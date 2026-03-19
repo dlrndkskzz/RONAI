@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RONAI 콘텐츠 스튜디오</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Playfair+Display:wght@700;900&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f1eb; --bg2:#faf8f4; --bg3:#ede9e1; --bg4:#e4ded4;
+  --ink:#1a1612; --ink2:#4a4030; --ink3:#9a8e80;
+  --gold:#b8924a; --gold2:#d4a85a; --gold-dim:rgba(184,146,74,0.10);
+  --red:#c94040; --green:#3a8a5a; --blue:#3a6090;
+  --border:rgba(0,0,0,0.07); --border-g:rgba(184,146,74,0.28);
+  --shadow:0 2px 12px rgba(0,0,0,0.06);
+  --r:11px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+
+/* ── HEADER ── */
+header{height:56px;background:var(--bg2);border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.8rem;position:sticky;top:0;z-index:200;box-shadow:var(--shadow)}
+.logo{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:900;color:var(--gold);letter-spacing:3px}
+.logo-sub{font-size:0.68rem;color:var(--ink3);font-family:'DM Mono',monospace;letter-spacing:1.5px;margin-left:10px}
+.top-tabs{display:flex;gap:2px;background:var(--bg3);padding:4px;border-radius:10px}
+.ttab{padding:7px 16px;border-radius:7px;font-size:0.8rem;font-weight:600;cursor:pointer;color:var(--ink3);transition:all .15s;border:none;background:transparent;font-family:'Noto Sans KR',sans-serif;display:flex;align-items:center;gap:5px}
+.ttab:hover{color:var(--ink2)}
+.ttab.on{background:var(--bg2);color:var(--gold);box-shadow:0 1px 5px rgba(0,0,0,0.07)}
+
+/* ── PAGE ── */
+.page{display:none}.page.on{display:block}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:320px 1fr;min-height:calc(100vh - 56px)}
+.panel-l{border-right:1.5px solid var(--border);padding:1.5rem 1.4rem;overflow-y:auto;height:calc(100vh - 56px);position:sticky;top:56px;background:var(--bg2)}
+.panel-r{padding:1.8rem 2rem;overflow-y:auto;height:calc(100vh - 56px)}
+.panel-l::-webkit-scrollbar,.panel-r::-webkit-scrollbar{width:4px}
+.panel-l::-webkit-scrollbar-thumb,.panel-r::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ── FORM ── */
+.sec{font-size:0.65rem;font-family:'DM Mono',monospace;color:var(--ink3);letter-spacing:2px;text-transform:uppercase;margin:1.2rem 0 0.7rem}
+.sec:first-child{margin-top:0}
+.fg{margin-bottom:0.9rem}
+.fg label{display:block;font-size:0.72rem;font-weight:700;color:var(--ink3);margin-bottom:5px;letter-spacing:.3px}
+.fg input,.fg textarea,.fg select{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--ink);font-family:'Noto Sans KR',sans-serif;font-size:0.84rem;outline:none;transition:border-color .2s}
+.fg input:focus,.fg textarea:focus,.fg select:focus{border-color:var(--border-g);background:var(--bg2)}
+.fg input::placeholder,.fg textarea::placeholder{color:var(--ink3)}
+.fg textarea{resize:none;line-height:1.6}
+.fg select option{background:var(--bg2)}
+
+/* ── CHIPS ── */
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:.5rem}
+.chip{padding:5px 11px;border:1.5px solid var(--border);border-radius:20px;font-size:0.74rem;font-weight:500;color:var(--ink3);cursor:pointer;transition:all .15s;user-select:none;background:var(--bg2)}
+.chip:hover{border-color:var(--border-g);color:var(--ink2)}
+.chip.on{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);font-weight:700}
+
+/* ── BUTTONS ── */
+.btn-main{width:100%;padding:12px;background:var(--gold);border:none;border-radius:9px;font-family:'Noto Sans KR',sans-serif;font-size:0.9rem;font-weight:700;color:#fff;cursor:pointer;margin-top:1.2rem;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .18s;letter-spacing:-.2px}
+.btn-main:hover{background:var(--gold2);box-shadow:0 4px 16px rgba(184,146,74,.25)}
+.btn-main:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.btn-sm{padding:5px 12px;background:var(--bg3);border:1.5px solid var(--border);border-radius:7px;font-family:'Noto Sans KR',sans-serif;font-size:0.72rem;font-weight:600;color:var(--ink3);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
+.btn-sm:hover{border-color:var(--border-g);color:var(--gold)}
+.btn-sm.done{background:var(--gold-dim);border-color:var(--gold);color:var(--gold)}
+.btn-full{width:100%;justify-content:center}
+
+/* ── OUTPUT CARDS ── */
+.ocard{background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:1rem;overflow:hidden;transition:border-color .3s;box-shadow:var(--shadow)}
+.ocard.ready{border-color:var(--border-g)}
+.ocard-head{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1.5px solid var(--border);background:var(--bg3)}
+.ocard-title{font-size:0.74rem;font-weight:700;color:var(--ink2);display:flex;align-items:center;gap:7px}
+.ocard-body{padding:15px;font-size:0.87rem;line-height:1.85;color:var(--ink);white-space:pre-wrap;min-height:60px}
+.ocard-body.empty{display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:0.8rem;flex-direction:column;gap:5px;min-height:80px}
+.ocard-foot{padding:9px 15px;border-top:1.5px solid var(--border);display:flex;gap:6px;justify-content:flex-end}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.cpill{font-family:'DM Mono',monospace;font-size:0.62rem;padding:2px 7px;background:var(--gold-dim);color:var(--gold);border-radius:8px}
+
+/* ── SKELETON ── */
+@keyframes sk{0%{background-position:-300px 0}100%{background-position:300px 0}}
+.sk{height:12px;border-radius:5px;margin:7px 0;background:linear-gradient(90deg,var(--bg3) 25%,var(--bg4) 50%,var(--bg3) 75%);background-size:300px 100%;animation:sk 1.2s infinite}
+.sk.w80{width:80%}.sk.w60{width:60%}.sk.w45{width:45%}
+
+/* ── SPINNER ── */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+
+@keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fu .3s ease forwards}
+
+/* ── COMBO / CONFLICT ── */
+.combo-card{background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--r);padding:1.1rem 1.2rem;margin-bottom:.9rem;box-shadow:var(--shadow)}
+.combo-title{font-size:.84rem;font-weight:700;color:var(--gold);margin-bottom:.5rem;display:flex;align-items:center;gap:6px}
+.combo-desc{font-size:.81rem;line-height:1.75;color:var(--ink3)}
+.combo-tag{display:inline-block;padding:3px 10px;margin:2px;border-radius:15px;font-size:.72rem;font-weight:600}
+.tag-g{background:rgba(58,138,90,.1);color:var(--green);border:1px solid rgba(58,138,90,.2)}
+.tag-r{background:rgba(201,64,64,.1);color:var(--red);border:1px solid rgba(201,64,64,.2)}
+.tag-b{background:rgba(58,96,144,.1);color:var(--blue);border:1px solid rgba(58,96,144,.2)}
+.conf-row{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1.5px solid var(--border);font-size:.81rem}
+.conf-row:last-child{border:none}
+.cbadge{min-width:48px;text-align:center;padding:2px 6px;border-radius:5px;font-size:.65rem;font-weight:700;font-family:'DM Mono',monospace}
+.cb-d{background:rgba(201,64,64,.1);color:var(--red)}
+.cb-w{background:rgba(184,146,74,.1);color:var(--gold)}
+.cb-o{background:rgba(58,138,90,.1);color:var(--green)}
+
+/* ── INGR TAGS ── */
+.ingr-area{background:var(--bg3);border:1.5px solid var(--border);border-radius:9px;padding:.9rem}
+.itag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;margin:2px;background:var(--gold-dim);border:1px solid var(--border-g);border-radius:15px;font-size:.73rem;color:var(--gold);font-weight:600}
+.itag button{background:none;border:none;color:var(--gold);cursor:pointer;font-size:.78rem;padding:0;line-height:1}
+.irow{display:flex;gap:5px;margin-top:7px}
+.irow input{flex:1;background:var(--bg4);border:1.5px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--ink);font-family:'Noto Sans KR',sans-serif;font-size:.81rem;outline:none}
+.irow input:focus{border-color:var(--border-g)}
+.irow button{padding:7px 12px;background:var(--gold-dim);border:1.5px solid var(--border-g);border-radius:7px;color:var(--gold);font-size:.78rem;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+
+/* ── EMPTY STATE ── */
+.empty-hero{text-align:center;padding:4rem 2rem;color:var(--ink3)}
+.empty-hero .ei{font-size:2.6rem;margin-bottom:.8rem}
+.empty-hero p{font-size:.85rem;line-height:1.8}
+.empty-hero strong{color:var(--ink2)}
+
+/* ── MEDIA EDITOR ── */
+.editor-wrap{display:flex;height:calc(100vh - 56px)}
+.ed-sidebar{width:248px;min-width:220px;background:var(--bg2);border-right:1.5px solid var(--border);overflow-y:auto;padding:1rem}
+.ed-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.ed-viewport{flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:repeating-conic-gradient(#e8e2d8 0% 25%,#f0ece4 0% 50%) 0 0/16px 16px}
+.ed-toolbar{height:44px;background:var(--bg2);border-top:1.5px solid var(--border);display:flex;align-items:center;gap:5px;padding:0 1rem;flex-shrink:0}
+.ed-right{width:180px;background:var(--bg2);border-left:1.5px solid var(--border);overflow-y:auto}
+.ed-rhead{padding:9px 11px;border-bottom:1.5px solid var(--border);font-size:.65rem;font-family:'DM Mono',monospace;color:var(--ink3);letter-spacing:1.5px;text-transform:uppercase}
+.ed-rbody{padding:7px}
+.ctrl-row2{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.ctrl-v{font-size:.63rem;font-family:'DM Mono',monospace;color:var(--gold);min-width:32px;text-align:right}
+input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:var(--bg4);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;background:var(--gold);border-radius:50%;cursor:pointer}
+.filter-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px}
+.fchip{background:var(--bg3);border:1.5px solid var(--border);border-radius:7px;padding:5px 3px;text-align:center;cursor:pointer;font-size:.67rem;color:var(--ink3);transition:all .15s;user-select:none}
+.fchip:hover{border-color:var(--border-g);color:var(--ink2)}
+.fchip.on{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);font-weight:700}
+.fprev{width:100%;aspect-ratio:1;border-radius:4px;margin-bottom:3px;display:block}
+.pbtn{padding:6px 4px;background:var(--bg3);border:1.5px solid var(--border);border-radius:6px;font-size:.63rem;color:var(--ink3);cursor:pointer;text-align:center;transition:all .15s;font-family:'DM Mono',monospace;line-height:1.4}
+.pbtn:hover{border-color:var(--border-g);color:var(--gold)}
+.pbtn.on{background:var(--gold-dim);border-color:var(--gold);color:var(--gold)}
+.preset-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-bottom:8px}
+.sticker-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:8px}
+.stk{font-size:1.2rem;text-align:center;cursor:pointer;padding:4px;border-radius:5px;transition:background .15s}
+.stk:hover{background:var(--bg4)}
+.dropzone{border:2px dashed var(--border-g);border-radius:11px;padding:2rem 1rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--gold-dim)}
+.dropzone:hover,.dropzone.drag{border-color:var(--gold);background:rgba(184,146,74,.18)}
+#canvasWrap{position:relative;display:inline-block;line-height:0}
+#mainCanvas{display:block;max-width:100%;max-height:calc(100vh - 160px)}
+.ov{position:absolute;cursor:move;user-select:none;border:1px dashed transparent;border-radius:3px}
+.ov:hover,.ov.sel{border-color:rgba(184,146,74,.7)}
+.ov-del{position:absolute;top:-9px;right:-9px;width:16px;height:16px;background:var(--red);border-radius:50%;display:none;align-items:center;justify-content:center;font-size:.55rem;color:#fff;cursor:pointer;z-index:10}
+.ov.sel .ov-del{display:flex}
+.lyr{display:flex;align-items:center;gap:5px;padding:6px 8px;background:var(--bg3);border:1.5px solid transparent;border-radius:7px;margin-bottom:3px;cursor:pointer;font-size:.73rem}
+.lyr:hover{border-color:var(--border)}
+.lyr.sel{background:var(--gold-dim);border-color:var(--border-g)}
+.lyr-icon{font-size:.85rem;flex-shrink:0}
+.lyr-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink3)}
+.lyr-del{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:.78rem;padding:0;line-height:1}
+.lyr-del:hover{color:var(--red)}
+.timeline{height:30px;background:var(--bg3);border-radius:6px;position:relative;cursor:pointer;overflow:hidden;margin:5px 0}
+.tl-prog{height:100%;background:rgba(184,146,74,.15);position:absolute;top:0;left:0}
+.tl-range{height:100%;background:rgba(184,146,74,.22);position:absolute;top:0;border:1px solid var(--gold)}
+.tl-handle{width:3px;height:100%;background:var(--gold);position:absolute;top:0;cursor:ew-resize;border-radius:2px}
+.tts-wave{height:36px;background:var(--bg3);border-radius:8px;display:flex;align-items:center;justify-content:center;gap:2px;overflow:hidden}
+.wbar{width:3px;border-radius:2px;background:var(--gold);transition:height .1s}
+.voice-card{background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:9px;margin-bottom:5px;cursor:pointer;transition:all .15s}
+.voice-card:hover{border-color:var(--border-g)}
+.voice-card.on{border-color:var(--gold);background:var(--gold-dim)}
+.batch-thumb{width:36px;height:36px;object-fit:cover;border-radius:5px;flex-shrink:0}
+.bstatus{font-size:.65rem;font-family:'DM Mono',monospace}
+.bstatus.done{color:var(--green)}.bstatus.wait{color:var(--ink3)}.bstatus.proc{color:var(--gold)}
+.no-media-msg{text-align:center;color:var(--ink3);font-size:.83rem}
+
+@media(max-width:900px){.layout{grid-template-columns:1fr}.panel-l{height:auto;position:static}.panel-r{height:auto}.grid2{grid-template-columns:1fr}.editor-wrap{flex-direction:column}.ed-sidebar{width:100%;height:auto}.ed-right{display:none}}
+</style>
+</head>
+<body>
+
+<!-- ████ HEADER ████ -->
+<header>
+  <div style="display:flex;align-items:center">
+    <span class="logo">RONAI</span>
+    <span class="logo-sub">CONTENT STUDIO</span>
+  </div>
+  <div class="top-tabs" id="topTabs">
+    <button class="ttab on" data-page="content">✍️ 콘텐츠</button>
+    <button class="ttab" data-page="combo">💡 꿀조합</button>
+    <button class="ttab" data-page="conflict">⚠️ 성분체크</button>
+    <button class="ttab" data-page="media">🎨 미디어편집</button>
+  </div>
+  <div style="font-size:.68rem;color:var(--ink3);font-family:'DM Mono',monospace">ronai.co.kr</div>
+</header>
+
+<!-- ████ PAGE: 콘텐츠 작성 ████ -->
+<div class="page on" id="page-content">
+<div class="layout">
+  <aside class="panel-l">
+    <div class="sec">제품 정보</div>
+    <div class="fg"><label>제품명 *</label><input id="iName" placeholder="예: 노탈리 타미텐겔 해열겔 500ml" onkeydown="if(event.key==='Enter')genContent()"></div>
+    <div class="fg"><label>브랜드</label>
+      <select id="iBrand"><option value="">선택 안함</option><option>리라신</option><option>브릴리에잇</option><option>노탈리</option><option>더라포</option><option>에크리크</option><option>듀베로</option><option>오바코</option><option>졸로픽스</option><option>오도라타</option></select>
+    </div>
+    <div class="fg"><label>제품 타입</label>
+      <select id="iType"><option value="">선택 안함</option><option>토너/스킨</option><option>앰플/에센스</option><option>로션/크림</option><option>클렌징/딥클렌징</option><option>선케어</option><option>바디/립/핸드</option><option>홈케어세트</option><option>팩트/쿠션</option><option>아로마 오일</option></select>
+    </div>
+    <div class="sec">피부 고민</div>
+    <div class="chips" id="skinChips">
+      <div class="chip" data-v="트러블/민감">트러블/민감</div>
+      <div class="chip" data-v="수분/악건성">수분/악건성</div>
+      <div class="chip" data-v="모공/각질">모공/각질</div>
+      <div class="chip" data-v="탄력/주름">탄력/주름</div>
+      <div class="chip" data-v="미백/톤업">미백/톤업</div>
+      <div class="chip" data-v="피부장벽/홍조/예민">피부장벽/홍조</div>
+    </div>
+    <div class="sec">콘텐츠 유형</div>
+    <div class="chips" id="ctChips">
+      <div class="chip on" data-v="상품 상세페이지">🛍 상세</div>
+      <div class="chip" data-v="블로그 포스팅">📝 블로그 SEO</div>
+      <div class="chip" data-v="이벤트/공지">📢 이벤트</div>
+      <div class="chip" data-v="SNS 홍보">📱 SNS</div>
+      <div class="chip" data-v="스레드">🧵 스레드</div>
+    </div>
+
+    <!-- 상세페이지 세부 유형 -->
+    <div id="detailTypeWrap" style="margin-top:.6rem">
+      <div class="sec" style="margin-top:0">상세페이지 유형</div>
+      <div class="chips" id="detailTypeChips">
+        <div class="chip on" data-v="전체">전체 구성</div>
+        <div class="chip" data-v="성분집중">성분 집중형</div>
+        <div class="chip" data-v="비교형">경쟁 비교형</div>
+        <div class="chip" data-v="스토리형">브랜드 스토리</div>
+        <div class="chip" data-v="후기형">리뷰 강조형</div>
+      </div>
+      <div class="fg" style="margin-top:.5rem">
+        <label>강조 포인트 <span style="color:var(--ink3);font-weight:400">(선택)</span></label>
+        <input id="detailPoint" placeholder="예: 저자극, 임상 테스트 완료, 비건 인증">
+      </div>
+    </div>
+
+    <!-- 블로그(SEO) 세부 유형 -->
+    <div id="blogTypeWrap" style="display:none;margin-top:.6rem">
+      <div class="sec" style="margin-top:0">블로그 유형</div>
+      <div class="chips" id="blogTypeChips">
+        <div class="chip on" data-v="정보리뷰">정보+리뷰형</div>
+        <div class="chip" data-v="성분분석">성분 분석형</div>
+        <div class="chip" data-v="사용법">사용법 가이드</div>
+        <div class="chip" data-v="비교">제품 비교형</div>
+        <div class="chip" data-v="피부타입">피부타입 맞춤</div>
+      </div>
+
+      <!-- 주제/키워드: AI 자동 or 직접 입력 -->
+      <div class="sec">주제 & 키워드</div>
+      <div style="display:flex;gap:6px;margin-bottom:10px" id="blogKeywordMode">
+        <div class="chip on" data-v="auto" onclick="setBlogMode('auto')" style="flex:1;text-align:center">✨ AI 자동 추천</div>
+        <div class="chip" data-v="manual" onclick="setBlogMode('manual')" style="flex:1;text-align:center">✏️ 직접 입력</div>
+      </div>
+
+      <!-- AI 자동 모드 안내 -->
+      <div id="blogAutoInfo" style="background:var(--gold-dim);border:1.5px solid var(--border-g);border-radius:9px;padding:10px 12px;font-size:.76rem;color:var(--ink2);line-height:1.7;margin-bottom:8px">
+        ✨ <strong>위 제품명 입력하면 AI가 알아서</strong><br>
+        주제 · 메인키워드 · LSI키워드를<br>자동으로 정해서 최적의 블로그를 씁니다
+      </div>
+
+      <!-- 직접 입력 모드 (기본 숨김) -->
+      <div id="blogManualInputs" style="display:none">
+        <div class="fg">
+          <label>주제 <span style="color:var(--red)">*</span></label>
+          <input id="seoTopic" placeholder="예: 민감성 피부 수분 관리">
+        </div>
+        <div class="fg">
+          <label>메인 키워드 <span style="color:var(--red)">*</span></label>
+          <input id="seoKeyword" placeholder="예: 민감성 피부 수분크림">
+        </div>
+        <div class="fg">
+          <label>LSI 키워드 <span style="color:var(--ink3);font-weight:400">쉼표 구분</span></label>
+          <input id="seoLSI" placeholder="예: 피부장벽, 세라마이드, 보습, 진정">
+        </div>
+        <div class="fg">
+          <label>타겟 독자</label>
+          <input id="seoReader" placeholder="예: 피부 트러블 고민 중인 30대 직장인">
+        </div>
+        <div class="fg">
+          <label>차별화 포인트</label>
+          <input id="seoDiff" placeholder="예: 로나이 리라신 성분 기반 실제 경험">
+        </div>
+      </div>
+
+      <div class="sec">글 톤</div>
+      <div class="chips" id="seoToneChips">
+        <div class="chip on" data-v="친근체">😊 친근체</div>
+        <div class="chip" data-v="정보체">📋 정보체</div>
+        <div class="chip" data-v="전문체">💼 전문체</div>
+      </div>
+      <div class="sec">플랫폼</div>
+      <div class="chips" id="seoPlatChips">
+        <div class="chip on" data-v="네이버">N 네이버</div>
+        <div class="chip" data-v="티스토리">T 티스토리</div>
+        <div class="chip" data-v="워드프레스">W 워드프레스</div>
+      </div>
+      <div class="sec">검색 의도</div>
+      <div class="chips" id="seoIntChips">
+        <div class="chip on" data-v="정보형">💡 정보형</div>
+        <div class="chip" data-v="비교형">⚖️ 비교형</div>
+        <div class="chip" data-v="행동형">🛒 행동형</div>
+      </div>
+    </div>
+    <div id="eventTypeWrap" style="display:none;margin-top:.6rem">
+      <div class="sec" style="margin-top:0">이벤트 유형</div>
+      <div class="chips" id="eventTypeChips">
+        <div class="chip on" data-v="할인">할인 프로모션</div>
+        <div class="chip" data-v="신제품">신제품 출시</div>
+        <div class="chip" data-v="시즌">시즌 기획전</div>
+        <div class="chip" data-v="묶음">묶음/세트 구성</div>
+        <div class="chip" data-v="공지">일반 공지</div>
+      </div>
+      <div class="fg" style="margin-top:.5rem">
+        <label>이벤트 기간/조건 <span style="color:var(--ink3);font-weight:400">(선택)</span></label>
+        <input id="eventPeriod" placeholder="예: 3일 한정, 선착순 100명, ~12/31">
+      </div>
+    </div>
+
+    <!-- SNS 세부 유형 -->
+    <div id="snsTypeWrap" style="display:none;margin-top:.6rem">
+      <div class="sec" style="margin-top:0">SNS 유형</div>
+      <div class="chips" id="snsTypeChips">
+        <div class="chip on" data-v="인스타감성">인스타 감성형</div>
+        <div class="chip" data-v="정보카드">정보 카드뉴스</div>
+        <div class="chip" data-v="before-after">Before/After</div>
+        <div class="chip" data-v="루틴소개">데일리 루틴</div>
+        <div class="chip" data-v="이벤트홍보">이벤트 홍보</div>
+      </div>
+      <div class="fg" style="margin-top:.5rem">
+        <label>채널 선택</label>
+        <div class="chips" id="snsChannelChips" style="margin-top:0">
+          <div class="chip on" data-v="인스타">📷 인스타</div>
+          <div class="chip" data-v="카카오">💛 카카오</div>
+          <div class="chip" data-v="블로그SNS">📝 블로그</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 스레드 세부 유형 -->
+    <div id="threadsTypeWrap" style="display:none;margin-top:.6rem">
+      <div class="sec" style="margin-top:0">스레드 유형</div>
+      <div class="chips" id="threadsTypeChips">
+        <div class="chip on" data-v="1">①제품소개</div>
+        <div class="chip" data-v="2">②트렌드</div>
+        <div class="chip" data-v="3">③공감일상</div>
+        <div class="chip" data-v="4">④정보교육</div>
+        <div class="chip" data-v="5">⑤후기신뢰</div>
+        <div class="chip" data-v="6">⑥이벤트혜택</div>
+      </div>
+      <div class="fg" style="margin-top:.5rem">
+        <label>트렌드/키워드 <span style="color:var(--ink3);font-weight:400">(선택)</span></label>
+        <input id="threadsTrend" placeholder="예: 환절기, 꿀피부, 트렌드 키워드">
+      </div>
+      <div class="fg">
+        <label>버전 수</label>
+        <select id="threadsCount" style="background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--ink);font-family:'Noto Sans KR',sans-serif;font-size:.84rem;outline:none;width:100%">
+          <option value="1">1개</option>
+          <option value="3">3개 버전</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg" style="margin-top:.8rem"><label>주요 성분 / 특징</label><input id="iIngr" placeholder="예: 히알루론산, 나이아신아마이드, 세라마이드"></div>
+    <div class="fg"><label>가격</label><input id="iPrice" placeholder="예: 89,100원 (10% 할인)"></div>
+    <div class="fg"><label>추가 요청</label><textarea id="iExtra" rows="2" placeholder="예: 피부 열 내려주는 효과 강조"></textarea></div>
+    <button class="btn-main" id="btnC" onclick="genContent()"><span id="btnCTxt">✦ 콘텐츠 생성</span><div class="spin" id="btnCSpin" style="display:none"></div></button>
+  </aside>
+  <div class="panel-r" id="contentOut">
+    <div class="empty-hero"><div class="ei">✍️</div><p>제품명을 입력하고 <strong>콘텐츠 생성</strong>을 누르면<br>상세페이지·블로그·SNS 문구가 자동으로 완성됩니다.</p></div>
+  </div>
+</div>
+</div>
+
+<!-- ████ PAGE: 꿀조합 ████ -->
+<div class="page" id="page-combo">
+<div class="layout">
+  <aside class="panel-l">
+    <div class="sec">기준 제품</div>
+    <div class="fg"><label>제품명 *</label><input id="cName" placeholder="예: 리라신 장벽 크림"></div>
+    <div class="fg"><label>주요 성분</label><input id="cIngr" placeholder="예: 세라마이드, 판테놀, 히알루론산"></div>
+    <div class="sec">피부 타입</div>
+    <div class="chips" id="comboSkinChips">
+      <div class="chip on" data-v="건성">건성</div><div class="chip" data-v="지성">지성</div>
+      <div class="chip" data-v="복합성">복합성</div><div class="chip" data-v="민감성">민감성</div><div class="chip" data-v="중성">중성</div>
+    </div>
+    <div class="sec">피부 고민</div>
+    <div class="chips" id="comboWorryChips">
+      <div class="chip" data-v="수분">수분</div><div class="chip" data-v="탄력">탄력</div><div class="chip" data-v="미백">미백</div>
+      <div class="chip" data-v="트러블">트러블</div><div class="chip" data-v="모공">모공</div>
+      <div class="chip" data-v="피부장벽">피부장벽</div><div class="chip" data-v="각질">각질</div>
+    </div>
+    <button class="btn-main" id="btnCombo" onclick="genCombo()"><span id="btnComboTxt">💡 꿀조합 추천받기</span><div class="spin" id="btnComboSpin" style="display:none"></div></button>
+  </aside>
+  <div class="panel-r" id="comboOut">
+    <div class="empty-hero"><div class="ei">💡</div><p>제품 정보를 입력하면<br><strong>함께 쓰면 좋은 제품 조합</strong>과<br>사용 순서, 시너지 효과를 알려드립니다.</p></div>
+  </div>
+</div>
+</div>
+
+<!-- ████ PAGE: 성분 충돌 ████ -->
+<div class="page" id="page-conflict">
+<div class="layout">
+  <aside class="panel-l">
+    <div class="sec">제품 A</div>
+    <div class="fg"><label>제품명</label><input id="aName" placeholder="예: 비타민C 세럼"></div>
+    <div class="ingr-area" style="margin-bottom:.9rem">
+      <div style="font-size:.72rem;color:var(--ink3);margin-bottom:6px;font-weight:600">성분 입력</div>
+      <div id="aIngrTags"></div>
+      <div class="irow"><input id="aIngrInput" placeholder="성분명 입력 후 추가" onkeydown="if(event.key==='Enter')addIngr('a')"><button onclick="addIngr('a')">+추가</button></div>
+    </div>
+    <div class="sec">제품 B</div>
+    <div class="fg"><label>제품명</label><input id="bName" placeholder="예: 레티놀 앰플"></div>
+    <div class="ingr-area">
+      <div style="font-size:.72rem;color:var(--ink3);margin-bottom:6px;font-weight:600">성분 입력</div>
+      <div id="bIngrTags"></div>
+      <div class="irow"><input id="bIngrInput" placeholder="성분명 입력 후 추가" onkeydown="if(event.key==='Enter')addIngr('b')"><button onclick="addIngr('b')">+추가</button></div>
+    </div>
+    <button class="btn-main" id="btnConf" onclick="genConflict()"><span id="btnConfTxt">⚠️ 충돌 체크</span><div class="spin" id="btnConfSpin" style="display:none"></div></button>
+  </aside>
+  <div class="panel-r" id="conflictOut">
+    <div class="empty-hero"><div class="ei">🔬</div><p>두 제품의 성분을 입력하면<br><strong>충돌 여부·주의사항·사용 순서</strong>를 분석해드립니다.</p></div>
+  </div>
+</div>
+</div>
+
+<!-- ████ PAGE: 미디어 편집 ████ -->
+<div class="page" id="page-media">
+<div class="editor-wrap">
+  <!-- LEFT SIDEBAR -->
+  <div class="ed-sidebar" id="edSidebar">
+    <div class="sec" style="margin-top:0">미디어 모드</div>
+    <div class="chips" style="margin-bottom:1rem" id="edModeChips">
+      <div class="chip on" data-v="photo" onclick="switchEdMode('photo')">🖼 사진</div>
+      <div class="chip" data-v="video" onclick="switchEdMode('video')">🎬 영상</div>
+      <div class="chip" data-v="batch" onclick="switchEdMode('batch')">📦 일괄</div>
+      <div class="chip" data-v="tts" onclick="switchEdMode('tts')">🎙 목소리</div>
+    </div>
+    <div id="edSidebarBody">
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('mediaInput').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="handleDrop(event)">
+        <input type="file" id="mediaInput" accept="image/*,video/*" multiple style="display:none" onchange="handleFileInput(this.files)">
+        <div style="font-size:2rem;margin-bottom:6px">📁</div>
+        <div style="font-size:.78rem;color:var(--ink3);line-height:1.6">사진 또는 영상을<br>클릭하거나 드래그<br><span style="font-size:.68rem;color:var(--ink3)">JPG·PNG·MP4·MOV</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CANVAS -->
+  <div class="ed-main">
+    <div class="ed-viewport" id="edViewport">
+      <div class="no-media-msg" id="noMediaMsg"><span style="font-size:2.5rem;display:block;margin-bottom:.8rem">🎨</span>왼쪽에서 파일을 불러오세요</div>
+      <div id="canvasWrap" style="display:none"><canvas id="mainCanvas"></canvas></div>
+      <video id="videoEl" controls playsinline style="display:none;max-width:100%;max-height:calc(100vh - 160px)"></video>
+      <div id="batchArea" style="display:none;width:100%;height:100%;overflow:auto;padding:1rem"><div id="batchGrid" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center"></div></div>
+      <div id="ttsArea" style="display:none;width:100%;max-width:480px;padding:2rem;text-align:center">
+        <div style="font-size:.85rem;color:var(--ink3);margin-bottom:1.2rem">🎙 음성 생성 준비</div>
+        <div class="tts-wave" id="ttsWave">${Array.from({length:18},(_,i)=>`<div class="wbar" id="wb${i}" style="height:4px"></div>`).join('')}</div>
+        <div style="margin-top:.8rem;font-size:.72rem;color:var(--ink3);font-family:'DM Mono',monospace" id="ttsStatus">대기중</div>
+      </div>
+    </div>
+    <div class="ed-toolbar" id="edToolbar">
+      <span style="font-size:.7rem;color:var(--ink3);font-family:'DM Mono',monospace" id="mediaInfo">미디어 없음</span>
+      <div id="imgTb" style="display:flex;gap:4px">
+        <button class="btn-sm" onclick="rotImg(-90)">↺</button>
+        <button class="btn-sm" onclick="rotImg(90)">↻</button>
+        <button class="btn-sm" onclick="flpImg('h')">↔</button>
+        <button class="btn-sm" onclick="flpImg('v')">↕</button>
+        <button class="btn-sm" style="color:var(--red)" onclick="resetEd()">↩초기화</button>
+      </div>
+      <div id="vidTb" style="display:none;gap:4px">
+        <button class="btn-sm" onclick="togglePlay()">▶/⏸</button>
+        <span style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--gold)" id="tcDisplay">00:00</span>
+        <button class="btn-sm" onclick="extractThumb()">🖼썸네일</button>
+      </div>
+      <div style="flex:1"></div>
+      <div id="expOpts" style="display:flex;gap:4px">
+        <select id="expFmt" style="background:var(--bg3);border:1.5px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--ink);font-size:.7rem;outline:none"><option value="jpeg">JPG</option><option value="png">PNG</option><option value="webp">WebP</option></select>
+        <select id="expQ" style="background:var(--bg3);border:1.5px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--ink);font-size:.7rem;outline:none"><option value="1">최고화질</option><option value="0.9" selected>고화질</option><option value="0.75">표준</option><option value="0.6">소용량</option></select>
+        <button class="btn-sm" style="background:var(--gold);border-color:var(--gold);color:#fff" onclick="exportImg()">⬇ 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Layers -->
+  <div class="ed-right">
+    <div class="ed-rhead">레이어</div>
+    <div class="ed-rbody" id="layerList"><div style="color:var(--ink3);font-size:.73rem;text-align:center;margin-top:1rem">레이어 없음</div></div>
+  </div>
+</div>
+</div>
+
+<!-- ████ SCRIPT ████ -->
+<script>
+// ═══════════════════════════════
+// PAGE SWITCH
+// ═══════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ttab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('page-'+name).classList.add('on');
+  const activeTab = document.querySelector(`.ttab[data-page="${name}"]`);
+  if (activeTab) activeTab.classList.add('on');
+  if (name==='media' && origImg) { drawCanvas(); renderOverlays(); }
+}
+
+// ═══════════════════════════════
+// CHIP INIT
+// ═══════════════════════════════
+function initChips(id, multi=false, onChange=null) {
+  document.querySelectorAll(`#${id} .chip`).forEach(c=>{
+    c.addEventListener('click',()=>{
+      if(multi) c.classList.toggle('on');
+      else { document.querySelectorAll(`#${id} .chip`).forEach(x=>x.classList.remove('on')); c.classList.add('on'); }
+      if(onChange) onChange();
+    });
+  });
+}
+initChips('skinChips',true);
+initChips('ctChips',false,()=>{
+  const v = getChip('ctChips');
+  document.getElementById('detailTypeWrap').style.display  = v==='상품 상세페이지' ? 'block' : 'none';
+  document.getElementById('blogTypeWrap').style.display    = v==='블로그 포스팅'   ? 'block' : 'none';
+  document.getElementById('eventTypeWrap').style.display   = v==='이벤트/공지'     ? 'block' : 'none';
+  document.getElementById('snsTypeWrap').style.display     = v==='SNS 홍보'        ? 'block' : 'none';
+  document.getElementById('threadsTypeWrap').style.display = v==='스레드'          ? 'block' : 'none';
+});
+initChips('detailTypeChips',false);
+initChips('blogTypeChips',false);
+initChips('blogStyleChips',false);
+initChips('eventTypeChips',false);
+initChips('snsTypeChips',false);
+initChips('snsChannelChips',false);
+initChips('threadsTypeChips',false);
+initChips('comboSkinChips');
+initChips('comboWorryChips',true);
+initChips('seoToneChips');
+initChips('seoPlatChips');
+initChips('seoIntChips');
+
+// ═══════════════════════════════
+// HELPERS
+// ═══════════════════════════════
+const ingrA=[], ingrB=[];
+let waveInt=null;
+
+function getChip(id){return document.querySelector(`#${id} .chip.on`)?.dataset.v||''}
+function getChips(id){return [...document.querySelectorAll(`#${id} .chip.on`)].map(c=>c.dataset.v)}
+function skelHTML(n=3){return Array.from({length:n},(_,i)=>`<div class="sk ${['w80','w60','w45'][i%3]}"></div>`).join('')}
+function setLoad(btnId,spinId){document.getElementById(btnId).disabled=true;document.getElementById(btnId+'Txt').style.display='none';document.getElementById(btnId+'Spin').style.display='block'}
+function stopLoad(btnId,spinId){document.getElementById(btnId).disabled=false;document.getElementById(btnId+'Txt').style.display='inline';document.getElementById(btnId+'Spin').style.display='none'}
+
+function cp(id,btn){
+  const t=document.getElementById(id)?.textContent;
+  if(!t||t.length<3)return;
+  navigator.clipboard.writeText(t);
+  const o=btn.textContent; btn.textContent='✓완료'; btn.classList.add('done');
+  setTimeout(()=>{btn.textContent=o;btn.classList.remove('done')},1800);
+}
+function cpHTML(id,btn){
+  const t=document.getElementById(id)?.textContent;
+  if(!t)return;
+  const h='<p>'+t.split('\n\n').map(s=>s.replace(/\n/g,'<br>')).join('</p><p>')+'</p>';
+  navigator.clipboard.writeText(h);
+  const o=btn.textContent; btn.textContent='✓완료'; btn.classList.add('done');
+  setTimeout(()=>{btn.textContent=o;btn.classList.remove('done')},1800);
+}
+
+function addIngr(side){
+  const input=document.getElementById(side+'IngrInput');
+  const val=input.value.trim(); if(!val)return;
+  const arr=side==='a'?ingrA:ingrB;
+  if(!arr.includes(val)){arr.push(val);renderIngrTags(side);}
+  input.value='';
+}
+function removeIngr(side,val){const arr=side==='a'?ingrA:ingrB;arr.splice(arr.indexOf(val),1);renderIngrTags(side);}
+function renderIngrTags(side){
+  const arr=side==='a'?ingrA:ingrB;
+  document.getElementById(side+'IngrTags').innerHTML=arr.map(v=>`<span class="itag">${v}<button onclick="removeIngr('${side}','${v}')">✕</button></span>`).join('');
+}
+
+async function callAI(prompt,maxTokens=4000){
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTokens,messages:[{role:'user',content:prompt}]})
+  });
+  const data=await res.json();
+  if(!res.ok){
+    const errMsg = data?.error?.message || `HTTP ${res.status}`;
+    throw new Error(errMsg);
+  }
+  const raw=data.content?.[0]?.text||'';
+  if(!raw) throw new Error('AI 응답이 비어있습니다.');
+  return parseJSON(raw);
+}
+
+function parseJSON(raw){
+  // 1) 코드블록 제거 (```json ... ``` 또는 ``` ... ```)
+  let cleaned = raw.replace(/^```(?:json)?\s*/i,'').replace(/\s*```\s*$/,'').trim();
+  // 2) 혹시 중간에 코드블록 마커가 있으면 제거
+  cleaned = cleaned.replace(/```(?:json)?/gi,'').replace(/```/g,'').trim();
+  // 3) JSON 시작 { 이전 텍스트 제거
+  const start = cleaned.indexOf('{');
+  const end   = cleaned.lastIndexOf('}');
+  if(start === -1 || end === -1) throw new Error('JSON을 찾을 수 없습니다. 다시 시도해주세요.');
+  cleaned = cleaned.slice(start, end+1);
+  try{
+    return JSON.parse(cleaned);
+  }catch(e){
+    // 4) 마지막 수단: 불완전 JSON을 닫아서 시도
+    try{ return JSON.parse(cleaned+'}'); }catch(_){}
+    try{ return JSON.parse(cleaned+'"}'); }catch(_){}
+    throw new Error('응답 형식 오류. 다시 시도해주세요.');
+  }
+}
+
+function showErr(outId, e){
+  const msg = e.message||'알 수 없는 오류';
+  const isApiKey = msg.includes('401') || msg.includes('api_key') || msg.includes('Authentication') || msg.includes('permission');
+  const isCors   = msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('Load failed');
+  const isJson   = msg.includes('JSON 파싱');
+  let body = '';
+  if(isApiKey){
+    body=`<strong>🔑 API 인증 오류</strong><br>이 앱은 <u>Claude.ai 채팅창 안</u>에서만 작동합니다.<br>다운로드한 파일을 직접 브라우저에서 열면 API 키가 없어서 작동하지 않아요.<br><br>→ Claude.ai 대화창에서 앱 파일을 열어주세요.`;
+  } else if(isCors){
+    body=`<strong>🌐 네트워크 오류</strong><br>Claude.ai 채팅창 안에서 실행해주세요.<br>로컬 파일로 열면 API 요청이 차단됩니다.`;
+  } else if(isJson){
+    body=`<strong>📄 응답 파싱 오류</strong><br>AI 응답을 읽는 중 문제가 생겼어요.<br>다시 생성 버튼을 눌러보세요.<br><small style="opacity:.6">${msg}</small>`;
+  } else {
+    body=`<strong>⚠️ 오류 발생</strong><br>${msg}<br><br>잠시 후 다시 시도해주세요.`;
+  }
+  const el=document.getElementById(outId);
+  if(el) el.innerHTML=`<div style="padding:1.5rem;color:var(--red);line-height:1.9;font-size:.84rem;background:rgba(201,64,64,.05);border-radius:10px;border:1.5px solid rgba(201,64,64,.15)">${body}</div>`;
+}
+
+// ═══════════════════════════════
+// THREADS ONLY GEN
+// ═══════════════════════════════
+const THREADS_TYPE_NAMES = {
+  '1':'제품 소개형','2':'트렌드 연결형','3':'공감·일상형',
+  '4':'정보·교육형','5':'후기·신뢰형','6':'이벤트·혜택형'
+};
+async function genThreadsOnly(name,brand,ptype,skin,ingr,price,extra){
+  const tType = getChip('threadsTypeChips')||'1';
+  const tTypeName = THREADS_TYPE_NAMES[tType]||'제품 소개형';
+  const trend = document.getElementById('threadsTrend')?.value||'';
+  const count = +(document.getElementById('threadsCount')?.value||1);
+
+  setLoad('btnC','btnCSpin');
+
+  const skels = Array.from({length:count},(_,i)=>`
+    <div class="ocard" id="tsk${i}">
+      <div class="ocard-head"><div class="ocard-title">🧵 스레드 ${count>1?`버전 ${i+1}`:''}</div></div>
+      <div class="ocard-body">${skelHTML(3)}</div>
+    </div>`).join('');
+  document.getElementById('contentOut').innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem">
+      <div style="font-size:.78rem;color:var(--ink3)">🧵 <strong style="color:var(--gold)">${name}</strong> 스레드 생성 중...</div>
+    </div>${skels}`;
+
+  const typeGuide = {
+    '1':'제품 특징·성분·효능을 자연스럽게 소개하는 흐름. 모호한 표현 금지, 구체적 성분/효과 최소 1가지 포함.',
+    '2':'요즘 계절·SNS 유행·트렌드 이슈로 시작 → 피부 고민 → 제품 해결로 자연스럽게 연결.',
+    '3':'일상 에피소드나 피부 고민 공감으로 시작 → 제품으로 해결되는 흐름. 친한 친구에게 카톡 보내듯.',
+    '4':'스킨케어 꿀팁·성분 설명 정보 먼저 → 마지막에 관련 제품 자연스럽게 연결.',
+    '5':'실제 사용 경험·고객 반응 기반으로 신뢰 형성 → 자연스럽게 구매 욕구 유도.',
+    '6':'할인·기간 한정·묶음 구성으로 긴박감 조성. 단 광고 문구 직접 노출 금지.'
+  };
+
+  const prompt=`당신은 로나이(ronai.co.kr) 화장품 자사몰의 Threads(스레드) 전문 SNS 마케터입니다.
+
+## 제품 정보
+제품명: ${name} | 브랜드: ${brand||'미입력'} | 타입: ${ptype||'미입력'} | 피부고민: ${skin.join(',')||'일반'} | 성분: ${ingr||'미입력'} | 가격: ${price||'미입력'}
+추가요청: ${extra||'없음'} | 트렌드/키워드: ${trend||'없음'}
+
+## 스레드 유형
+[${tTypeName}] — ${typeGuide[tType]}
+
+## 말투 규칙 (필수)
+- 반말 필수: "~했어", "~더라", "~인 거 알았어?" 같은 자연스러운 구어체
+- "~합니다", "~하세요", "~드립니다" 절대 금지
+- 친한 친구한테 카톡 보내듯이 쓰는 느낌
+- 유행어·줄임말 자연스럽게 활용 가능 (억지스럽지 않게)
+
+## 작성 규칙 (필수)
+- 길이: 3~6줄 (Threads 최적 길이)
+- 이모지: 2~4개 자연스럽게 배치 (남발 금지)
+- 제품의 구체적인 특징 최소 1가지 반드시 포함 (모호한 표현 금지)
+- "좋아요", "달라졌어요" 같은 막연한 표현 금지
+- 광고 문구 직접 노출 금지 ("지금 구매하세요!" 같은 표현 지양)
+- 판매 유도는 글의 흐름 안에 자연스럽게 녹일 것
+- 해시태그 2~3개만 (마지막 줄에)
+
+${count===3?'버전 3개를 각각 다른 각도로 작성해주세요.':'버전 1개 작성'}
+
+JSON만 응답 (코드블록 없이):
+${count===1
+  ? '{"v1":"스레드 포스트 내용 (줄바꿈은 \\n 사용)"}'
+  : '{"v1":"버전1 포스트","v2":"버전2 포스트","v3":"버전3 포스트"}'}`;
+
+  try{
+    const p=await callAI(prompt,2000);
+    const versions = count===1 ? [p.v1||''] : [p.v1||'',p.v2||'',p.v3||''];
+    document.getElementById('contentOut').innerHTML=`
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div style="font-size:.78rem;color:var(--ink3)">🧵 <strong style="color:var(--gold)">${name}</strong> · ${tTypeName} 완성</div>
+        <div style="font-size:.68rem;font-family:'DM Mono',monospace;color:var(--ink3)">${new Date().toLocaleTimeString('ko-KR')}</div>
+      </div>
+      <div style="background:rgba(184,146,74,.07);border:1.5px solid var(--border-g);border-radius:9px;padding:10px 13px;font-size:.75rem;color:var(--ink3);margin-bottom:1rem;line-height:1.6">
+        💡 <strong style="color:var(--ink2)">${tTypeName}</strong> · 반말 구어체 · 이모지 ${count>1?`${count}개 버전`:''}
+      </div>
+      ${versions.map((v,i)=>`
+        <div class="ocard ready" style="margin-bottom:.8rem">
+          <div class="ocard-head" style="background:linear-gradient(90deg,var(--bg3),#f0ece8)">
+            <div class="ocard-title">🧵 ${count>1?`버전 ${i+1}`:'스레드 포스트'} <span class="cpill">${v.length}자</span></div>
+          </div>
+          <div class="ocard-body fu" id="ot${i}" style="white-space:pre-wrap;line-height:1.9;font-size:.9rem">${v}</div>
+          <div class="ocard-foot"><button class="btn-sm" onclick="cp('ot${i}',this)">📋 복사</button></div>
+        </div>`).join('')}`;
+  }catch(e){
+    showErr('contentOut',e);
+  }
+  stopLoad('btnC','btnCSpin');
+}
+
+// ═══════════════════════════════
+// CONTENT GEN
+// ═══════════════════════════════
+async function genContent(){
+  const name=document.getElementById('iName').value.trim();
+  if(!name){document.getElementById('iName').focus();return;}
+  const brand=document.getElementById('iBrand').value;
+  const ptype=document.getElementById('iType').value;
+  const skin=getChips('skinChips');
+  const ctype=getChip('ctChips')||'상품 상세페이지';
+  const ingr=document.getElementById('iIngr').value;
+  const price=document.getElementById('iPrice').value;
+  const extra=document.getElementById('iExtra').value;
+
+  // ── 블로그(SEO) 전용 분기 ──
+  if(ctype==='블로그 포스팅'){
+    await genSEO();
+    return;
+  }
+
+  // ── 스레드 전용 분기 ──
+  if(ctype==='스레드'){
+    await genThreadsOnly(name,brand,ptype,skin,ingr,price,extra);
+    return;
+  }
+
+  setLoad('btnC','btnCSpin');
+  document.getElementById('contentOut').innerHTML=`
+    <div class="grid2">
+      <div class="ocard"><div class="ocard-head"><div class="ocard-title">📌 제목</div></div><div class="ocard-body">${skelHTML(2)}</div></div>
+      <div class="ocard"><div class="ocard-head"><div class="ocard-title">🏷 해시태그</div></div><div class="ocard-body">${skelHTML(2)}</div></div>
+    </div>
+    <div class="ocard"><div class="ocard-head"><div class="ocard-title">📄 본문</div></div><div class="ocard-body">${skelHTML(5)}</div></div>
+    <div class="grid2">
+      <div class="ocard"><div class="ocard-head"><div class="ocard-title">📱 인스타그램</div></div><div class="ocard-body">${skelHTML(3)}</div></div>
+      <div class="ocard"><div class="ocard-head"><div class="ocard-title">🧵 스레드</div></div><div class="ocard-body">${skelHTML(3)}</div></div>
+    </div>
+    <div class="grid2">
+      <div class="ocard"><div class="ocard-head"><div class="ocard-title">🎬 쇼츠 스크립트</div></div><div class="ocard-body">${skelHTML(3)}</div></div>
+      <div class="ocard"><div class="ocard-head"><div class="ocard-title">🎯 구매 유도 문구</div></div><div class="ocard-body">${skelHTML(3)}</div></div>
+    </div>`;
+
+  // 유형별 세부 설정 수집
+  const subTypeMap = {
+    '상품 상세페이지': ()=>{
+      const t=getChip('detailTypeChips')||'전체';
+      const p=document.getElementById('detailPoint')?.value||'';
+      const guide={전체:'도입-성분-효능-사용법-구매유도 전체 구성',성분집중:'핵심 성분 3가지 이상 과학적 설명 집중',비교형:'경쟁 제품 대비 차별화 포인트 중심',스토리형:'브랜드 철학·개발 스토리 감성적으로',후기형:'실제 사용 후기·고객 목소리 중심으로'};
+      return `상세페이지 유형: [${t}] ${guide[t]||''}${p?` | 강조포인트: ${p}`:''}`;
+    },
+    '이벤트/공지': ()=>{
+      const t=getChip('eventTypeChips')||'할인';
+      const period=document.getElementById('eventPeriod')?.value||'';
+      const guide={할인:'할인율·혜택 강조, 긴박감 조성',신제품:'출시 스토리·특징·기대감 중심',시즌:'계절/시즌 감성과 제품 연결',묶음:'세트 구성 혜택·가성비 강조',공지:'깔끔하고 명확한 안내 중심'};
+      return `이벤트 유형: [${t}] ${guide[t]||''}${period?` | 기간/조건: ${period}`:''}`;
+    },
+    'SNS 홍보': ()=>{
+      const t=getChip('snsTypeChips')||'인스타감성';
+      const ch=getChip('snsChannelChips')||'인스타';
+      const guide={인스타감성:'감성적 비주얼 텍스트, 무드 있는 캡션',정보카드:'핵심 정보 카드뉴스 형식, 리스트 활용',비포애프터:'사용 전후 변화 스토리텔링','before-after':'사용 전후 변화 스토리텔링',루틴소개:'아침/저녁 루틴 속 자연스러운 제품 노출',이벤트홍보:'프로모션 정보 감각적으로 전달'};
+      return `SNS 유형: [${t}] ${guide[t]||''} | 채널: ${ch}`;
+    }
+  };
+  const subTypeInfo = subTypeMap[ctype] ? subTypeMap[ctype]() : '';
+
+  const prompt=`당신은 로나이(ronai.co.kr) 화장품 자사몰 전문 마케터입니다.
+로나이는 리라신·브릴리에잇·노탈리·더라포·에크리크·듀베로·오바코·졸로픽스·오도라타 브랜드를 취급하는 피부 셀렉트샵입니다.
+
+[콘텐츠 유형] ${ctype}${subTypeInfo ? `\n[세부 설정] ${subTypeInfo}` : ''}
+
+제품명: ${name} | 브랜드: ${brand||'미입력'} | 타입: ${ptype||'미입력'} | 피부고민: ${skin.join(',')||'일반'} | 성분: ${ingr||'미입력'} | 가격: ${price||'미입력'} | 추가요청: ${extra||'없음'}
+
+위 세부 설정을 반드시 반영해서 콘텐츠를 작성하세요.
+
+JSON만 응답 (코드블록 없이):
+{
+  "title": "SEO 최적화 제목 (25-40자, 핵심 키워드 앞배치)",
+  "tags": "#태그1 #태그2 #태그3 #태그4 #태그5 #태그6 #태그7 #태그8 #태그9 #태그10",
+  "body": "상세 본문 (700-900자, 단락 \\n\\n 구분, 이모지 포함, 세부 유형에 맞는 구조로 작성)",
+  "instagram": "인스타그램 캡션 (200-250자, 감성적, 해시태그 7개)",
+  "threads": "스레드 포스트 (반말 구어체, 3~6줄, 이모지 2~4개, 해시태그 2~3개)",
+  "shorts": "쇼츠/릴스 60초 스크립트 (도입-본론-CTA 구조)",
+  "cta": "구매 유도 문구 3가지 (줄바꿈 구분, 각 20자 이내)"
+}`;
+
+  try{
+    const p=await callAI(prompt,4000); // 제목+본문+인스타+스레드+쇼츠+CTA
+    document.getElementById('contentOut').innerHTML=`
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem">
+        <div style="font-size:.78rem;color:var(--ink3)">✦ <strong style="color:var(--gold)">${name}</strong> 완성</div>
+        <div style="font-size:.68rem;font-family:'DM Mono',monospace;color:var(--ink3)">${new Date().toLocaleTimeString('ko-KR')}</div>
+      </div>
+      <div class="grid2">
+        <div class="ocard ready"><div class="ocard-head"><div class="ocard-title">📌 제목 <span class="cpill">${(p.title||'').length}자</span></div></div>
+          <div class="ocard-body fu" id="o-title">${p.title||''}</div>
+          <div class="ocard-foot"><button class="btn-sm" onclick="cp('o-title',this)">복사</button></div></div>
+        <div class="ocard ready"><div class="ocard-head"><div class="ocard-title">🏷 해시태그</div></div>
+          <div class="ocard-body fu" id="o-tags">${p.tags||''}</div>
+          <div class="ocard-foot"><button class="btn-sm" onclick="cp('o-tags',this)">복사</button></div></div>
+      </div>
+      <div class="ocard ready"><div class="ocard-head"><div class="ocard-title">📄 본문 <span class="cpill">${(p.body||'').length}자</span></div></div>
+        <div class="ocard-body fu" id="o-body">${p.body||''}</div>
+        <div class="ocard-foot"><button class="btn-sm" onclick="cp('o-body',this)">텍스트 복사</button><button class="btn-sm" onclick="cpHTML('o-body',this)">HTML 복사</button></div></div>
+      <div class="grid2">
+        <div class="ocard ready"><div class="ocard-head"><div class="ocard-title">📱 인스타그램 <span class="cpill">${(p.instagram||'').length}자</span></div></div>
+          <div class="ocard-body fu" id="o-insta">${p.instagram||''}</div>
+          <div class="ocard-foot"><button class="btn-sm" onclick="cp('o-insta',this)">복사</button></div></div>
+        <div class="ocard ready"><div class="ocard-head" style="background:linear-gradient(90deg,var(--bg3),#f0ece8)"><div class="ocard-title">🧵 스레드 <span class="cpill">${(p.threads||'').length}자</span></div></div>
+          <div class="ocard-body fu" id="o-threads">${p.threads||''}</div>
+          <div class="ocard-foot"><button class="btn-sm" onclick="cp('o-threads',this)">복사</button></div></div>
+      </div>
+      <div class="grid2">
+        <div class="ocard ready"><div class="ocard-head"><div class="ocard-title">🎬 쇼츠 스크립트</div></div>
+          <div class="ocard-body fu" id="o-shorts">${p.shorts||''}</div>
+          <div class="ocard-foot"><button class="btn-sm" onclick="cp('o-shorts',this)">복사</button></div></div>
+        <div class="ocard ready"><div class="ocard-head"><div class="ocard-title">🎯 구매 유도 문구</div></div>
+          <div class="ocard-body fu" id="o-cta">${p.cta||''}</div>
+          <div class="ocard-foot"><button class="btn-sm" onclick="cp('o-cta',this)">복사</button></div></div>
+      </div>`;
+  }catch(e){showErr('contentOut',e);}
+  stopLoad('btnC','btnCSpin');
+}
+
+// ═══════════════════════════════
+// COMBO
+// ═══════════════════════════════
+async function genCombo(){
+  const name=document.getElementById('cName').value.trim();
+  if(!name){document.getElementById('cName').focus();return;}
+  setLoad('btnCombo','btnComboSpin');
+  document.getElementById('comboOut').innerHTML=`<div style="padding:2rem">${skelHTML(6)}</div>`;
+  const prompt=`화장품 성분 전문가이자 로나이(ronai.co.kr) 에디터입니다.
+로나이 취급 브랜드: 리라신, 브릴리에잇, 노탈리, 더라포, 에크리크, 듀베로, 오바코, 졸로픽스, 오도라타
+기준 제품: ${name} | 성분: ${document.getElementById('cIngr').value||'미입력'} | 피부타입: ${getChip('comboSkinChips')||'건성'} | 고민: ${getChips('comboWorryChips').join(',')||'일반'}
+꿀조합 3가지 추천. JSON만 응답:
+{"combos":[{"title":"조합명(20자)","products":["제품1","제품2","제품3"],"why":"시너지 이유(100자)","order":"사용순서(60자)","effect":"기대효과(50자)","caution":null}],"avoid":[{"ingredient":"성분명","reason":"이유(60자)"}],"routine_tip":"루틴팁(80자)"}`;
+  try{
+    const p=await callAI(prompt);
+    let html=`<div style="font-size:.85rem;font-weight:700;color:var(--gold);margin-bottom:1.2rem">💡 ${name} 꿀조합 추천</div>`;
+    if(p.routine_tip) html+=`<div style="background:rgba(58,138,90,.07);border:1.5px solid rgba(58,138,90,.18);border-radius:8px;padding:10px 13px;font-size:.78rem;color:var(--green);margin-bottom:1.1rem">🌿 루틴 팁: ${p.routine_tip}</div>`;
+    (p.combos||[]).forEach((c,i)=>{
+      html+=`<div class="combo-card"><div class="combo-title">✦ 조합 ${i+1}. ${c.title}</div>
+        <div style="margin-bottom:8px">${(c.products||[]).map(pr=>`<span class="combo-tag tag-g">${pr}</span>`).join('')}</div>
+        <div class="combo-desc" style="margin-bottom:5px"><strong style="color:var(--ink2);font-size:.76rem">🔬 시너지</strong> ${c.why}</div>
+        <div class="combo-desc" style="margin-bottom:5px"><strong style="color:var(--ink2);font-size:.76rem">📋 순서</strong> ${c.order}</div>
+        <div class="combo-desc"><strong style="color:var(--ink2);font-size:.76rem">✨ 효과</strong> ${c.effect}</div>
+        ${c.caution?`<div style="margin-top:7px;padding:6px 10px;background:rgba(201,64,64,.07);border-radius:6px;font-size:.75rem;color:var(--red)">⚠️ ${c.caution}</div>`:''}</div>`;
+    });
+    if((p.avoid||[]).length){
+      html+=`<div class="ocard"><div class="ocard-head"><div class="ocard-title" style="color:var(--red)">⛔ 함께 쓰면 안 되는 성분</div></div><div style="padding:0 15px">${p.avoid.map(a=>`<div class="conf-row"><div class="cbadge cb-d">주의</div><div><strong style="color:var(--ink)">${a.ingredient}</strong><br><span style="color:var(--ink3);font-size:.77rem">${a.reason}</span></div></div>`).join('')}</div></div>`;
+    }
+    document.getElementById('comboOut').innerHTML=html;
+  }catch(e){showErr('comboOut',e);}
+  stopLoad('btnCombo','btnComboSpin');
+}
+
+// ═══════════════════════════════
+// CONFLICT
+// ═══════════════════════════════
+async function genConflict(){
+  if(!ingrA.length&&!ingrB.length){alert('성분을 하나 이상 입력해주세요!');return;}
+  setLoad('btnConf','btnConfSpin');
+  document.getElementById('conflictOut').innerHTML=`<div style="padding:2rem">${skelHTML(6)}</div>`;
+  const prompt=`화장품 성분 전문가. 두 제품 성분 충돌 분석.
+제품A: ${document.getElementById('aName').value||'제품A'} / 성분: ${ingrA.join(', ')||'없음'}
+제품B: ${document.getElementById('bName').value||'제품B'} / 성분: ${ingrB.join(', ')||'없음'}
+JSON만 응답: {"overall":"safe|caution|danger","summary":"요약(80자)","conflicts":[{"level":"danger|caution|ok","ingredients":"충돌성분","reason":"이유(80자)","solution":"해결책(60자)"}],"use_order":"사용순서(80자)","time_gap":"시간간격","tip":"전문가팁(70자)"}`;
+  try{
+    const p=await callAI(prompt);
+    const oc=p.overall==='danger'?'var(--red)':p.overall==='caution'?'var(--gold)':'var(--green)';
+    const ol=p.overall==='danger'?'⛔ 함께 사용 위험':p.overall==='caution'?'⚠️ 주의 필요':'✅ 함께 사용 가능';
+    let html=`<div style="background:var(--bg2);border:1.5px solid ${oc}30;border-radius:var(--r);padding:1.1rem 1.4rem;margin-bottom:1.1rem;display:flex;gap:12px;align-items:flex-start;box-shadow:var(--shadow)">
+      <div style="font-size:1.6rem">🔬</div>
+      <div><div style="font-size:.95rem;font-weight:700;color:${oc};margin-bottom:5px">${ol}</div><div style="font-size:.83rem;color:var(--ink3);line-height:1.7">${p.summary}</div></div></div>`;
+    if((p.conflicts||[]).length){
+      html+=`<div class="ocard" style="margin-bottom:1rem"><div class="ocard-head"><div class="ocard-title">🧬 성분 분석</div></div><div style="padding:0 15px">
+        ${p.conflicts.map(c=>{const lv=c.level==='danger'?'cb-d':c.level==='caution'?'cb-w':'cb-o';const lb=c.level==='danger'?'위험':c.level==='caution'?'주의':'안전';
+        return `<div class="conf-row"><div class="cbadge ${lv}">${lb}</div><div><strong style="color:var(--ink);font-size:.81rem">${c.ingredients}</strong><br><span style="color:var(--ink3);font-size:.76rem">${c.reason}</span><br><span style="color:var(--green);font-size:.74rem">→ ${c.solution}</span></div></div>`;
+        }).join('')}</div></div>`;
+    }
+    html+=`<div class="grid2">
+      <div class="ocard"><div class="ocard-head"><div class="ocard-title">📋 사용 순서</div></div><div class="ocard-body" style="font-size:.82rem">${p.use_order||'-'}</div></div>
+      <div class="ocard"><div class="ocard-head"><div class="ocard-title">⏰ 시간 간격</div></div><div class="ocard-body" style="font-size:.82rem">${p.time_gap||'-'}</div></div></div>`;
+    if(p.tip) html+=`<div style="background:rgba(58,96,144,.07);border:1.5px solid rgba(58,96,144,.18);border-radius:8px;padding:10px 13px;font-size:.77rem;color:var(--blue)">💊 전문가 팁: ${p.tip}</div>`;
+    document.getElementById('conflictOut').innerHTML=html;
+  }catch(e){showErr('conflictOut',e);}
+  stopLoad('btnConf','btnConfSpin');
+}
+
+// ── 블로그 키워드 모드 전환 ──
+let blogMode = 'auto';
+function setBlogMode(m) {
+  blogMode = m;
+  document.querySelectorAll('#blogKeywordMode .chip').forEach(c => c.classList.toggle('on', c.dataset.v === m));
+  document.getElementById('blogAutoInfo').style.display    = m === 'auto'   ? 'block' : 'none';
+  document.getElementById('blogManualInputs').style.display = m === 'manual' ? 'block' : 'none';
+}
+
+// ═══════════════════════════════
+// SEO BLOG
+// ═══════════════════════════════
+async function genSEO(){
+  const name = document.getElementById('iName')?.value.trim();
+  if(!name){ alert('제품명을 먼저 입력해주세요!'); return; }
+
+  const isAuto = blogMode === 'auto';
+  const topic   = isAuto ? '' : (document.getElementById('seoTopic')?.value.trim()||'');
+  const keyword = isAuto ? '' : (document.getElementById('seoKeyword')?.value.trim()||'');
+  if(!isAuto && (!topic||!keyword)){ alert('주제와 메인 키워드를 입력해주세요!'); return; }
+
+  const brand  = document.getElementById('iBrand')?.value||'';
+  const ptype  = document.getElementById('iType')?.value||'';
+  const skin   = getChips('skinChips');
+  const ingr   = document.getElementById('iIngr')?.value||'';
+  const price  = document.getElementById('iPrice')?.value||'';
+  const blogSubType = getChip('blogTypeChips')||'정보리뷰';
+  const tone   = getChip('seoToneChips')||'친근체';
+  const plat   = getChip('seoPlatChips')||'네이버';
+  const intent = getChip('seoIntChips')||'정보형';
+  const diff   = document.getElementById('seoDiff')?.value||'로나이 자사몰 제품 기반';
+  const reader = document.getElementById('seoReader')?.value||'화장품에 관심 있는 20-40대';
+  const lsi    = document.getElementById('seoLSI')?.value||'';
+
+  setLoad('btnC','btnCSpin');
+  document.getElementById('contentOut').innerHTML=`<div style="padding:2rem">${skelHTML(10)}</div>`;
+
+  const keywordSection = isAuto
+    ? `[키워드 자동 선정] 제품명·성분·피부고민을 분석해서 ${plat} 검색량이 높고 경쟁이 낮은 최적의 주제와 메인키워드, LSI키워드를 직접 선정하세요. 선정 결과를 "selected_topic"과 "selected_keyword" 필드에 반드시 기재하세요.`
+    : `주제: ${topic} | 메인키워드: ${keyword} | LSI: ${lsi||'자동 선정'}`;
+
+  const prompt=`한국 최고 수준 SEO 전략가이자 블로그 작가. 로나이(ronai.co.kr) 화장품 자사몰 블로그 전문.
+AI 티 나지 않는 자연스러운 한국어. 클리셰·흔한 인사말 금지.
+
+[제품 정보]
+제품명: ${name} | 브랜드: ${brand||'미입력'} | 타입: ${ptype||'미입력'} | 피부고민: ${skin.join(',')||'일반'} | 성분: ${ingr||'미입력'} | 가격: ${price||'미입력'}
+
+[블로그 설정]
+${keywordSection}
+유형: ${blogSubType} | 톤: ${tone} | 플랫폼: ${plat} | 검색의도: ${intent} | 독자: ${reader} | 차별화: ${diff}
+
+JSON만 응답:
+{"selected_topic":"AI선정주제","selected_keyword":"AI선정키워드","analysis":{"difficulty":"상/중/하","possibility":"이유50자","niche_keywords":["k1","k2","k3"],"timing":{"now":["k1","k2"],"later":["k3","k4"]}},"cluster":{"pillar":"필러제목","supporting":["s1","s2","s3","s4","s5"],"role":"역할40자"},"persona":{"profile":"프로파일60자","next_action":"행동40자","cta_direction":"CTA방향30자"},"titles":{"t1":"숫자결과형","t2":"궁금증유발형","t3":"타겟지칭형"},"summary":"핵심요약2-3문장","body":"본문1200-1500자(소제목##표시,볼드**단어**,리스트포함,직접경험,수치/날짜,신뢰표현,트렌드,CTA,다음편예고)","faq":[{"q":"Q1","a":"답변2-3문장"},{"q":"Q2","a":"답변"},{"q":"Q3","a":"답변"}],"schema":"Schema타입과이유","images":[{"filename":"eng-name.jpg","alt":"한글alt20자"},{"filename":"eng2.jpg","alt":"한글alt"},{"filename":"eng3.jpg","alt":"한글alt"}],"hashtags":{"big":["대형1","대형2","대형3"],"mid":["중1","중2","중3","중4","중5"],"small":["소1","소2","소3","소4","소5","소6","소7"]},"meta":"메타160자","best_time":"최적시간대이유","checklist":{"url":"서치콘솔팁","channels":["ch1","ch2","ch3"],"first_comment":"첫댓글예시"},"next_posts":["글1","글2","글3"],"ab_titles":{"short":"15자이내","long":"35자이상"},"reuse":{"instagram":"인스타캡션300자","threads":"스레드포스트150자이내","shorts":"쇼츠60초스크립트","kakao":"카카오100자"}}`;  try{
+    const p=await callAI(prompt,8000); // SEO 본문 1500자 + 전체 구조
+    // AI 자동 선정 키워드 표시
+    const shownTopic   = isAuto ? (p.selected_topic||topic)   : topic;
+    const shownKeyword = isAuto ? (p.selected_keyword||keyword) : keyword;
+    const dc=p.analysis?.difficulty==='상'?'var(--red)':p.analysis?.difficulty==='중'?'var(--gold)':'var(--green)';
+    let html=`
+    ${isAuto ? `<div style="background:var(--gold-dim);border:1.5px solid var(--border-g);border-radius:9px;padding:10px 14px;margin-bottom:1rem;font-size:.78rem;line-height:1.7">
+      <div style="font-weight:700;color:var(--gold);margin-bottom:4px">✨ AI 자동 선정 키워드</div>
+      <div style="color:var(--ink2)">주제: <strong>${shownTopic}</strong></div>
+      <div style="color:var(--ink2)">메인키워드: <strong>${shownKeyword}</strong></div>
+    </div>` : ''}
+    <div style="font-size:.65rem;font-family:'DM Mono',monospace;color:var(--ink3);letter-spacing:2px;text-transform:uppercase;margin-bottom:.9rem">STEP 1 · 사전 분석</div>
+    <div class="grid2" style="margin-bottom:1rem">
+      <div class="ocard ready"><div class="ocard-head"><div class="ocard-title">📊 키워드 난이도</div></div>
+        <div class="ocard-body" style="font-size:.82rem"><div style="font-size:1.5rem;font-weight:900;color:${dc};margin-bottom:5px">${p.analysis?.difficulty||'-'}</div>
+        <div style="color:var(--ink3)">${p.analysis?.possibility||''}</div>
+        <div style="margin-top:8px">${(p.analysis?.niche_keywords||[]).map(k=>`<span style="display:inline-block;padding:2px 9px;margin:2px;background:var(--gold-dim);border:1px solid var(--border-g);border-radius:10px;font-size:.71rem;color:var(--gold)">${k}</span>`).join('')}</div></div></div>
+      <div class="ocard ready"><div class="ocard-head"><div class="ocard-title">👤 독자 페르소나</div></div>
+        <div class="ocard-body" style="font-size:.82rem"><div style="margin-bottom:5px">${p.persona?.profile||''}</div>
+        <div style="color:var(--ink3);font-size:.77rem;margin-bottom:3px">→ ${p.persona?.next_action||''}</div>
+        <div style="color:var(--green);font-size:.75rem">CTA: ${p.persona?.cta_direction||''}</div></div></div>
+    </div>
+    <div class="ocard ready" style="margin-bottom:1rem"><div class="ocard-head"><div class="ocard-title">🗺 콘텐츠 클러스터</div></div>
+      <div class="ocard-body" style="font-size:.82rem"><div style="margin-bottom:6px"><span style="color:var(--gold);font-weight:700">필러:</span> ${p.cluster?.pillar||''}</div>
+      <div style="margin-bottom:6px;font-size:.75rem;color:var(--ink3)">이번 글 역할: ${p.cluster?.role||''}</div>
+      <div>${(p.cluster?.supporting||[]).map((s,i)=>`<span style="display:inline-block;padding:2px 9px;margin:2px;background:var(--bg3);border-radius:9px;font-size:.71rem;color:var(--ink3)">서포팅${i+1}: ${s}</span>`).join('')}</div></div></div>
+
+    <div style="font-size:.65rem;font-family:'DM Mono',monospace;color:var(--ink3);letter-spacing:2px;text-transform:uppercase;margin-bottom:.9rem">STEP 2 · 제목 & 요약</div>
+    <div class="ocard ready" style="margin-bottom:1rem"><div class="ocard-head"><div class="ocard-title">✅ 제목 후보 3개</div><button class="btn-sm" onclick="cp('o-titles',this)">복사</button></div>
+      <div class="ocard-body fu" id="o-titles" style="font-size:.84rem">
+        <div style="padding:7px 0;border-bottom:1.5px solid var(--border)"><span style="color:var(--ink3);font-size:.68rem;font-family:'DM Mono',monospace">01 숫자+결과형</span><br><strong style="color:var(--gold)">${p.titles?.t1||''}</strong></div>
+        <div style="padding:7px 0;border-bottom:1.5px solid var(--border)"><span style="color:var(--ink3);font-size:.68rem;font-family:'DM Mono',monospace">02 궁금증 유발형</span><br><strong>${p.titles?.t2||''}</strong></div>
+        <div style="padding:7px 0"><span style="color:var(--ink3);font-size:.68rem;font-family:'DM Mono',monospace">03 타겟 직접 지칭형</span><br><strong>${p.titles?.t3||''}</strong></div></div></div>
+    <div class="ocard ready" style="margin-bottom:1rem"><div class="ocard-head"><div class="ocard-title">💬 핵심 요약</div><button class="btn-sm" onclick="cp('o-summary',this)">복사</button></div>
+      <div class="ocard-body fu" id="o-summary">${p.summary||''}</div></div>
+
+    <div style="font-size:.65rem;font-family:'DM Mono',monospace;color:var(--ink3);letter-spacing:2px;text-transform:uppercase;margin-bottom:.9rem">STEP 3 · 본문</div>
+    <div class="ocard ready" style="margin-bottom:1rem"><div class="ocard-head"><div class="ocard-title">📄 본문 <span class="cpill">${(p.body||'').length}자</span></div>
+      <div style="display:flex;gap:5px"><button class="btn-sm" onclick="cp('o-body-seo',this)">텍스트</button><button class="btn-sm" onclick="cpHTML('o-body-seo',this)">HTML</button></div></div>
+      <div class="ocard-body fu" id="o-body-seo" style="min-height:180px">${p.body||''}</div></div>
+    <div class="ocard ready" style="margin-bottom:1rem"><div class="ocard-head"><div class="ocard-title">❓ FAQ 3개</div><button class="btn-sm" onclick="cp('o-faq',this)">복사</button></div>
+      <div class="ocard-body fu" id="o-faq" style="font-size:.82rem">${(p.faq||[]).map(f=>`<div style="padding:7px 0;border-bottom:1.5px solid var(--border)"><div style="color:var(--gold);font-weight:700;margin-bottom:3px">Q. ${f.q}</div><div style="color:var(--ink3)">${f.a}</div></div>`).join('')}</div></div>
+
+    <div style="font-size:.65rem;font-family:'DM Mono',monospace;color:var(--ink3);letter-spacing:2px;text-transform:uppercase;margin-bottom:.9rem">STEP 4 · SEO 기술</div>
+    <div class="grid2" style="margin-bottom:1rem">
+      <div class="ocard ready"><div class="ocard-head"><div class="ocard-title">🔖 Schema & 메타</div></div>
+        <div class="ocard-body" style="font-size:.79rem"><div style="margin-bottom:7px"><span style="color:var(--gold);font-size:.68rem">SCHEMA</span><br>${p.schema||''}</div>
+        <div style="border-top:1.5px solid var(--border);padding-top:7px"><span style="color:var(--gold);font-size:.68rem">META (${(p.meta||'').length}자)</span><br><span style="color:var(--ink3)" id="o-meta">${p.meta||''}</span></div></div>
+        <div class="ocard-foot"><button class="btn-sm" onclick="cp('o-meta',this)">메타 복사</button></div></div>
+      <div class="ocard ready"><div class="ocard-head"><div class="ocard-title">🖼 이미지 가이드</div></div>
+        <div class="ocard-body" style="font-size:.79rem">${(p.images||[]).map((img,i)=>`<div style="padding:4px 0;border-bottom:1.5px solid var(--border)"><code style="color:var(--green);font-family:'DM Mono',monospace;font-size:.7rem">${img.filename}</code><br><span style="color:var(--ink3);font-size:.74rem">alt: ${img.alt}</span></div>`).join('')}</div></div>
+    </div>
+    <div class="ocard ready" style="margin-bottom:1rem"><div class="ocard-head"><div class="ocard-title">🏷 해시태그 15개</div><button class="btn-sm" onclick="cp('o-hash',this)">복사</button></div>
+      <div class="ocard-body fu" id="o-hash" style="font-size:.81rem">
+        <div style="margin-bottom:5px"><span style="color:var(--red);font-size:.68rem;font-family:'DM Mono',monospace">대형(3)</span><br>${(p.hashtags?.big||[]).map(h=>`<span style="display:inline-block;margin:2px;color:var(--red)">#${h.replace('#','')}</span>`).join('')}</div>
+        <div style="margin-bottom:5px"><span style="color:var(--gold);font-size:.68rem;font-family:'DM Mono',monospace">중형(5)</span><br>${(p.hashtags?.mid||[]).map(h=>`<span style="display:inline-block;margin:2px;color:var(--gold)">#${h.replace('#','')}</span>`).join('')}</div>
+        <div><span style="color:var(--ink3);font-size:.68rem;font-family:'DM Mono',monospace">소형(7)</span><br>${(p.hashtags?.small||[]).map(h=>`<span style="display:inline-block;margin:2px;color:var(--ink3)">#${h.replace('#','')}</span>`).join('')}</div></div></div>
+
+    <div style="font-size:.65rem;font-family:'DM Mono',monospace;color:var(--ink3);letter-spacing:2px;text-transform:uppercase;margin-bottom:.9rem">STEP 5 · 발행 전략</div>
+    <div class="grid2" style="margin-bottom:1rem">
+      <div class="ocard ready"><div class="ocard-head"><div class="ocard-title">⏰ 최적 발행 시간</div></div><div class="ocard-body" style="font-size:.82rem;color:var(--ink3)">${p.best_time||''}</div></div>
+      <div class="ocard ready"><div class="ocard-head"><div class="ocard-title">✅ 발행 체크리스트</div></div>
+        <div class="ocard-body" style="font-size:.79rem"><div style="margin-bottom:5px;color:var(--ink3)">📌 ${p.checklist?.url||''}</div>
+        <div style="margin-bottom:5px">${(p.checklist?.channels||[]).map(c=>`<span style="display:inline-block;padding:2px 7px;margin:2px;background:var(--bg3);border-radius:7px;font-size:.7rem;color:var(--ink3)">${c}</span>`).join('')}</div>
+        <div style="color:var(--green);font-size:.74rem">💬 "${p.checklist?.first_comment||''}"</div></div></div>
+    </div>
+    <div class="grid2" style="margin-bottom:1rem">
+      <div class="ocard ready"><div class="ocard-head"><div class="ocard-title">🔀 A/B 제목</div></div>
+        <div class="ocard-body" style="font-size:.82rem">
+          <div style="padding:5px 0;border-bottom:1.5px solid var(--border)"><span style="color:var(--ink3);font-size:.68rem">SHORT(15자↓)</span><br><strong>${p.ab_titles?.short||''}</strong></div>
+          <div style="padding:5px 0"><span style="color:var(--ink3);font-size:.68rem">LONG(35자↑)</span><br><strong>${p.ab_titles?.long||''}</strong></div></div></div>
+      <div class="ocard ready"><div class="ocard-head"><div class="ocard-title">🔗 다음 연결글</div></div>
+        <div class="ocard-body" style="font-size:.82rem">${(p.next_posts||[]).map((n,i)=>`<div style="padding:4px 0;border-bottom:1.5px solid var(--border);color:var(--ink3)"><span style="color:var(--gold)">${i+1}.</span> ${n}</div>`).join('')}</div></div>
+    </div>
+
+    <div style="font-size:.65rem;font-family:'DM Mono',monospace;color:var(--ink3);letter-spacing:2px;text-transform:uppercase;margin-bottom:.9rem">STEP 6 · 콘텐츠 재활용</div>
+    <div class="ocard ready" style="margin-bottom:1rem"><div class="ocard-head"><div class="ocard-title">📱 인스타그램 캡션 <span class="cpill">${(p.reuse?.instagram||'').length}자</span></div><button class="btn-sm" onclick="cp('o-seo-insta',this)">복사</button></div>
+      <div class="ocard-body fu" id="o-seo-insta">${p.reuse?.instagram||''}</div></div>
+    <div class="grid2">
+      <div class="ocard ready"><div class="ocard-head"><div class="ocard-title" style="background:none">🧵 스레드 <span class="cpill">${(p.reuse?.threads||'').length}자</span></div><button class="btn-sm" onclick="cp('o-seo-threads',this)">복사</button></div>
+        <div class="ocard-body fu" id="o-seo-threads">${p.reuse?.threads||''}</div></div>
+      <div class="ocard ready"><div class="ocard-head"><div class="ocard-title">🎬 쇼츠 스크립트</div><button class="btn-sm" onclick="cp('o-seo-shorts',this)">복사</button></div>
+        <div class="ocard-body fu" id="o-seo-shorts" style="font-size:.82rem">${p.reuse?.shorts||''}</div></div>
+    </div>
+    <div class="ocard ready"><div class="ocard-head"><div class="ocard-title">💬 카카오톡 채널 <span class="cpill">${(p.reuse?.kakao||'').length}자</span></div><button class="btn-sm" onclick="cp('o-seo-kakao',this)">복사</button></div>
+      <div class="ocard-body fu" id="o-seo-kakao">${p.reuse?.kakao||''}</div></div>`;
+    document.getElementById('contentOut').innerHTML=html;
+  }catch(e){showErr('contentOut',e);}
+  stopLoad('btnC','btnCSpin');
+}
+
+// ═══════════════════════════════
+// MEDIA EDITOR
+// ═══════════════════════════════
+let origImg=null,rotation=0,flipH=false,flipV=false;
+let layers=[],selectedLayer=-1,cropRatio='orig',activeFilter='none';
+let adj={brightness:0,contrast:0,saturation:0,warmth:0,blur:0,vignette:0};
+let edMode='photo',videoEl=null,trimStart=0,trimEnd=0;
+let batchFiles=[],batchSettings={};
+
+const FILTERS={
+  none:{name:'없음',bg:'var(--bg3)',b:0,c:0,s:0,w:0},bright:{name:'밝은',bg:'linear-gradient(135deg,#fff8e7,#ffe0b2)',b:25,c:5,s:8,w:18},
+  cool:{name:'쿨톤',bg:'linear-gradient(135deg,#e3f2fd,#b3e5fc)',b:8,c:8,s:-8,w:-30},warm:{name:'웜톤',bg:'linear-gradient(135deg,#fff3e0,#ffccbc)',b:10,c:8,s:15,w:35},
+  vivid:{name:'비비드',bg:'linear-gradient(135deg,#f3e5f5,#e8f5e9)',b:5,c:22,s:45,w:5},mono:{name:'흑백',bg:'linear-gradient(135deg,#757575,#bdbdbd)',b:0,c:12,s:-100,w:0},
+  soft:{name:'소프트',bg:'linear-gradient(135deg,#fce4ec,#f8bbd0)',b:22,c:-12,s:-12,w:15},luxury:{name:'럭셔리',bg:'linear-gradient(135deg,#2a1e10,#c9a96e)',b:-12,c:18,s:-22,w:-10},
+  fresh:{name:'프레시',bg:'linear-gradient(135deg,#e8f5e9,#b2dfdb)',b:14,c:6,s:22,w:-18},fade:{name:'페이드',bg:'linear-gradient(135deg,#eceff1,#cfd8dc)',b:18,c:-15,s:-20,w:5},
+  drama:{name:'드라마',bg:'linear-gradient(135deg,#1a1a2e,#e94560)',b:-5,c:30,s:20,w:-5},golden:{name:'골든',bg:'linear-gradient(135deg,#f9a825,#ffd54f)',b:15,c:10,s:30,w:50}
+};
+const STICKERS=['✨','💫','🌸','🌿','💧','🌙','☀️','❄️','🍃','💕','⭐','🔮','🌺','🦋','💎','🌊','🍀','🌻','💐','🫧'];
+
+function switchEdMode(m){
+  edMode=m;
+  document.querySelectorAll('#edModeChips .chip').forEach(c=>c.classList.toggle('on',c.dataset.v===m));
+  renderEdSidebar();
+  const ca=document.getElementById('canvasWrap'),va=document.getElementById('videoEl'),ba=document.getElementById('batchArea'),ta=document.getElementById('ttsArea');
+  if(m==='batch'){ca.style.display='none';va.style.display='none';ba.style.display='block';ta.style.display='none';}
+  else if(m==='tts'){ca.style.display='none';va.style.display='none';ba.style.display='none';ta.style.display='block';}
+  else if(m==='video'&&videoEl&&videoEl.src){ca.style.display='none';va.style.display='block';ba.style.display='none';ta.style.display='none';}
+  else{if(origImg){ca.style.display='inline-block';}ba.style.display='none';va.style.display='none';ta.style.display='none';}
+  document.getElementById('imgTb').style.display=m==='photo'?'flex':'none';
+  document.getElementById('vidTb').style.display=m==='video'?'flex':'none';
+  document.getElementById('expOpts').style.display=(m==='photo'||m==='batch')?'flex':'none';
+}
+
+function renderEdSidebar(){
+  const b=document.getElementById('edSidebarBody');
+  if(edMode==='photo') b.innerHTML=photoSidebar();
+  else if(edMode==='video') b.innerHTML=videoSidebar();
+  else if(edMode==='batch') b.innerHTML=batchSidebar();
+  else if(edMode==='tts') b.innerHTML=ttsSidebar();
+  // Re-bind
+  const ti=document.getElementById('txtInput2');
+  if(ti) ti.addEventListener('keydown',e=>{if(e.key==='Enter')addTextLayer();});
+}
+
+function photoSidebar(){
+  const fi=Object.entries(FILTERS).map(([k,f])=>`<div class="fchip${activeFilter===k?' on':''}" onclick="applyFilter('${k}')"><div class="fprev" style="background:${f.bg}"></div>${f.name}</div>`).join('');
+  const si=STICKERS.map(s=>`<div class="stk" onclick="addSticker('${s}')">${s}</div>`).join('');
+  return `
+    <div class="sec" style="margin-top:0">조정</div>
+    ${['밝기|brightness|s0|-100|100','대비|contrast|s1|-100|100','채도|saturation|s2|-100|100','따뜻함|warmth|s3|-100|100','블러|blur|s4|0|20','비네팅|vignette|s5|0|100'].map((r,i)=>{
+      const[label,key,sid,mn,mx]=r.split('|');
+      return `<div style="margin-bottom:8px"><div class="ctrl-row2"><span style="font-size:.71rem;color:var(--ink3)">${label}</span><span class="ctrl-v" id="v${i}">${adj[key]}</span></div><input type="range" id="${sid}" min="${mn}" max="${mx}" value="${adj[key]}" oninput="setAdj('${key}',+this.value,${i})"></div>`;
+    }).join('')}
+    <div class="sec">필터</div>
+    <div class="filter-grid">${fi}</div>
+    <div class="sec">크롭/비율</div>
+    <div class="preset-grid">${[['orig','원본'],['1:1','1:1'],['4:5','4:5'],['16:9','16:9'],['9:16','9:16쇼츠'],['3:4','3:4블로그']].map(([r,l])=>`<div class="pbtn${cropRatio===r?' on':''}" onclick="setCrop('${r}')">${l}</div>`).join('')}</div>
+    <div class="sec">텍스트</div>
+    <div style="margin-bottom:6px"><input id="txtInput2" type="text" style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:7px;padding:7px 9px;color:var(--ink);font-family:'Noto Sans KR',sans-serif;font-size:.81rem;outline:none" placeholder="텍스트 입력"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:6px">
+      <div><div style="font-size:.65rem;color:var(--ink3);margin-bottom:2px">크기</div><input type="range" id="txtSize" min="10" max="150" value="36" oninput="document.getElementById('tszV').textContent=this.value+'px'"><div style="font-size:.6rem;color:var(--gold);font-family:'DM Mono',monospace" id="tszV">36px</div></div>
+      <div><div style="font-size:.65rem;color:var(--ink3);margin-bottom:2px">색상</div><input type="color" id="txtColor" value="#ffffff" style="width:100%;height:26px;border:1.5px solid var(--border);border-radius:5px;background:var(--bg3);cursor:pointer"></div>
+    </div>
+    <div style="display:flex;gap:4px;margin-bottom:6px">
+      <select id="txtStyle" style="flex:1;background:var(--bg3);border:1.5px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--ink);font-size:.71rem;outline:none"><option value="normal">일반</option><option value="bold">굵게</option><option value="italic">기울임</option></select>
+      <input type="color" id="txtBg" value="#000000" style="width:32px;height:26px;border:1.5px solid var(--border);border-radius:5px;cursor:pointer">
+      <input type="range" id="txtBgOp" min="0" max="100" value="0" style="flex:1" oninput="document.getElementById('bgOpV').textContent=this.value+'%'">
+      <span style="font-size:.6rem;color:var(--ink3);min-width:22px;font-family:'DM Mono',monospace" id="bgOpV">0%</span>
+    </div>
+    <button class="btn-sm btn-full" onclick="addTextLayer()" style="margin-bottom:8px">+ 텍스트 추가</button>
+    <div class="sec">워터마크</div>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">
+      <button class="btn-sm btn-full" onclick="addWatermark('RONAI')">RONAI 워터마크</button>
+      <button class="btn-sm btn-full" onclick="addWatermark('ronai.co.kr')">URL 워터마크</button>
+    </div>
+    <div class="sec">스티커</div>
+    <div class="sticker-grid">${si}</div>
+    <div class="sec">도형</div>
+    <div style="display:flex;gap:4px;margin-bottom:8px">
+      <button class="btn-sm" onclick="addShape('rect')">■사각</button>
+      <button class="btn-sm" onclick="addShape('circle')">●원</button>
+      <button class="btn-sm" onclick="addShape('line')">─선</button>
+    </div>
+    <div class="sec">배경</div>
+    <button class="btn-sm btn-full" onclick="addBgColor()" style="margin-bottom:4px">🎨 배경색 채우기</button>
+    <button class="btn-sm btn-full" onclick="alert('배경 제거는 remove.bg API 키가 필요합니다.\\nremove.bg 에서 먼저 제거 후 불러오세요.')">🪄 배경 제거 안내</button>`;
+}
+
+function videoSidebar(){
+  return `
+    <div class="sec" style="margin-top:0">영상 트리밍</div>
+    <div style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--gold);margin-bottom:4px" id="tcSide">00:00 / 00:00</div>
+    <div class="timeline" id="tlWrap" onclick="seekVid(event)">
+      <div class="tl-prog" id="tlProg"></div>
+      <div class="tl-range" id="tlRange"></div>
+      <div class="tl-handle" id="tlS" style="left:0" onmousedown="startTrimDrag(event,'s')"></div>
+      <div class="tl-handle" id="tlE" style="left:calc(100% - 3px)" onmousedown="startTrimDrag(event,'e')"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px">
+      <div><div style="font-size:.65rem;color:var(--ink3)">시작</div><div style="font-family:'DM Mono',monospace;font-size:.73rem;color:var(--gold)" id="tsS">0.0s</div></div>
+      <div><div style="font-size:.65rem;color:var(--ink3)">끝</div><div style="font-family:'DM Mono',monospace;font-size:.73rem;color:var(--gold)" id="tsE">0.0s</div></div>
+    </div>
+    <div class="sec">자막</div>
+    <input id="capInput" type="text" placeholder="자막 텍스트" style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:7px;padding:7px 9px;color:var(--ink);font-family:'Noto Sans KR',sans-serif;font-size:.81rem;outline:none;margin-bottom:5px">
+    <div style="display:flex;gap:4px;margin-bottom:6px">
+      <input type="color" id="capColor" value="#ffffff" style="width:28px;height:26px;border:1.5px solid var(--border);border-radius:5px;cursor:pointer">
+      <select id="capPos" style="flex:1;background:var(--bg3);border:1.5px solid var(--border);border-radius:6px;padding:4px;color:var(--ink);font-size:.71rem;outline:none"><option>하단</option><option>상단</option><option>중앙</option></select>
+    </div>
+    <button class="btn-sm btn-full" onclick="addCaption()" style="margin-bottom:8px">+ 자막 추가</button>
+    <div class="sec">속도/볼륨</div>
+    <div style="margin-bottom:6px"><div class="ctrl-row2"><span style="font-size:.71rem;color:var(--ink3)">속도</span><span class="ctrl-v" id="vSpeed">1.0x</span></div><input type="range" min="0.25" max="3" step="0.25" value="1" oninput="setVidSpeed(+this.value)"></div>
+    <div style="margin-bottom:10px"><div class="ctrl-row2"><span style="font-size:.71rem;color:var(--ink3)">볼륨</span><span class="ctrl-v" id="vVol">100%</span></div><input type="range" min="0" max="1" step="0.05" value="1" oninput="setVidVol(+this.value)"></div>
+    <button class="btn-sm btn-full" onclick="extractThumb()">🖼 썸네일 추출 → 이미지 편집</button>`;
+}
+
+function batchSidebar(){
+  return `
+    <div class="sec" style="margin-top:0">이미지 선택</div>
+    <button class="btn-sm btn-full" onclick="document.getElementById('batchInput').click()" style="margin-bottom:8px">📁 이미지 여러 장 선택</button>
+    <input type="file" id="batchInput" accept="image/*" multiple style="display:none" onchange="loadBatch(this.files)">
+    <div class="sec">적용 필터</div>
+    <div class="filter-grid" style="margin-bottom:8px">${Object.entries(FILTERS).map(([k,f])=>`<div class="fchip${batchSettings.filter===k?' on':''}" onclick="batchSettings.filter='${k}';renderEdSidebar()" style="font-size:.63rem"><div class="fprev" style="background:${f.bg}"></div>${f.name}</div>`).join('')}</div>
+    <div class="sec">일괄 텍스트</div>
+    <input id="batchTxt" type="text" placeholder="모든 이미지에 넣을 텍스트" value="${batchSettings.text||''}" style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:7px;padding:7px 9px;color:var(--ink);font-family:'Noto Sans KR',sans-serif;font-size:.81rem;outline:none;margin-bottom:8px">
+    <div class="sec">출력 비율</div>
+    <div class="preset-grid" style="margin-bottom:10px">${[['orig','원본'],['1:1','1:1'],['4:5','4:5'],['16:9','16:9'],['9:16','9:16']].map(([r,l])=>`<div class="pbtn${batchSettings.ratio===r?' on':''}" onclick="batchSettings.ratio='${r}';renderEdSidebar()">${l}</div>`).join('')}</div>
+    <button class="btn-sm btn-full" style="background:var(--gold);border-color:var(--gold);color:#fff" onclick="runBatch()">⚡ 일괄 처리 시작</button>`;
+}
+
+function ttsSidebar(){
+  const voices=window.speechSynthesis?window.speechSynthesis.getVoices().filter(v=>v.lang.startsWith('ko')):[];
+  return `
+    <div class="sec" style="margin-top:0">텍스트 입력</div>
+    <textarea id="ttsText" rows="5" placeholder="읽어줄 텍스트를 입력하세요&#10;&#10;생성된 콘텐츠를 여기에 붙여넣으면 음성으로 만들어집니다." style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--ink);font-family:'Noto Sans KR',sans-serif;font-size:.81rem;outline:none;resize:none;line-height:1.6;margin-bottom:6px"></textarea>
+    <div class="sec">음성 설정</div>
+    <div style="margin-bottom:6px"><div class="ctrl-row2"><span style="font-size:.71rem;color:var(--ink3)">속도</span><span class="ctrl-v" id="vRate">1.0</span></div><input type="range" id="sRate" min="0.5" max="2" step="0.1" value="1" oninput="document.getElementById('vRate').textContent=this.value"></div>
+    <div style="margin-bottom:6px"><div class="ctrl-row2"><span style="font-size:.71rem;color:var(--ink3)">음높이</span><span class="ctrl-v" id="vPitch">1.0</span></div><input type="range" id="sPitch" min="0.1" max="2" step="0.1" value="1" oninput="document.getElementById('vPitch').textContent=this.value"></div>
+    <div class="sec">음성 선택</div>
+    <div style="margin-bottom:10px">${voices.length?voices.map((v,i)=>`<div class="voice-card${i===0?' on':''}" onclick="selectVoice(this)"><div style="font-size:.77rem;font-weight:600;margin-bottom:1px">${v.name.replace('Google ','').replace('Microsoft ','')}</div><div style="font-size:.65rem;color:var(--ink3)">${v.lang}</div></div>`).join(''):'<div style="font-size:.74rem;color:var(--ink3)">브라우저 기본 한국어 음성 사용</div>'}</div>
+    <div style="display:flex;flex-direction:column;gap:5px">
+      <button class="btn-sm btn-full" style="background:var(--gold);border-color:var(--gold);color:#fff" onclick="playTTS()">▶ 음성 재생</button>
+      <button class="btn-sm btn-full" onclick="stopTTS()">⏹ 정지</button>
+    </div>`;
+}
+
+// CANVAS
+function getOutSize(){
+  if(!origImg)return{w:800,h:600};
+  let w=origImg.naturalWidth,h=origImg.naturalHeight;
+  const sc=Math.min(2400/Math.max(w,h),1); w=Math.round(w*sc); h=Math.round(h*sc);
+  if(cropRatio==='orig'||cropRatio==='free')return{w,h};
+  const[rw,rh]=cropRatio.split(':').map(Number),rat=rw/rh;
+  return w/h>rat?{w:Math.round(h*rat),h}:{w,h:Math.round(w/rat)};
+}
+function drawCanvas(){
+  if(!origImg)return;
+  const{w,h}=getOutSize();
+  const cv=document.getElementById('mainCanvas'); cv.width=w; cv.height=h;
+  const ctx=cv.getContext('2d');
+  ctx.save(); ctx.translate(w/2,h/2); ctx.rotate(rotation*Math.PI/180); ctx.scale(flipH?-1:1,flipV?-1:1);
+  ctx.drawImage(origImg,-origImg.naturalWidth/2,-origImg.naturalHeight/2,origImg.naturalWidth,origImg.naturalHeight);
+  ctx.restore();
+  const{brightness:b,contrast:c,saturation:s,warmth:warm,blur:bl}=adj;
+  cv.style.filter=[`brightness(${1+b/100})`,`contrast(${1+c/100})`,`saturate(${Math.max(0,1+s/100)})`,warm>0?`sepia(${warm/250})`:'',bl>0?`blur(${bl*0.4}px)`:''  ].filter(Boolean).join(' ');
+  if(adj.vignette>0){const g=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.3,w/2,h/2,Math.max(w,h)*.75);g.addColorStop(0,'transparent');g.addColorStop(1,`rgba(0,0,0,${adj.vignette/100*.8})`);ctx.fillStyle=g;ctx.fillRect(0,0,w,h);}
+}
+function setAdj(key,val,idx){adj[key]=val;document.getElementById('v'+idx).textContent=val;drawCanvas();renderOverlays();}
+function applyFilter(name){
+  activeFilter=name; const f=FILTERS[name];
+  adj.brightness=f.b; adj.contrast=f.c; adj.saturation=f.s; adj.warmth=f.w;
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.toggle('on',c.getAttribute('onclick')?.includes(`'${name}'`)));
+  ['brightness','contrast','saturation','warmth'].forEach((k,i)=>{const sl=document.getElementById('s'+i);const vl=document.getElementById('v'+i);if(sl)sl.value=adj[k];if(vl)vl.textContent=adj[k];});
+  drawCanvas(); renderOverlays();
+}
+function rotImg(d){rotation=(rotation+d+360)%360;drawCanvas();renderOverlays();}
+function flpImg(dir){if(dir==='h')flipH=!flipH;else flipV=!flipV;drawCanvas();renderOverlays();}
+function setCrop(r){cropRatio=r;document.querySelectorAll('.pbtn').forEach(b=>b.classList.toggle('on',b.getAttribute('onclick')?.includes(`'${r}'`)));drawCanvas();renderOverlays();}
+function resetEd(){rotation=0;flipH=false;flipV=false;layers=[];selectedLayer=-1;cropRatio='orig';activeFilter='none';adj={brightness:0,contrast:0,saturation:0,warmth:0,blur:0,vignette:0};renderEdSidebar();drawCanvas();renderLayers();renderOverlays();}
+
+// LAYERS
+function addTextLayer(){
+  const txt=document.getElementById('txtInput2')?.value.trim(); if(!txt)return;
+  layers.push({type:'text',text:txt,x:50,y:50,size:+(document.getElementById('txtSize')?.value||36),color:document.getElementById('txtColor')?.value||'#fff',style:document.getElementById('txtStyle')?.value||'normal',bg:document.getElementById('txtBg')?.value||'#000',bgOp:+(document.getElementById('txtBgOp')?.value||0)/100});
+  if(document.getElementById('txtInput2'))document.getElementById('txtInput2').value='';
+  selectedLayer=layers.length-1; renderLayers(); renderOverlays();
+}
+function addSticker(emoji){layers.push({type:'sticker',emoji,x:50,y:50,size:60});selectedLayer=layers.length-1;renderLayers();renderOverlays();}
+function addShape(t){layers.push({type:'shape',shape:t,x:50,y:50,w:120,h:80,color:document.getElementById('txtColor')?.value||'#b8924a',opacity:.8});selectedLayer=layers.length-1;renderLayers();renderOverlays();}
+function addWatermark(txt){layers.push({type:'text',text:txt,x:75,y:92,size:14,color:'#fff',style:'normal',bg:'#000',bgOp:.4});selectedLayer=layers.length-1;renderLayers();renderOverlays();}
+function addCaption(){
+  const txt=document.getElementById('capInput')?.value.trim(); if(!txt)return;
+  const pos=document.getElementById('capPos')?.value||'하단';
+  const y=pos==='하단'?88:pos==='상단'?8:48;
+  layers.push({type:'text',text:txt,x:50,y,size:22,color:document.getElementById('capColor')?.value||'#fff',style:'bold',bg:'#000',bgOp:.55});
+  selectedLayer=layers.length-1; renderLayers(); renderOverlays();
+}
+function renderLayers(){
+  const list=document.getElementById('layerList'); if(!list)return;
+  if(!layers.length){list.innerHTML='<div style="color:var(--ink3);font-size:.73rem;text-align:center;margin-top:.8rem">레이어 없음</div>';return;}
+  list.innerHTML=[...layers].reverse().map((l,ri)=>{const i=layers.length-1-ri;const icon=l.type==='text'?'T':l.type==='sticker'?l.emoji:'■';
+    return `<div class="lyr${i===selectedLayer?' sel':''}" onclick="selectedLayer=${i};renderLayers();renderOverlays()">
+      <span class="lyr-icon">${icon}</span><span class="lyr-label">${l.type==='text'?l.text:l.type==='sticker'?l.emoji:l.shape}</span>
+      <button class="lyr-del" onclick="event.stopPropagation();layers.splice(${i},1);if(selectedLayer>=${i})selectedLayer=Math.max(-1,selectedLayer-1);renderLayers();renderOverlays()">✕</button>
+    </div>`;
+  }).join('');
+}
+function renderOverlays(){
+  const wrap=document.getElementById('canvasWrap'); if(!wrap)return;
+  document.querySelectorAll('.ov').forEach(e=>e.remove());
+  const cv=document.getElementById('mainCanvas');
+  const scX=cv.offsetWidth/cv.width;
+  layers.forEach((layer,i)=>{
+    const div=document.createElement('div'); div.className='ov'+(i===selectedLayer?' sel':'');
+    div.style.left=layer.x+'%'; div.style.top=layer.y+'%';
+    if(layer.type==='text'){const fsPx=layer.size*scX;div.style.cssText+=`font-size:${fsPx}px;color:${layer.color};font-weight:${layer.style==='bold'?700:400};font-style:${layer.style==='italic'?'italic':'normal'};background:${hRgba(layer.bg,layer.bgOp)};padding:${layer.bgOp>0?'2px 7px':'0'};border-radius:3px;font-family:'Noto Sans KR',sans-serif;text-shadow:1px 1px 3px rgba(0,0,0,.5);white-space:nowrap;transform:translate(-50%,-50%)`;div.textContent=layer.text;}
+    else if(layer.type==='sticker'){div.style.cssText+=`font-size:${layer.size*scX}px;transform:translate(-50%,-50%);line-height:1`;div.textContent=layer.emoji;}
+    else if(layer.type==='shape'){div.style.cssText+=`width:${layer.w*scX}px;height:${layer.h*(cv.offsetHeight/cv.height)}px;transform:translate(-50%,-50%)`;if(layer.shape==='rect')div.style.cssText+=`background:${layer.color};opacity:${layer.opacity};border-radius:3px`;else if(layer.shape==='circle')div.style.cssText+=`background:${layer.color};opacity:${layer.opacity};border-radius:50%`;else div.style.cssText+=`border-top:3px solid ${layer.color};height:0;opacity:${layer.opacity}`;}
+    const del=document.createElement('div'); del.className='ov-del'; del.textContent='✕';
+    del.onclick=e=>{e.stopPropagation();layers.splice(i,1);if(selectedLayer>=i)selectedLayer=Math.max(-1,selectedLayer-1);renderLayers();renderOverlays();};
+    div.appendChild(del);
+    div.onmousedown=e=>{if(e.target===del)return;e.stopPropagation();selectedLayer=i;renderLayers();const rect=wrap.getBoundingClientRect();const ox=layer.x,oy=layer.y;const onMove=ev=>{layer.x=Math.max(2,Math.min(98,ox+(ev.clientX-e.clientX)/rect.width*100));layer.y=Math.max(2,Math.min(98,oy+(ev.clientY-e.clientY)/rect.height*100));div.style.left=layer.x+'%';div.style.top=layer.y+'%';};const onUp=()=>{document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp)};document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);};
+    wrap.appendChild(div);
+  });
+}
+function hRgba(hex,op){if(op<=0)return 'transparent';const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return `rgba(${r},${g},${b},${op})`}
+function clamp(v){return Math.max(0,Math.min(255,Math.round(v)))}
+
+// FILE HANDLING
+function handleDrop(e){e.preventDefault();document.getElementById('dropzone').classList.remove('drag');handleFileInput(e.dataTransfer.files);}
+function handleFileInput(files){
+  if(!files||!files.length)return;
+  if(edMode==='batch'){loadBatch(files);return;}
+  const f=files[0];
+  if(f.type.startsWith('video/')){loadVideo(f);switchEdMode('video');}
+  else{loadImage(f);if(edMode!=='photo')switchEdMode('photo');}
+}
+function loadImage(file){
+  const url=URL.createObjectURL(file);
+  const img=new Image();
+  img.onload=()=>{
+    origImg=img;rotation=0;flipH=false;flipV=false;layers=[];selectedLayer=-1;cropRatio='orig';activeFilter='none';adj={brightness:0,contrast:0,saturation:0,warmth:0,blur:0,vignette:0};
+    document.getElementById('noMediaMsg').style.display='none';
+    document.getElementById('canvasWrap').style.display='inline-block';
+    document.getElementById('videoEl').style.display='none';
+    document.getElementById('mediaInfo').textContent=`${img.naturalWidth}×${img.naturalHeight}px`;
+    document.getElementById('imgTb').style.display='flex';
+    document.getElementById('vidTb').style.display='none';
+    renderEdSidebar();drawCanvas();renderLayers();renderOverlays();
+  };
+  img.src=url;
+}
+function loadVideo(file){
+  const url=URL.createObjectURL(file);
+  videoEl=document.getElementById('videoEl');
+  videoEl.src=url;videoEl.style.display='block';
+  document.getElementById('noMediaMsg').style.display='none';
+  document.getElementById('canvasWrap').style.display='none';
+  document.getElementById('mediaInfo').textContent='영상 로딩 중...';
+  videoEl.onloadedmetadata=()=>{trimStart=0;trimEnd=videoEl.duration;document.getElementById('mediaInfo').textContent=`${videoEl.videoWidth}×${videoEl.videoHeight} · ${fmtT(videoEl.duration)}`;updateTrimUI();};
+  videoEl.ontimeupdate=()=>{const p=videoEl.currentTime/videoEl.duration;if(document.getElementById('tlProg'))document.getElementById('tlProg').style.width=(p*100)+'%';const tc=document.getElementById('tcSide');if(tc)tc.textContent=fmtT(videoEl.currentTime)+' / '+fmtT(videoEl.duration);document.getElementById('tcDisplay').textContent=fmtT(videoEl.currentTime)+' / '+fmtT(videoEl.duration);};
+  renderEdSidebar();renderLayers();
+}
+
+// EXPORT
+function exportImg(){
+  if(!origImg)return;
+  const{w,h}=getOutSize();
+  const exp=document.createElement('canvas');exp.width=w;exp.height=h;
+  const ctx=exp.getContext('2d');
+  ctx.save();ctx.translate(w/2,h/2);ctx.rotate(rotation*Math.PI/180);ctx.scale(flipH?-1:1,flipV?-1:1);
+  ctx.drawImage(origImg,-origImg.naturalWidth/2,-origImg.naturalHeight/2,origImg.naturalWidth,origImg.naturalHeight);
+  ctx.restore();
+  const{brightness:b,contrast:c,saturation:s,warmth:warm}=adj;
+  if(b||c||s||warm){const id=ctx.getImageData(0,0,w,h);const d=id.data;for(let i=0;i<d.length;i+=4){let r=d[i]+b*2.55,g=d[i+1]+b*2.55,bv=d[i+2]+b*2.55;const cf=(259*(c+255))/(255*(259-c));r=cf*(r-128)+128;g=cf*(g-128)+128;bv=cf*(bv-128)+128;const gray=.299*r+.587*g+.114*bv;const sf=1+s/100;r=gray+sf*(r-gray);g=gray+sf*(g-gray);bv=gray+sf*(bv-gray);r+=warm*.5;bv-=warm*.3;d[i]=clamp(r);d[i+1]=clamp(g);d[i+2]=clamp(bv);}ctx.putImageData(id,0,0);}
+  if(adj.vignette>0){const g=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.3,w/2,h/2,Math.max(w,h)*.75);g.addColorStop(0,'transparent');g.addColorStop(1,`rgba(0,0,0,${adj.vignette/100*.8})`);ctx.fillStyle=g;ctx.fillRect(0,0,w,h);}
+  const cv=document.getElementById('mainCanvas');const scX=w/cv.offsetWidth;
+  layers.forEach(layer=>{const px=layer.x/100*w,py=layer.y/100*h;
+    if(layer.type==='text'){const fs=layer.size*scX;ctx.font=`${layer.style==='bold'?'bold ':layer.style==='italic'?'italic ':''}${fs}px 'Noto Sans KR',sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';if(layer.bgOp>0){const tm=ctx.measureText(layer.text);ctx.fillStyle=hRgba(layer.bg,layer.bgOp);ctx.fillRect(px-tm.width/2-8,py-fs/2-3,tm.width+16,fs+10);}ctx.fillStyle=layer.color;ctx.shadowColor='rgba(0,0,0,.4)';ctx.shadowBlur=3;ctx.fillText(layer.text,px,py);ctx.shadowBlur=0;}
+    else if(layer.type==='sticker'){ctx.font=`${layer.size*scX}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(layer.emoji,px,py);}
+  });
+  const fmt=document.getElementById('expFmt').value;const q=+document.getElementById('expQ').value;
+  const a=document.createElement('a');a.download=`ronai-${Date.now()}.${fmt==='jpeg'?'jpg':fmt}`;a.href=exp.toDataURL('image/'+fmt,q);a.click();
+}
+function addBgColor(){const color=prompt('배경색 입력 (예: #ffffff)','#ffffff');if(!color||!origImg)return;const{w,h}=getOutSize();const tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;const ctx=tmp.getContext('2d');ctx.fillStyle=color;ctx.fillRect(0,0,w,h);ctx.drawImage(origImg,0,0,w,h);const img=new Image();img.onload=()=>{origImg=img;drawCanvas();renderOverlays();};img.src=tmp.toDataURL();}
+
+// VIDEO
+function updateTrimUI(){if(!videoEl||!videoEl.duration)return;const d=videoEl.duration;const tsS=document.getElementById('tsS'),tsE=document.getElementById('tsE'),tlS=document.getElementById('tlS'),tlE=document.getElementById('tlE'),tlR=document.getElementById('tlRange');if(tsS)tsS.textContent=trimStart.toFixed(1)+'s';if(tsE)tsE.textContent=trimEnd.toFixed(1)+'s';if(tlS)tlS.style.left=(trimStart/d*100)+'%';if(tlE)tlE.style.left=(trimEnd/d*100)+'%';if(tlR){tlR.style.left=(trimStart/d*100)+'%';tlR.style.width=((trimEnd-trimStart)/d*100)+'%';}}
+function seekVid(e){if(!videoEl||!videoEl.duration)return;const r=e.currentTarget.getBoundingClientRect();videoEl.currentTime=(e.clientX-r.left)/r.width*videoEl.duration;}
+function startTrimDrag(e,side){e.stopPropagation();const tl=document.getElementById('tlWrap');const onMove=ev=>{const r=tl.getBoundingClientRect();const p=Math.max(0,Math.min(1,(ev.clientX-r.left)/r.width));if(side==='s')trimStart=Math.min(p*videoEl.duration,trimEnd-.1);else trimEnd=Math.max(p*videoEl.duration,trimStart+.1);updateTrimUI();};const onUp=()=>{document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp)};document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);}
+function togglePlay(){if(videoEl)videoEl.paused?videoEl.play():videoEl.pause();}
+function setVidSpeed(v){if(videoEl)videoEl.playbackRate=v;const el=document.getElementById('vSpeed');if(el)el.textContent=v+'x';}
+function setVidVol(v){if(videoEl)videoEl.volume=v;const el=document.getElementById('vVol');if(el)el.textContent=Math.round(v*100)+'%';}
+function extractThumb(){if(!videoEl)return;const cv=document.createElement('canvas');cv.width=videoEl.videoWidth;cv.height=videoEl.videoHeight;cv.getContext('2d').drawImage(videoEl,0,0);const img=new Image();img.onload=()=>{origImg=img;rotation=0;flipH=false;flipV=false;layers=[];selectedLayer=-1;cropRatio='orig';activeFilter='none';adj={brightness:0,contrast:0,saturation:0,warmth:0,blur:0,vignette:0};switchEdMode('photo');document.getElementById('canvasWrap').style.display='inline-block';document.getElementById('videoEl').style.display='none';document.getElementById('noMediaMsg').style.display='none';document.getElementById('imgTb').style.display='flex';document.getElementById('vidTb').style.display='none';document.getElementById('mediaInfo').textContent=`${img.naturalWidth}×${img.naturalHeight}px`;drawCanvas();renderLayers();renderOverlays();};img.src=cv.toDataURL();}
+function fmtT(s){const m=Math.floor(s/60);return`${String(m).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`}
+
+// BATCH
+function loadBatch(files){batchFiles=Array.from(files);const grid=document.getElementById('batchGrid');grid.innerHTML='';batchFiles.forEach((f,i)=>{const url=URL.createObjectURL(f);const item=document.createElement('div');item.style.cssText='display:flex;flex-direction:column;align-items:center;width:110px;background:var(--bg3);border-radius:8px;padding:7px;gap:4px';item.innerHTML=`<img src="${url}" class="batch-thumb" style="width:100%;height:72px"><div style="font-size:.65rem;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%">${f.name}</div><div class="bstatus wait" id="bs${i}">대기중</div>`;grid.appendChild(item);});document.getElementById('batchArea').style.display='block';document.getElementById('canvasWrap').style.display='none';document.getElementById('noMediaMsg').style.display='none';}
+async function runBatch(){if(!batchFiles.length){alert('이미지를 먼저 선택해주세요!');return;}const filter=batchSettings.filter||'none';const text=document.getElementById('batchTxt')?.value||'';const ratio=batchSettings.ratio||'orig';for(let i=0;i<batchFiles.length;i++){document.getElementById('bs'+i).textContent='처리중...';document.getElementById('bs'+i).className='bstatus proc';await new Promise(res=>{const img=new Image();img.onload=()=>{const f=FILTERS[filter]||FILTERS.none;let w=img.naturalWidth,h=img.naturalHeight;if(ratio!=='orig'){const[rw,rh]=ratio.split(':').map(Number);const rat=rw/rh;if(w/h>rat)w=Math.round(h*rat);else h=Math.round(w/rat);}const cv=document.createElement('canvas');cv.width=w;cv.height=h;const ctx=cv.getContext('2d');ctx.drawImage(img,0,0,w,h);if(f.b||f.c||f.s||f.w){const id=ctx.getImageData(0,0,w,h);const d=id.data;for(let j=0;j<d.length;j+=4){let r=d[j]+f.b*2.55,g=d[j+1]+f.b*2.55,bv=d[j+2]+f.b*2.55;const cf=(259*(f.c+255))/(255*(259-f.c));r=cf*(r-128)+128;g=cf*(g-128)+128;bv=cf*(bv-128)+128;const gray=.299*r+.587*g+.114*bv;const sf=1+f.s/100;r=gray+sf*(r-gray);g=gray+sf*(g-gray);bv=gray+sf*(bv-gray);r+=f.w*.5;bv-=f.w*.3;d[j]=clamp(r);d[j+1]=clamp(g);d[j+2]=clamp(bv);}ctx.putImageData(id,0,0);}if(text){ctx.font='bold 22px Noto Sans KR,sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(0,h-38,w,38);ctx.fillStyle='#fff';ctx.fillText(text,w/2,h-8);}const a=document.createElement('a');a.download=`ronai-batch-${i+1}.jpg`;a.href=cv.toDataURL('image/jpeg',.9);a.click();document.getElementById('bs'+i).textContent='✓완료';document.getElementById('bs'+i).className='bstatus done';res();};img.src=URL.createObjectURL(batchFiles[i]);});await new Promise(r=>setTimeout(r,350));}}
+
+// TTS
+let ttsVoice=null;
+function selectVoice(el){document.querySelectorAll('.voice-card').forEach(c=>c.classList.remove('on'));el.classList.add('on');}
+function playTTS(){
+  const text=document.getElementById('ttsText')?.value.trim();
+  if(!text){alert('텍스트를 입력해주세요!');return;}
+  if(!window.speechSynthesis){alert('Chrome/Edge에서 사용해주세요.');return;}
+  stopTTS();
+  const voiceCard=document.querySelector('.voice-card.on');
+  const voices=window.speechSynthesis.getVoices();
+  const koVoice=voices.find(v=>v.name===(voiceCard?.querySelector('[style*="font-size"]')?.textContent||''))||voices.find(v=>v.lang.startsWith('ko'))||null;
+  const utt=new SpeechSynthesisUtterance(text);
+  if(koVoice)utt.voice=koVoice; utt.lang='ko-KR';
+  utt.rate=+(document.getElementById('sRate')?.value||1);
+  utt.pitch=+(document.getElementById('sPitch')?.value||1);
+  utt.onstart=()=>{document.getElementById('ttsStatus').textContent='🔊 재생 중...';startWave();};
+  utt.onend=()=>{document.getElementById('ttsStatus').textContent='✓ 완료';stopWave();};
+  utt.onerror=()=>{document.getElementById('ttsStatus').textContent='⚠️ 오류';stopWave();};
+  window.speechSynthesis.speak(utt);
+}
+function stopTTS(){if(window.speechSynthesis)window.speechSynthesis.cancel();stopWave();const s=document.getElementById('ttsStatus');if(s)s.textContent='정지됨';}
+function startWave(){waveInt=setInterval(()=>{for(let i=0;i<18;i++){const b=document.getElementById('wb'+i);if(b)b.style.height=(4+Math.random()*26)+'px';}},80);}
+function stopWave(){clearInterval(waveInt);for(let i=0;i<18;i++){const b=document.getElementById('wb'+i);if(b)b.style.height='4px';}}
+
+// INIT
+window.addEventListener('load',()=>{
+  // Bind top tabs
+  document.querySelectorAll('#topTabs .ttab').forEach(btn => {
+    btn.addEventListener('click', function() { showPage(this.dataset.page); });
+  });
+  renderEdSidebar();
+  if(window.speechSynthesis){window.speechSynthesis.onvoiceschanged=()=>{if(edMode==='tts')renderEdSidebar();}; window.speechSynthesis.getVoices();}
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Delete'&&selectedLayer>=0&&document.getElementById('page-media').classList.contains('on')){layers.splice(selectedLayer,1);selectedLayer=Math.max(-1,selectedLayer-1);renderLayers();renderOverlays();}
+  if(e.key==='Escape'){selectedLayer=-1;renderLayers();renderOverlays();}
+  if(e.ctrlKey&&e.key==='z'&&layers.length){layers.pop();renderLayers();renderOverlays();}
+});
+</script>
+</body>
+</html>
