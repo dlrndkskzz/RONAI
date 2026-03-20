@@ -190,7 +190,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   <div style="font-size:.68rem;color:var(--ink3);font-family:'DM Mono',monospace">ronai.co.kr</div>
 </header>
 
-<!-- ████ PAGE: 콘텐츠 작성 ████ -->
+<!-- ████ API KEY BANNER ████ -->
+<div id="apiBanner" style="background:#1a1612;padding:10px 1.8rem;display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:1.5px solid rgba(184,146,74,.3)">
+  <div style="font-size:.78rem;color:var(--gold);font-weight:700;white-space:nowrap">🔑 API 키</div>
+  <input id="apiKeyInput" type="password" placeholder="sk-ant-api... 입력 후 Enter (GitHub Pages에서 사용 시 필요)"
+    style="flex:1;min-width:260px;background:#2a2218;border:1.5px solid rgba(184,146,74,.3);border-radius:7px;padding:7px 12px;color:#e8c98a;font-family:'DM Mono',monospace;font-size:.78rem;outline:none"
+    onkeydown="if(event.key==='Enter')saveApiKey()"
+    onfocus="this.style.borderColor='var(--gold)'"
+    onblur="this.style.borderColor='rgba(184,146,74,.3)'">
+  <button onclick="saveApiKey()" style="padding:7px 16px;background:var(--gold);border:none;border-radius:7px;font-family:'Noto Sans KR',sans-serif;font-size:.78rem;font-weight:700;color:#1a1208;cursor:pointer;white-space:nowrap">저장</button>
+  <div id="apiStatus" style="font-size:.72rem;color:#6b7a6e;font-family:'DM Mono',monospace;white-space:nowrap">미입력</div>
+  <div style="font-size:.68rem;color:#4a4030;flex-basis:100%;margin-top:-4px">Claude.ai 채팅창에서 쓸 땐 입력 불필요 · API 키는 이 브라우저에만 저장됩니다</div>
+</div>
 <div class="page on" id="page-content">
 <div class="layout">
   <aside class="panel-l">
@@ -450,8 +461,19 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 
   <!-- CANVAS -->
   <div class="ed-main">
-    <div class="ed-viewport" id="edViewport">
-      <div class="no-media-msg" id="noMediaMsg"><span style="font-size:2.5rem;display:block;margin-bottom:.8rem">🎨</span>왼쪽에서 파일을 불러오세요</div>
+    <div class="ed-viewport" id="edViewport"
+      ondragover="event.preventDefault();event.currentTarget.style.outline='3px dashed var(--gold)'"
+      ondragleave="event.currentTarget.style.outline=''"
+      ondrop="event.currentTarget.style.outline='';handleDrop(event)">
+      <div class="no-media-msg" id="noMediaMsg" style="text-align:center">
+        <span style="font-size:3rem;display:block;margin-bottom:1rem">🖼</span>
+        <div style="margin-bottom:1.2rem;color:var(--ink3);font-size:.85rem">사진 또는 영상을 불러오세요</div>
+        <label for="mediaInputMain" style="display:inline-block;padding:12px 28px;background:var(--gold);border-radius:9px;font-size:.88rem;font-weight:700;color:#1a1208;cursor:pointer;font-family:'Noto Sans KR',sans-serif">
+          📁 파일 선택
+        </label>
+        <input type="file" id="mediaInputMain" accept="image/*,video/*" multiple style="display:none" onchange="handleFileInput(this.files)">
+        <div style="margin-top:.8rem;font-size:.72rem;color:var(--ink3)">JPG · PNG · GIF · MP4 · MOV · 드래그&드롭 가능</div>
+      </div>
       <div id="canvasWrap" style="display:none"><canvas id="mainCanvas"></canvas></div>
       <video id="videoEl" controls playsinline style="display:none;max-width:100%;max-height:calc(100vh - 160px)"></video>
       <div id="batchArea" style="display:none;width:100%;height:100%;overflow:auto;padding:1rem"><div id="batchGrid" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center"></div></div>
@@ -462,6 +484,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       </div>
     </div>
     <div class="ed-toolbar" id="edToolbar">
+      <label for="mediaInputToolbar" style="padding:5px 12px;background:var(--gold);border:none;border-radius:7px;font-family:'Noto Sans KR',sans-serif;font-size:.75rem;font-weight:700;color:#1a1208;cursor:pointer;white-space:nowrap">📁 파일 열기</label>
+      <input type="file" id="mediaInputToolbar" accept="image/*,video/*" multiple style="display:none" onchange="handleFileInput(this.files)">
+      <div style="width:1px;height:18px;background:var(--border);margin:0 4px"></div>
       <span style="font-size:.7rem;color:var(--ink3);font-family:'DM Mono',monospace" id="mediaInfo">미디어 없음</span>
       <div id="imgTb" style="display:flex;gap:4px">
         <button class="btn-sm" onclick="rotImg(-90)">↺</button>
@@ -494,6 +519,23 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 
 <!-- ████ SCRIPT ████ -->
 <script>
+// ═══════════════════════════════
+// API KEY MANAGEMENT
+// ═══════════════════════════════
+function saveApiKey(){
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if(!key){ alert('API 키를 입력해주세요.'); return; }
+  if(!key.startsWith('sk-ant-')){
+    alert('올바른 Anthropic API 키 형식이 아닙니다.\nsk-ant-api... 로 시작해야 합니다.');
+    return;
+  }
+  sessionStorage.setItem('ronai_api_key', key);
+  document.getElementById('apiKeyInput').value = '';
+  document.getElementById('apiStatus').textContent = '✅ 저장됨';
+  document.getElementById('apiStatus').style.color = '#3a8a5a';
+}
+function getApiKey(){ return sessionStorage.getItem('ronai_api_key') || null; }
+
 // ═══════════════════════════════
 // PAGE SWITCH
 // ═══════════════════════════════
@@ -582,9 +624,12 @@ function renderIngrTags(side){
 }
 
 async function callAI(prompt,maxTokens=4000){
+  const userKey = getApiKey();
+  const hdrs = {'Content-Type':'application/json'};
+  if(userKey) hdrs['x-api-key'] = userKey;
   const res=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    headers: hdrs,
     body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTokens,messages:[{role:'user',content:prompt}]})
   });
   const data=await res.json();
@@ -1384,6 +1429,11 @@ function stopWave(){clearInterval(waveInt);for(let i=0;i<18;i++){const b=documen
 
 // INIT
 window.addEventListener('load',()=>{
+  // API 키 상태 표시
+  if(sessionStorage.getItem('ronai_api_key')){
+    document.getElementById('apiStatus').textContent='✅ 저장됨';
+    document.getElementById('apiStatus').style.color='#3a8a5a';
+  }
   // Bind top tabs
   document.querySelectorAll('#topTabs .ttab').forEach(btn => {
     btn.addEventListener('click', function() { showPage(this.dataset.page); });
