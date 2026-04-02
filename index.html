@@ -3,578 +3,2075 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RONAI 미디어 편집기</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=DM+Mono&display=swap" rel="stylesheet">
+<title>RONAI 콘텐츠 메이커</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Playfair+Display:wght@700;900&family=DM+Mono&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f5f1eb;--bg2:#faf8f4;--bg3:#ede9e1;--bg4:#e4ded4;--ink:#1a1612;--ink2:#4a4030;--ink3:#9a8e80;--gold:#b8924a;--gold2:#d4a85a;--gold-dim:rgba(184,146,74,.12);--border:rgba(0,0,0,.08);--border-g:rgba(184,146,74,.35);--red:#c94040;--green:#3a8a5a;}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink);height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{height:52px;background:var(--bg2);border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:8px;padding:0 1rem;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.logo{font-weight:900;font-size:.95rem;color:var(--gold);letter-spacing:2px;flex-shrink:0}
-.mg{display:flex;gap:2px;background:var(--bg3);padding:3px;border-radius:8px;flex-shrink:0}
-.mb{padding:5px 11px;border-radius:5px;font-size:.74rem;font-weight:600;cursor:pointer;color:var(--ink3);border:none;background:transparent;font-family:'Noto Sans KR',sans-serif;white-space:nowrap;transition:all .15s}
-.mb.on{background:var(--bg2);color:var(--gold);box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.hbtns{display:flex;gap:5px;margin-left:auto}
-.hb{padding:6px 12px;background:var(--bg3);border:1.5px solid var(--border);border-radius:7px;font-family:'Noto Sans KR',sans-serif;font-size:.74rem;font-weight:600;color:var(--ink3);cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;transition:all .15s}
-.hb:hover{border-color:var(--border-g);color:var(--gold)}
-.hb.gold{background:var(--gold);border-color:var(--gold);color:#1a1208}
-.hb.red{color:var(--red);border-color:rgba(201,64,64,.3)}
-.studio{display:flex;flex:1;overflow:hidden}
-.tools{width:230px;background:var(--bg2);border-right:1.5px solid var(--border);overflow-y:auto;padding:10px;flex-shrink:0}
-.tools::-webkit-scrollbar{width:3px}
-.tools::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.cwrap{flex:1;display:flex;flex-direction:column;background:#282420;overflow:hidden;position:relative}
-.carea{flex:1;overflow:hidden;position:relative;cursor:grab}
-.carea.gb{cursor:grabbing}
-.carea canvas{position:absolute;transform-origin:top left}
-.umsg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
-.ubox{border:2.5px dashed var(--border-g);border-radius:16px;padding:2.5rem 2rem;background:rgba(184,146,74,.05);transition:all .2s;cursor:pointer}
-.ubox:hover{border-color:var(--gold);background:rgba(184,146,74,.1)}
-.zbar{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:none;gap:5px;align-items:center;background:rgba(26,22,18,.8);backdrop-filter:blur(8px);padding:5px 10px;border-radius:20px;z-index:10}
-.zb{padding:3px 9px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:5px;color:#ddd;font-size:.72rem;cursor:pointer;transition:all .15s}
-.zb:hover{border-color:var(--gold);color:var(--gold)}
-.zv{font-family:'DM Mono',monospace;font-size:.7rem;color:#aaa;min-width:38px;text-align:center}
-.ctb-wrap{height:44px;background:#1a1612;display:flex;align-items:center;gap:6px;padding:0 10px;flex-shrink:0}
-.ctb{padding:5px 10px;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:6px;font-family:'Noto Sans KR',sans-serif;font-size:.72rem;font-weight:600;color:#ccc;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;transition:all .15s}
-.ctb:hover{border-color:var(--gold);color:var(--gold)}
-.ctb.gold{background:var(--gold);border-color:var(--gold);color:#1a1208}
-.tb-info{font-size:.68rem;color:#666;font-family:'DM Mono',monospace}
-.layers{width:170px;background:var(--bg2);border-left:1.5px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
-.lh{padding:8px 10px;border-bottom:1.5px solid var(--border);font-size:.65rem;font-family:'DM Mono',monospace;color:var(--ink3);letter-spacing:1.5px;text-transform:uppercase}
-.lb{flex:1;overflow-y:auto;padding:6px}
-.lyr{display:flex;align-items:center;gap:5px;padding:6px 7px;background:var(--bg3);border:1.5px solid transparent;border-radius:7px;margin-bottom:3px;cursor:pointer;font-size:.72rem}
-.lyr:hover{border-color:var(--border)}
-.lyr.sel{background:var(--gold-dim);border-color:var(--border-g)}
-.lyr-l{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink3)}
-.ldel{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:.8rem;padding:0}
-.ldel:hover{color:var(--red)}
-.sec{font-size:.62rem;font-family:'DM Mono',monospace;color:var(--ink3);letter-spacing:1.5px;text-transform:uppercase;margin:10px 0 5px}
-.sec:first-child{margin-top:0}
-.btn{padding:6px 10px;background:var(--bg3);border:1.5px solid var(--border);border-radius:7px;font-family:'Noto Sans KR',sans-serif;font-size:.72rem;font-weight:600;color:var(--ink3);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;gap:4px;margin-bottom:4px}
-.btn:hover{border-color:var(--border-g);color:var(--gold)}
-.btn.gold{background:var(--gold);border-color:var(--gold);color:#1a1208}
-.btn.full{width:100%}
-.sr{margin-bottom:7px}
-.sr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
-.sr-l{font-size:.72rem;color:var(--ink2)}
-.sr-v{font-size:.63rem;font-family:'DM Mono',monospace;color:var(--gold);min-width:26px;text-align:right}
-input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--bg4);border-radius:2px;outline:none;cursor:pointer}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--gold);border-radius:50%;cursor:pointer}
-.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px}
-.fc{background:var(--bg3);border:1.5px solid var(--border);border-radius:6px;padding:4px 2px;text-align:center;cursor:pointer;font-size:.64rem;color:var(--ink3);transition:all .15s}
-.fc:hover{border-color:var(--border-g);color:var(--gold)}
-.fc.on{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);font-weight:700}
-.fp{width:100%;aspect-ratio:1;border-radius:4px;margin-bottom:3px;display:block}
-.rgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-bottom:8px}
-.rb{padding:6px 4px;background:var(--bg3);border:1.5px solid var(--border);border-radius:6px;font-size:.63rem;color:var(--ink3);cursor:pointer;text-align:center;transition:all .12s;line-height:1.4}
-.rb:hover{border-color:var(--border-g);color:var(--gold)}
-.rb.on{background:var(--gold-dim);border-color:var(--gold);color:var(--gold)}
-.ti{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:7px;padding:7px 9px;color:var(--ink);font-family:'Noto Sans KR',sans-serif;font-size:.78rem;outline:none;margin-bottom:5px}
-.ti:focus{border-color:var(--border-g)}
-.ti::placeholder{color:var(--ink3)}
-.cr{display:flex;gap:5px;margin-bottom:5px;align-items:center}
-.cr label{font-size:.68rem;color:var(--ink3);white-space:nowrap}
-input[type=color]{height:26px;border:1.5px solid var(--border);border-radius:5px;cursor:pointer;padding:0;background:none}
-.sgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:6px}
-.sk{font-size:1.1rem;text-align:center;cursor:pointer;padding:4px;border-radius:5px;transition:background .12s}
-.sk:hover{background:var(--bg4)}
-.tl{height:36px;background:var(--bg3);border-radius:7px;position:relative;cursor:pointer;overflow:hidden;margin:5px 0;border:1.5px solid var(--border)}
-.tl-p{height:100%;background:rgba(184,146,74,.2);position:absolute;top:0;left:0;pointer-events:none}
-.tl-s{height:100%;background:rgba(184,146,74,.35);border:2px solid var(--gold);position:absolute;top:0;pointer-events:none}
-.tl-h{width:8px;height:100%;background:var(--gold);position:absolute;top:0;cursor:ew-resize;border-radius:3px;z-index:2}
-.tl-c{width:2px;height:100%;background:#fff;position:absolute;top:0;pointer-events:none;opacity:.7}
-.ti-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px}
-.ti-box{background:var(--bg3);border-radius:6px;padding:5px 8px;text-align:center}
-.ti-lbl{font-size:.6rem;color:var(--ink3);margin-bottom:2px}
-.ti-val{font-size:.75rem;font-family:'DM Mono',monospace;color:var(--gold);font-weight:600}
-.ov{position:absolute;cursor:move;user-select:none;border:2px dashed transparent;border-radius:3px;transform:translate(-50%,-50%)}
-.ov:hover,.ov.sel{border-color:rgba(184,146,74,.8)}
-.ov-del{position:absolute;top:-10px;right:-10px;width:18px;height:18px;background:var(--red);border-radius:50%;display:none;align-items:center;justify-content:center;font-size:.58rem;color:#fff;cursor:pointer;z-index:10;border:none}
-.ov.sel .ov-del{display:flex}
-.rbg-st{padding:8px;background:var(--bg3);border-radius:7px;font-size:.74rem;color:var(--ink3);text-align:center;margin-bottom:6px;line-height:1.6}
-.smodal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1000}
-.smodal.on{display:flex}
-.sbox{background:var(--bg2);border-radius:14px;padding:1.8rem;width:320px;box-shadow:0 8px 40px rgba(0,0,0,.3)}
-.stitle{font-size:1rem;font-weight:700;color:var(--ink);margin-bottom:1.2rem}
-.sopts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.2rem}
-.sopt{padding:12px 8px;background:var(--bg3);border:1.5px solid var(--border);border-radius:9px;cursor:pointer;text-align:center;transition:all .15s}
-.sopt:hover{border-color:var(--border-g)}
-.sopt.on{background:var(--gold-dim);border-color:var(--gold)}
-.sopt-ic{font-size:1.4rem;margin-bottom:4px}
-.sopt-nm{font-size:.78rem;font-weight:700;color:var(--ink2)}
-.sopt-dc{font-size:.65rem;color:var(--ink3);margin-top:2px}
-.srow2{display:flex;gap:8px;margin-bottom:8px;align-items:center}
-.slbl{font-size:.75rem;color:var(--ink3);flex-shrink:0}
-@keyframes fi{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
-.fi{animation:fi .2s ease}
+:root {
+  --bg: #f5f1eb;
+  --bg2: #faf8f4;
+  --bg3: #ede9e1;
+  --bg4: #e4ded4;
+  --gold: #b8924a;
+  --gold2: #d4a85a;
+  --gold-dim: rgba(184,146,74,0.1);
+  --red: #c94040;
+  --green: #3a8a5a;
+  --blue: #3a6090;
+  --text: #1a1612;
+  --text2: #5a5040;
+  --text3: #9a8e80;
+  --border: rgba(0,0,0,0.07);
+  --border-g: rgba(184,146,74,0.3);
+  --r: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* HEADER */
+header {
+  height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo {
+  display: flex; align-items: center; gap: 12px;
+}
+.logo-img {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--gold);
+  letter-spacing: 3px;
+}
+.logo-sep { width: 1px; height: 22px; background: var(--border); }
+.logo-sub { font-size: 0.72rem; color: var(--text2); font-family: 'DM Mono', monospace; letter-spacing: 1.5px; }
+.header-mode {
+  display: flex; gap: 6px;
+}
+.mode-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  color: var(--text2);
+  background: transparent;
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: all 0.18s;
+}
+.mode-btn.on { background: var(--gold-dim); border-color: var(--border-g); color: var(--gold); }
+
+/* TABS */
+.tabs-wrap {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.tab {
+  padding: 14px 24px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text3);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.18s;
+  display: flex; align-items: center; gap: 7px;
+}
+.tab:hover { color: var(--text2); }
+.tab.on { color: var(--gold); border-bottom-color: var(--gold); }
+.tab-content { display: none; }
+.tab-content.on { display: block; }
+
+/* LAYOUT */
+.layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  min-height: calc(100vh - 105px);
+}
+.panel-left {
+  border-right: 1px solid var(--border);
+  padding: 1.8rem 1.6rem;
+  overflow-y: auto;
+  height: calc(100vh - 105px);
+  position: sticky; top: 105px;
+}
+.panel-right {
+  padding: 1.8rem 2rem;
+  overflow-y: auto;
+  height: calc(100vh - 105px);
+}
+
+/* FORM */
+.fg { margin-bottom: 1.1rem; }
+.fg label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text2);
+  letter-spacing: 0.5px;
+  margin-bottom: 7px;
+  text-transform: uppercase;
+}
+.fg input, .fg textarea, .fg select {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 13px;
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.fg input:focus, .fg textarea:focus, .fg select:focus { border-color: var(--border-g); }
+.fg input::placeholder, .fg textarea::placeholder { color: var(--text3); }
+.fg textarea { resize: none; line-height: 1.6; }
+.fg select option { background: var(--bg3); }
+
+.sec-label {
+  font-size: 0.68rem;
+  font-family: 'DM Mono', monospace;
+  color: var(--text3);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 1.4rem 0 0.8rem;
+}
+
+/* CHIPS */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.chip:hover { border-color: var(--border-g); color: var(--text); }
+.chip.on { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); font-weight: 700; }
+
+/* BTN */
+.btn-main {
+  width: 100%;
+  padding: 13px;
+  background: var(--gold);
+  border: none;
+  border-radius: 10px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1a1208;
+  cursor: pointer;
+  margin-top: 1.4rem;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.2s;
+  letter-spacing: -0.2px;
+}
+.btn-main:hover { background: var(--gold2); box-shadow: 0 4px 20px rgba(201,169,110,0.25); }
+.btn-main:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+/* OUTPUT CARDS */
+.out-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 1.1rem;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+.out-card.ready { border-color: var(--border-g); }
+.out-card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+}
+.out-card-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text2);
+  display: flex; align-items: center; gap: 8px;
+  letter-spacing: 0.3px;
+}
+.out-card-body {
+  padding: 16px;
+  font-size: 0.87rem;
+  line-height: 1.85;
+  color: var(--text);
+  white-space: pre-wrap;
+  min-height: 70px;
+}
+.out-card-body.empty {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text3); font-size: 0.8rem;
+  flex-direction: column; gap: 6px; min-height: 80px;
+}
+.out-card-foot {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 7px; justify-content: flex-end;
+}
+
+/* 2COL */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; margin-bottom: 1.1rem; }
+
+/* COMBO CARDS */
+.combo-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+}
+.combo-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 0.6rem;
+  display: flex; align-items: center; gap: 7px;
+}
+.combo-desc { font-size: 0.82rem; line-height: 1.75; color: var(--text2); }
+.combo-products {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
+}
+.combo-tag {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.73rem;
+  font-weight: 600;
+}
+.combo-tag.good { background: rgba(82,201,138,0.12); color: var(--green); border: 1px solid rgba(82,201,138,0.25); }
+.combo-tag.bad { background: rgba(224,82,82,0.12); color: var(--red); border: 1px solid rgba(224,82,82,0.25); }
+.combo-tag.info { background: rgba(82,144,201,0.12); color: var(--blue); border: 1px solid rgba(82,144,201,0.25); }
+
+/* CONFLICT TABLE */
+.conflict-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+.conflict-row:last-child { border-bottom: none; }
+.conflict-badge {
+  min-width: 56px;
+  text-align: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-family: 'DM Mono', monospace;
+}
+.badge-danger { background: rgba(224,82,82,0.15); color: var(--red); }
+.badge-warn { background: rgba(201,169,110,0.15); color: var(--gold); }
+.badge-ok { background: rgba(82,201,138,0.15); color: var(--green); }
+
+/* CHAR PILL */
+.char-pill {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem;
+  padding: 2px 8px;
+  background: var(--gold-dim);
+  color: var(--gold);
+  border-radius: 8px;
+}
+
+/* COPY BTN */
+.btn-sm {
+  padding: 5px 13px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-sm:hover { border-color: var(--border-g); color: var(--gold); }
+.btn-sm.done { background: var(--gold-dim); border-color: var(--border-g); color: var(--gold); }
+
+/* SKEL */
+@keyframes sk { 0%{background-position:-300px 0} 100%{background-position:300px 0} }
+.sk {
+  height: 12px; border-radius: 5px; margin: 7px 0;
+  background: linear-gradient(90deg,var(--bg3) 25%,var(--bg4) 50%,var(--bg3) 75%);
+  background-size: 300px 100%;
+  animation: sk 1.2s infinite;
+}
+.sk.w70 { width: 70%; } .sk.w85 { width: 85%; } .sk.w50 { width: 50%; }
+
+/* SPIN */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { width: 15px; height: 15px; border: 2px solid rgba(26,18,8,0.3); border-top-color: #1a1208; border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.fu { animation: fadeUp 0.3s ease forwards; }
+
+/* EMPTY STATE */
+.empty-hero { text-align: center; padding: 5rem 2rem; color: var(--text3); }
+.empty-hero .ei { font-size: 2.8rem; margin-bottom: 1rem; }
+.empty-hero p { font-size: 0.85rem; line-height: 1.8; }
+.empty-hero strong { color: var(--text2); }
+
+/* INGREDIENT INPUT */
+.ingr-area {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+}
+.ingr-label { font-size: 0.72rem; color: var(--text2); margin-bottom: 8px; font-weight: 600; }
+.ingr-tags { display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px; margin-bottom: 8px; }
+.ingr-tag {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 10px;
+  background: var(--gold-dim);
+  border: 1px solid var(--border-g);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: var(--gold);
+  font-weight: 600;
+}
+.ingr-tag button { background: none; border: none; color: var(--gold); cursor: pointer; font-size: 0.8rem; padding: 0; line-height: 1; }
+.ingr-input-row { display: flex; gap: 7px; }
+.ingr-input-row input {
+  flex: 1;
+  background: var(--bg4);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 8px 11px;
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.82rem;
+  outline: none;
+}
+.ingr-input-row input:focus { border-color: var(--border-g); }
+.ingr-input-row button {
+  padding: 8px 14px;
+  background: var(--gold-dim);
+  border: 1px solid var(--border-g);
+  border-radius: 7px;
+  color: var(--gold);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .panel-left { height: auto; position: static; }
+  .panel-right { height: auto; }
+  .grid2 { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
+
 <header>
-  <span class="logo">RONAI EDITOR</span>
-  <div class="mg">
-    <button class="mb on" id="mPhoto" onclick="setMode('photo')">🖼 사진</button>
-    <button class="mb" id="mVideo" onclick="setMode('video')">🎬 영상</button>
+  <div class="logo">
+    <div class="logo-img">RONAI</div>
+    <div class="logo-sep"></div>
+    <div class="logo-sub">CONTENT AI</div>
   </div>
-  <div class="hbtns">
-    <label for="fileIn" class="hb">📁 파일 열기</label>
-    <input type="file" id="fileIn" accept="image/*,video/*" style="display:none" onchange="openFile(this.files[0])">
-    <button class="hb red" onclick="resetAll()">↩ 초기화</button>
-    <button class="hb gold" onclick="showSave()">💾 저장하기</button>
+  <div class="header-mode">
+    <button class="mode-btn on" id="m1" onclick="switchMode('content')">✦ 콘텐츠 생성</button>
+    <button class="mode-btn" id="m2" onclick="switchMode('combo')">🧪 성분 분석</button>
   </div>
 </header>
 
-<div class="studio">
-  <div class="tools">
-    <!-- 사진 도구 -->
-    <div id="PT">
-      <div class="sec">조정</div>
-      <div class="sr"><div class="sr-top"><span class="sr-l">밝기</span><span class="sr-v" id="lv0">0</span></div><input type="range" id="r0" min="-100" max="100" value="0" oninput="sa('brightness',+this.value,0)"></div>
-      <div class="sr"><div class="sr-top"><span class="sr-l">대비</span><span class="sr-v" id="lv1">0</span></div><input type="range" id="r1" min="-100" max="100" value="0" oninput="sa('contrast',+this.value,1)"></div>
-      <div class="sr"><div class="sr-top"><span class="sr-l">채도</span><span class="sr-v" id="lv2">0</span></div><input type="range" id="r2" min="-100" max="100" value="0" oninput="sa('saturation',+this.value,2)"></div>
-      <div class="sr"><div class="sr-top"><span class="sr-l">따뜻함</span><span class="sr-v" id="lv3">0</span></div><input type="range" id="r3" min="-100" max="100" value="0" oninput="sa('warmth',+this.value,3)"></div>
-      <div class="sr"><div class="sr-top"><span class="sr-l">흐림</span><span class="sr-v" id="lv4">0</span></div><input type="range" id="r4" min="0" max="20" value="0" oninput="sa('blur',+this.value,4)"></div>
-      <div class="sr"><div class="sr-top"><span class="sr-l">비네팅</span><span class="sr-v" id="lv5">0</span></div><input type="range" id="r5" min="0" max="100" value="0" oninput="sa('vignette',+this.value,5)"></div>
-      <div class="sec">필터</div>
-      <div class="fgrid">
-        <div class="fc on" onclick="applyF(this,'none')"><div class="fp" style="background:#ede9e1"></div>없음</div>
-        <div class="fc" onclick="applyF(this,'bright')"><div class="fp" style="background:linear-gradient(135deg,#fff8e7,#ffe0b2)"></div>밝은</div>
-        <div class="fc" onclick="applyF(this,'cool')"><div class="fp" style="background:linear-gradient(135deg,#e3f2fd,#b3e5fc)"></div>쿨톤</div>
-        <div class="fc" onclick="applyF(this,'warm')"><div class="fp" style="background:linear-gradient(135deg,#fff3e0,#ffccbc)"></div>웜톤</div>
-        <div class="fc" onclick="applyF(this,'vivid')"><div class="fp" style="background:linear-gradient(135deg,#f3e5f5,#e8f5e9)"></div>비비드</div>
-        <div class="fc" onclick="applyF(this,'mono')"><div class="fp" style="background:linear-gradient(135deg,#757575,#bdbdbd)"></div>흑백</div>
-        <div class="fc" onclick="applyF(this,'soft')"><div class="fp" style="background:linear-gradient(135deg,#fce4ec,#f8bbd0)"></div>소프트</div>
-        <div class="fc" onclick="applyF(this,'luxury')"><div class="fp" style="background:linear-gradient(135deg,#2a1e10,#c9a96e)"></div>럭셔리</div>
-        <div class="fc" onclick="applyF(this,'fresh')"><div class="fp" style="background:linear-gradient(135deg,#e8f5e9,#b2dfdb)"></div>프레시</div>
-        <div class="fc" onclick="applyF(this,'fade')"><div class="fp" style="background:linear-gradient(135deg,#eceff1,#cfd8dc)"></div>페이드</div>
-        <div class="fc" onclick="applyF(this,'drama')"><div class="fp" style="background:linear-gradient(135deg,#1a1a2e,#e94560)"></div>드라마</div>
-        <div class="fc" onclick="applyF(this,'golden')"><div class="fp" style="background:linear-gradient(135deg,#f9a825,#ffd54f)"></div>골든</div>
+<div class="tabs-wrap" id="tabsWrap">
+  <div class="tab on" data-tab="write" onclick="switchTab(this)">✍️ 콘텐츠 작성</div>
+  <div class="tab" data-tab="combo" onclick="switchTab(this)">💡 꿀조합 추천</div>
+  <div class="tab" data-tab="conflict" onclick="switchTab(this)">⚠️ 성분 충돌 체크</div>
+  <div class="tab" data-tab="seo" onclick="switchTab(this)">📈 SEO 블로그</div>
+  <div class="tab" data-tab="editor" onclick="switchTab(this)">🎨 미디어 편집</div>
+</div>
+
+<!-- ===================== TAB: 콘텐츠 작성 ===================== -->
+<div class="tab-content on" id="tc-write">
+  <div class="layout">
+    <aside class="panel-left">
+      <div class="sec-label">제품 정보</div>
+
+      <div class="fg">
+        <label>제품명 *</label>
+        <input id="iName" type="text" placeholder="예: 노탈리 타미텐겔 해열겔 500ml"
+          onkeydown="if(event.key==='Enter')genContent()" />
       </div>
-      <div class="sec">비율 / 크롭</div>
-      <div class="rgrid">
-        <div class="rb on" onclick="setCrop(this,'orig')">원본</div>
-        <div class="rb" onclick="setCrop(this,'1:1')">1:1<br><small style="color:var(--ink3);font-size:.58rem">인스타</small></div>
-        <div class="rb" onclick="setCrop(this,'4:5')">4:5<br><small style="color:var(--ink3);font-size:.58rem">세로</small></div>
-        <div class="rb" onclick="setCrop(this,'16:9')">16:9<br><small style="color:var(--ink3);font-size:.58rem">유튜브</small></div>
-        <div class="rb" onclick="setCrop(this,'9:16')">9:16<br><small style="color:var(--ink3);font-size:.58rem">쇼츠</small></div>
-        <div class="rb" onclick="setCrop(this,'3:4')">3:4<br><small style="color:var(--ink3);font-size:.58rem">블로그</small></div>
+
+      <div class="fg">
+        <label>브랜드</label>
+        <select id="iBrand">
+          <option value="">선택 안함</option>
+          <option>리라신</option>
+          <option>브릴리에잇</option>
+          <option>노탈리</option>
+          <option>더라포</option>
+          <option>에크리크</option>
+          <option>듀베로</option>
+          <option>오바코</option>
+          <option>졸로픽스</option>
+          <option>오도라타</option>
+        </select>
       </div>
-      <div class="sec">🪄 배경 제거 (누끼)</div>
-      <div class="rbg-st" id="rbgSt">remove.bg API 키 입력 후 사용<br><small style="font-size:.65rem">무료 50회/월 · remove.bg</small></div>
-      <input class="ti" id="rbgKey" type="password" placeholder="remove.bg API 키">
-      <button class="btn gold full" onclick="removeBg()">🪄 배경 제거 실행</button>
-      <button class="btn full" onclick="addBgColor()">🎨 배경색 채우기</button>
-      <div class="sec">텍스트</div>
-      <input class="ti" id="txtIn" type="text" placeholder="텍스트 입력 후 Enter" onkeydown="if(event.key==='Enter')addTxt()">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:5px">
-        <div><div style="font-size:.62rem;color:var(--ink3);margin-bottom:2px">크기</div>
-          <input type="range" id="txtSz" min="10" max="120" value="36" oninput="document.getElementById('tszV').textContent=this.value">
-          <div style="font-size:.6rem;color:var(--gold);font-family:'DM Mono',monospace" id="tszV">36</div></div>
-        <div><div style="font-size:.62rem;color:var(--ink3);margin-bottom:2px">색상</div>
-          <input type="color" id="txtClr" value="#ffffff" style="width:100%;height:28px;display:block"></div>
+
+      <div class="fg">
+        <label>제품 타입</label>
+        <select id="iType">
+          <option value="">선택 안함</option>
+          <option>토너/스킨</option>
+          <option>앰플/에센스</option>
+          <option>로션/크림</option>
+          <option>클렌징/딥클렌징</option>
+          <option>선케어</option>
+          <option>바디/립/핸드</option>
+          <option>홈케어세트</option>
+          <option>팩트/쿠션</option>
+          <option>아로마 오일</option>
+        </select>
       </div>
-      <div class="cr">
-        <label>배경</label>
-        <input type="color" id="txtBg" value="#000000" style="width:30px;height:24px">
-        <input type="range" id="txtBgOp" min="0" max="100" value="0" style="flex:1" oninput="document.getElementById('bgOpV').textContent=this.value+'%'">
-        <span style="font-size:.6rem;color:var(--ink3);font-family:'DM Mono',monospace;min-width:28px" id="bgOpV">0%</span>
+
+      <div class="sec-label">피부 고민</div>
+      <div class="chips" id="skinChips">
+        <div class="chip" data-v="트러블/민감">트러블/민감</div>
+        <div class="chip" data-v="수분/악건성">수분/악건성</div>
+        <div class="chip" data-v="모공/각질">모공/각질</div>
+        <div class="chip" data-v="탄력/주름">탄력/주름</div>
+        <div class="chip" data-v="미백/톤업">미백/톤업</div>
+        <div class="chip" data-v="피부장벽/홍조/예민">피부장벽/홍조</div>
       </div>
-      <select class="ti" id="txtSt"><option value="normal">일반체</option><option value="bold">굵게</option><option value="italic">기울임</option></select>
-      <button class="btn full" onclick="addTxt()">+ 텍스트 추가</button>
-      <button class="btn full" onclick="addWM('RONAI')">💧 RONAI 워터마크</button>
-      <button class="btn full" onclick="addWM('ronai.co.kr')">💧 URL 워터마크</button>
-      <div class="sec">스티커</div>
-      <div class="sgrid">
-        <div class="sk" onclick="addStk('✨')">✨</div><div class="sk" onclick="addStk('💫')">💫</div>
-        <div class="sk" onclick="addStk('🌸')">🌸</div><div class="sk" onclick="addStk('🌿')">🌿</div>
-        <div class="sk" onclick="addStk('💧')">💧</div><div class="sk" onclick="addStk('🌙')">🌙</div>
-        <div class="sk" onclick="addStk('☀️')">☀️</div><div class="sk" onclick="addStk('❄️')">❄️</div>
-        <div class="sk" onclick="addStk('🍃')">🍃</div><div class="sk" onclick="addStk('💕')">💕</div>
-        <div class="sk" onclick="addStk('⭐')">⭐</div><div class="sk" onclick="addStk('💎')">💎</div>
-        <div class="sk" onclick="addStk('🌺')">🌺</div><div class="sk" onclick="addStk('🦋')">🦋</div>
-        <div class="sk" onclick="addStk('🌊')">🌊</div>
+
+      <div class="sec-label">콘텐츠 유형</div>
+      <div class="chips" id="ctypeChips">
+        <div class="chip on" data-v="상품 상세페이지">🛍 상세페이지</div>
+        <div class="chip" data-v="블로그 포스팅">📝 블로그</div>
+        <div class="chip" data-v="이벤트/공지">📢 이벤트</div>
+        <div class="chip" data-v="SNS 홍보">📱 SNS</div>
       </div>
-    </div>
-    <!-- 영상 도구 -->
-    <div id="VT" style="display:none">
-      <div class="sec" style="margin-top:0">재생 제어</div>
-      <div style="display:flex;gap:5px;margin-bottom:8px">
-        <button class="btn" style="flex:1" onclick="vidPlay()">▶/⏸ 재생</button>
-        <button class="btn" onclick="vidBack()">⏮ 처음</button>
+
+      <div class="fg" style="margin-top:1.1rem">
+        <label>주요 성분 / 특징 (선택)</label>
+        <input id="iIngr" type="text" placeholder="예: 히알루론산, 나이아신아마이드, 세라마이드" />
       </div>
-      <div style="font-family:'DM Mono',monospace;font-size:.72rem;color:var(--gold);text-align:center;margin-bottom:6px" id="tcD">00:00 / 00:00</div>
-      <div class="sec">✂️ 영상 자르기 (트리밍)</div>
-      <div class="tl" id="tlW" onclick="seekVid(event)">
-        <div class="tl-p" id="tlP"></div>
-        <div class="tl-s" id="tlS"></div>
-        <div class="tl-h" id="tlHS" style="left:0" onmousedown="startTrim(event,'s')"></div>
-        <div class="tl-h" id="tlHE" style="right:0" onmousedown="startTrim(event,'e')"></div>
-        <div class="tl-c" id="tlC"></div>
+
+      <div class="fg">
+        <label>가격 (선택)</label>
+        <input id="iPrice" type="text" placeholder="예: 89,100원 (10% 할인)" />
       </div>
-      <div class="ti-grid">
-        <div class="ti-box"><div class="ti-lbl">시작점</div><div class="ti-val" id="tSV">0.0s</div></div>
-        <div class="ti-box"><div class="ti-lbl">끝점</div><div class="ti-val" id="tEV">0.0s</div></div>
+
+      <div class="fg">
+        <label>추가 요청 (선택)</label>
+        <textarea id="iExtra" rows="2" placeholder="예: 피부 열 내려주는 효과 강조해줘"></textarea>
       </div>
-      <button class="btn gold full" onclick="applyTrim()">✂️ 이 구간으로 자르기</button>
-      <button class="btn full" onclick="resetTrim()">↩ 트리밍 초기화</button>
-      <div class="sec">속도 / 볼륨</div>
-      <div class="sr"><div class="sr-top"><span class="sr-l">재생 속도</span><span class="sr-v" id="vSp">1.0x</span></div><input type="range" min="0.25" max="3" step="0.25" value="1" oninput="setVSp(+this.value)"></div>
-      <div class="sr"><div class="sr-top"><span class="sr-l">볼륨</span><span class="sr-v" id="vVl">100%</span></div><input type="range" min="0" max="1" step="0.05" value="1" oninput="setVVl(+this.value)"></div>
-      <div class="sec">썸네일</div>
-      <button class="btn full" onclick="exThumb()">🖼 현재 프레임 → 이미지 편집</button>
+
+      <button class="btn-main" id="btnContent" onclick="genContent()">
+        <span id="btnContentTxt">✦ 콘텐츠 생성</span>
+        <div class="spin" id="btnContentSpin" style="display:none"></div>
+      </button>
+    </aside>
+
+    <div class="panel-right" id="contentOutput">
+      <div class="empty-hero">
+        <div class="ei">✍️</div>
+        <p>제품명을 입력하고 <strong>콘텐츠 생성</strong>을 누르면<br>로나이 자사몰용 콘텐츠가 자동으로 완성됩니다.</p>
+      </div>
     </div>
   </div>
+</div>
 
-  <!-- 캔버스 영역 -->
-  <div class="cwrap">
-    <div class="carea" id="CA"
-      onwheel="onWh(event)"
-      onmousedown="onPS(event)"
-      ondragover="event.preventDefault();this.style.outline='3px dashed var(--gold)'"
-      ondragleave="this.style.outline=''"
-      ondrop="this.style.outline='';dropF(event)">
-      <div class="umsg" id="UM">
-        <label for="fileIn">
-          <div class="ubox">
-            <div style="font-size:3rem;margin-bottom:.8rem">🖼</div>
-            <div style="font-size:1rem;font-weight:700;color:var(--ink2);margin-bottom:.3rem">사진 또는 영상 불러오기</div>
-            <div style="font-size:.78rem;color:var(--ink3);line-height:1.7">클릭하거나 드래그&드롭<br>JPG · PNG · MP4 · MOV</div>
-            <div style="display:inline-block;margin-top:1rem;padding:10px 24px;background:var(--gold);border-radius:8px;font-size:.85rem;font-weight:700;color:#1a1208">📁 파일 선택</div>
+<!-- ===================== TAB: 꿀조합 추천 ===================== -->
+<div class="tab-content" id="tc-combo">
+  <div class="layout">
+    <aside class="panel-left">
+      <div class="sec-label">기준 제품</div>
+      <div class="fg">
+        <label>제품명 *</label>
+        <input id="cName" type="text" placeholder="예: 리라신 장벽 크림" />
+      </div>
+      <div class="fg">
+        <label>주요 성분</label>
+        <input id="cIngr" type="text" placeholder="예: 세라마이드, 판테놀, 히알루론산" />
+      </div>
+      <div class="fg">
+        <label>피부 타입</label>
+        <div class="chips" style="margin-top:2px" id="comboSkinChips">
+          <div class="chip on" data-v="건성">건성</div>
+          <div class="chip" data-v="지성">지성</div>
+          <div class="chip" data-v="복합성">복합성</div>
+          <div class="chip" data-v="민감성">민감성</div>
+          <div class="chip" data-v="중성">중성</div>
+        </div>
+      </div>
+      <div class="fg" style="margin-top:1rem">
+        <label>고민 (복수 선택)</label>
+        <div class="chips" id="comboWorryChips">
+          <div class="chip" data-v="수분">수분</div>
+          <div class="chip" data-v="탄력">탄력</div>
+          <div class="chip" data-v="미백">미백</div>
+          <div class="chip" data-v="트러블">트러블</div>
+          <div class="chip" data-v="모공">모공</div>
+          <div class="chip" data-v="피부장벽">피부장벽</div>
+          <div class="chip" data-v="각질">각질</div>
+        </div>
+      </div>
+      <button class="btn-main" id="btnCombo" onclick="genCombo()">
+        <span id="btnComboTxt">💡 꿀조합 추천받기</span>
+        <div class="spin" id="btnComboSpin" style="display:none"></div>
+      </button>
+    </aside>
+
+    <div class="panel-right" id="comboOutput">
+      <div class="empty-hero">
+        <div class="ei">💡</div>
+        <p>제품 정보를 입력하면<br><strong>함께 쓰면 좋은 제품 조합</strong>과<br>사용 순서, 시너지 효과를 알려드립니다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TAB: 성분 충돌 체크 ===================== -->
+<div class="tab-content" id="tc-conflict">
+  <div class="layout">
+    <aside class="panel-left">
+      <div class="sec-label">제품 A</div>
+      <div class="fg">
+        <label>제품명</label>
+        <input id="aName" type="text" placeholder="예: 비타민C 세럼" />
+      </div>
+      <div class="ingr-area" style="margin-bottom:1.1rem">
+        <div class="ingr-label">성분 입력</div>
+        <div class="ingr-tags" id="aIngrTags"></div>
+        <div class="ingr-input-row">
+          <input id="aIngrInput" type="text" placeholder="성분명 입력 후 추가"
+            onkeydown="if(event.key==='Enter')addIngr('a')" />
+          <button onclick="addIngr('a')">+ 추가</button>
+        </div>
+      </div>
+
+      <div class="sec-label">제품 B</div>
+      <div class="fg">
+        <label>제품명</label>
+        <input id="bName" type="text" placeholder="예: 레티놀 앰플" />
+      </div>
+      <div class="ingr-area">
+        <div class="ingr-label">성분 입력</div>
+        <div class="ingr-tags" id="bIngrTags"></div>
+        <div class="ingr-input-row">
+          <input id="bIngrInput" type="text" placeholder="성분명 입력 후 추가"
+            onkeydown="if(event.key==='Enter')addIngr('b')" />
+          <button onclick="addIngr('b')">+ 추가</button>
+        </div>
+      </div>
+
+      <button class="btn-main" id="btnConflict" onclick="genConflict()">
+        <span id="btnConflictTxt">⚠️ 충돌 체크</span>
+        <div class="spin" id="btnConflictSpin" style="display:none"></div>
+      </button>
+    </aside>
+
+    <div class="panel-right" id="conflictOutput">
+      <div class="empty-hero">
+        <div class="ei">🔬</div>
+        <p>두 제품의 성분을 입력하면<br><strong>충돌 여부, 사용 시 주의사항</strong>,<br>올바른 사용 순서를 분석해드립니다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TAB: SEO 블로그 ===================== -->
+<div class="tab-content" id="tc-seo">
+  <div class="layout">
+    <aside class="panel-left">
+      <div class="sec-label">블로그 기본 정보</div>
+
+      <div class="fg">
+        <label>주제 *</label>
+        <input id="seoTopic" type="text" placeholder="예: 민감성 피부 수분 관리" />
+      </div>
+      <div class="fg">
+        <label>메인 키워드 *</label>
+        <input id="seoKeyword" type="text" placeholder="예: 민감성 피부 수분크림" />
+      </div>
+      <div class="fg">
+        <label>LSI 키워드 <span style="color:var(--text3);font-weight:400">쉼표 구분</span></label>
+        <input id="seoLSI" type="text" placeholder="예: 피부장벽, 세라마이드, 보습, 진정" />
+      </div>
+      <div class="fg">
+        <label>타겟 독자</label>
+        <input id="seoReader" type="text" placeholder="예: 피부 트러블로 고민 중인 30대 직장인" />
+      </div>
+      <div class="fg">
+        <label>경쟁 차별화 포인트</label>
+        <input id="seoDiff" type="text" placeholder="예: 로나이 리라신 성분 기반 실제 사용 경험" />
+      </div>
+
+      <div class="sec-label">글 설정</div>
+      <div style="font-size:0.72rem;color:var(--text2);font-weight:700;margin-bottom:6px">글 톤</div>
+      <div class="chips" id="seoToneChips" style="margin-bottom:1rem">
+        <div class="chip on" data-v="친근체">😊 친근체</div>
+        <div class="chip" data-v="정보체">📋 정보체</div>
+        <div class="chip" data-v="전문체">💼 전문체</div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text2);font-weight:700;margin-bottom:6px">플랫폼</div>
+      <div class="chips" id="seoPlatformChips" style="margin-bottom:1rem">
+        <div class="chip on" data-v="네이버">N 네이버</div>
+        <div class="chip" data-v="티스토리">T 티스토리</div>
+        <div class="chip" data-v="워드프레스">W 워드프레스</div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text2);font-weight:700;margin-bottom:6px">검색 의도</div>
+      <div class="chips" id="seoIntentChips" style="margin-bottom:1rem">
+        <div class="chip on" data-v="정보형">💡 정보형</div>
+        <div class="chip" data-v="비교형">⚖️ 비교형</div>
+        <div class="chip" data-v="행동형">🛒 행동형</div>
+      </div>
+
+      <button class="btn-main" id="btnSEO" onclick="genSEO()">
+        <span id="btnSEOTxt">📈 SEO 블로그 생성</span>
+        <div class="spin" id="btnSEOSpin" style="display:none"></div>
+      </button>
+
+      <div style="margin-top:1.2rem;padding:10px 12px;background:rgba(82,144,201,0.06);border:1px solid rgba(82,144,201,0.15);border-radius:8px;font-size:0.75rem;color:var(--blue);line-height:1.7">
+        💡 키워드·LSI·플랫폼을 정확히 입력할수록 더 정교한 SEO 전략이 나옵니다.
+      </div>
+    </aside>
+
+    <div class="panel-right" id="seoOutput">
+      <div class="empty-hero">
+        <div class="ei">📈</div>
+        <p>주제와 키워드를 입력하면<br><strong>사전 분석 → 본문 → 해시태그 →<br>발행 전략 → 재활용 패키지</strong>까지<br>한번에 완성됩니다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TAB: 미디어 편집 ===================== -->
+<div class="tab-content" id="tc-editor">
+<style>
+/* ── EDITOR STYLES ── */
+.editor-wrap { display:flex; height:calc(100vh - 105px); }
+.editor-sidebar {
+  width:260px; min-width:220px; border-right:1px solid var(--border);
+  background:var(--bg2); overflow-y:auto; padding:1.2rem 1rem;
+  display:flex; flex-direction:column; gap:1rem;
+}
+.editor-main {
+  flex:1; display:flex; flex-direction:column; background:var(--bg); overflow:hidden;
+}
+.editor-canvas-area {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  position:relative; overflow:hidden; background: repeating-conic-gradient(var(--bg3) 0% 25%, var(--bg2) 0% 50%) 0 0 / 20px 20px;
+}
+.editor-toolbar {
+  height:48px; background:var(--bg2); border-top:1px solid var(--border);
+  display:flex; align-items:center; gap:8px; padding:0 1.2rem; flex-shrink:0;
+}
+
+/* Drop zone */
+.drop-zone {
+  border:2px dashed var(--border-g);
+  border-radius:14px; padding:2.5rem 1.5rem;
+  text-align:center; cursor:pointer; transition:all 0.2s;
+  background:var(--gold-dim);
+}
+.drop-zone:hover, .drop-zone.drag { border-color:var(--gold); background:rgba(201,169,110,0.18); }
+.drop-zone input { display:none; }
+.drop-icon { font-size:2rem; margin-bottom:8px; }
+.drop-text { font-size:0.8rem; color:var(--text2); line-height:1.6; }
+
+/* Control groups */
+.ctrl-group { background:var(--bg3); border-radius:10px; padding:10px 12px; }
+.ctrl-group-title {
+  font-size:0.68rem; font-family:'DM Mono',monospace; color:var(--text3);
+  letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px;
+}
+.ctrl-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.ctrl-row:last-child { margin-bottom:0; }
+.ctrl-label { font-size:0.75rem; color:var(--text2); flex:1; }
+.ctrl-val { font-size:0.72rem; font-family:'DM Mono',monospace; color:var(--gold); min-width:32px; text-align:right; }
+input[type=range] {
+  -webkit-appearance:none; width:100%; height:3px;
+  background:var(--bg4); border-radius:2px; outline:none; cursor:pointer;
+  margin:4px 0;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; width:14px; height:14px;
+  background:var(--gold); border-radius:50%; cursor:pointer;
+  box-shadow:0 0 6px rgba(201,169,110,0.4);
+}
+
+/* Filter preset chips */
+.filter-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+.filter-chip {
+  background:var(--bg4); border:1px solid var(--border); border-radius:8px;
+  padding:7px 4px; text-align:center; cursor:pointer; font-size:0.7rem;
+  color:var(--text2); transition:all 0.15s; user-select:none;
+}
+.filter-chip:hover { border-color:var(--border-g); color:var(--gold); }
+.filter-chip.on { background:var(--gold-dim); border-color:var(--gold); color:var(--gold); font-weight:700; }
+.filter-preview { width:100%; aspect-ratio:1; border-radius:5px; object-fit:cover; margin-bottom:4px; background:var(--bg3); display:block; }
+
+/* Text overlay panel */
+.text-item {
+  display:flex; align-items:center; gap:6px; padding:6px 8px;
+  background:var(--bg4); border-radius:7px; margin-bottom:5px; cursor:pointer;
+}
+.text-item.selected { background:var(--gold-dim); border:1px solid var(--border-g); }
+.text-item-label { flex:1; font-size:0.78rem; color:var(--text2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* Canvas wrapper */
+#canvasWrap { position:relative; display:inline-block; cursor:crosshair; }
+#mainCanvas { display:block; max-width:100%; max-height:calc(100vh - 220px); }
+.text-overlay {
+  position:absolute; cursor:move; user-select:none;
+  padding:4px 8px; border:1px dashed transparent;
+  border-radius:4px; line-height:1.3; white-space:nowrap;
+}
+.text-overlay:hover, .text-overlay.selected { border-color:rgba(201,169,110,0.6); }
+.text-overlay .del-btn {
+  position:absolute; top:-10px; right:-10px; width:18px; height:18px;
+  background:var(--red); border-radius:50%; display:none; align-items:center;
+  justify-content:center; font-size:0.6rem; color:#fff; cursor:pointer; z-index:10;
+}
+.text-overlay.selected .del-btn { display:flex; }
+
+/* Size presets */
+.preset-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:5px; }
+.preset-btn {
+  padding:7px 6px; background:var(--bg4); border:1px solid var(--border);
+  border-radius:7px; font-size:0.68rem; color:var(--text2); cursor:pointer;
+  text-align:center; transition:all 0.15s; font-family:'DM Mono',monospace;
+}
+.preset-btn:hover { border-color:var(--border-g); color:var(--gold); }
+.preset-btn.on { background:var(--gold-dim); border-color:var(--gold); color:var(--gold); }
+
+/* Video specific */
+#videoEl { max-width:100%; max-height:calc(100vh - 220px); display:none; }
+.timeline {
+  height:36px; background:var(--bg3); border-radius:6px;
+  position:relative; cursor:pointer; overflow:hidden; margin:8px 0;
+}
+.timeline-bar { height:100%; background:var(--gold-dim); position:absolute; top:0; }
+.timeline-handle {
+  width:3px; height:100%; background:var(--gold);
+  position:absolute; top:0; cursor:ew-resize; border-radius:2px;
+}
+#timecode { font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--gold); }
+
+/* Toolbar btns */
+.tb-btn {
+  padding:6px 13px; background:var(--bg3); border:1px solid var(--border);
+  border-radius:7px; font-family:'Noto Sans KR',sans-serif; font-size:0.75rem;
+  font-weight:600; color:var(--text2); cursor:pointer; transition:all 0.15s;
+  display:flex; align-items:center; gap:5px;
+}
+.tb-btn:hover { border-color:var(--border-g); color:var(--gold); }
+.tb-btn.primary { background:var(--gold); border-color:var(--gold); color:#1a1208; }
+.tb-btn.primary:hover { background:var(--gold2); }
+.tb-btn.danger { border-color:rgba(224,82,82,0.3); color:var(--red); }
+
+.no-media { color:var(--text3); font-size:0.85rem; text-align:center; }
+
+/* Mode toggle */
+.mode-toggle { display:flex; gap:5px; background:var(--bg3); padding:4px; border-radius:8px; }
+.mt-btn {
+  padding:5px 12px; border-radius:5px; font-size:0.75rem; font-weight:600;
+  cursor:pointer; color:var(--text2); transition:all 0.15s; border:none; background:transparent;
+  font-family:'Noto Sans KR',sans-serif;
+}
+.mt-btn.on { background:var(--gold); color:#1a1208; }
+</style>
+
+<div class="editor-wrap">
+  <!-- LEFT SIDEBAR: Tools -->
+  <div class="editor-sidebar" id="editorSidebar">
+
+    <!-- Upload -->
+    <div class="ctrl-group-title" style="margin-bottom:0">미디어 불러오기</div>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('mediaInput').click()"
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="handleDrop(event)">
+      <input type="file" id="mediaInput" accept="image/*,video/*" onchange="loadMedia(this.files[0])">
+      <div class="drop-icon">📁</div>
+      <div class="drop-text">사진 또는 영상을<br>클릭하거나 드래그하세요<br><span style="color:var(--text3);font-size:0.72rem">JPG · PNG · MP4 · MOV</span></div>
+    </div>
+
+    <!-- Mode toggle (shown after media load) -->
+    <div id="editorControls" style="display:none">
+
+      <!-- Image controls -->
+      <div id="imgControls">
+        <!-- Adjustments -->
+        <div class="ctrl-group">
+          <div class="ctrl-group-title">조정</div>
+          <div class="ctrl-row"><span class="ctrl-label">밝기</span><span class="ctrl-val" id="vBrightness">0</span></div>
+          <input type="range" id="sBrightness" min="-100" max="100" value="0" oninput="applyFilters()">
+          <div class="ctrl-row"><span class="ctrl-label">대비</span><span class="ctrl-val" id="vContrast">0</span></div>
+          <input type="range" id="sContrast" min="-100" max="100" value="0" oninput="applyFilters()">
+          <div class="ctrl-row"><span class="ctrl-label">채도</span><span class="ctrl-val" id="vSaturation">0</span></div>
+          <input type="range" id="sSaturation" min="-100" max="100" value="0" oninput="applyFilters()">
+          <div class="ctrl-row"><span class="ctrl-label">선명도</span><span class="ctrl-val" id="vSharpness">0</span></div>
+          <input type="range" id="sSharpness" min="0" max="100" value="0" oninput="applyFilters()">
+          <div class="ctrl-row"><span class="ctrl-label">따뜻함</span><span class="ctrl-val" id="vWarmth">0</span></div>
+          <input type="range" id="sWarmth" min="-100" max="100" value="0" oninput="applyFilters()">
+        </div>
+
+        <!-- Filters -->
+        <div class="ctrl-group">
+          <div class="ctrl-group-title">필터 프리셋</div>
+          <div class="filter-grid" id="filterGrid">
+            <div class="filter-chip on" data-filter="none" onclick="applyPreset(this,'none')"><div style="height:40px;border-radius:5px;background:var(--bg3);margin-bottom:4px"></div>없음</div>
+            <div class="filter-chip" data-filter="bright" onclick="applyPreset(this,'bright')"><div style="height:40px;border-radius:5px;background:linear-gradient(135deg,#fff8e7,#ffe0b2);margin-bottom:4px"></div>밝은</div>
+            <div class="filter-chip" data-filter="cool" onclick="applyPreset(this,'cool')"><div style="height:40px;border-radius:5px;background:linear-gradient(135deg,#e3f2fd,#b3e5fc);margin-bottom:4px"></div>쿨톤</div>
+            <div class="filter-chip" data-filter="warm" onclick="applyPreset(this,'warm')"><div style="height:40px;border-radius:5px;background:linear-gradient(135deg,#fff3e0,#ffccbc);margin-bottom:4px"></div>웜톤</div>
+            <div class="filter-chip" data-filter="vivid" onclick="applyPreset(this,'vivid')"><div style="height:40px;border-radius:5px;background:linear-gradient(135deg,#f3e5f5,#e8f5e9);margin-bottom:4px"></div>비비드</div>
+            <div class="filter-chip" data-filter="mono" onclick="applyPreset(this,'mono')"><div style="height:40px;border-radius:5px;background:linear-gradient(135deg,#757575,#bdbdbd);margin-bottom:4px"></div>흑백</div>
+            <div class="filter-chip" data-filter="soft" onclick="applyPreset(this,'soft')"><div style="height:40px;border-radius:5px;background:linear-gradient(135deg,#fce4ec,#f8bbd0);margin-bottom:4px"></div>소프트</div>
+            <div class="filter-chip" data-filter="luxury" onclick="applyPreset(this,'luxury')"><div style="height:40px;border-radius:5px;background:linear-gradient(135deg,#1a1208,#c9a96e);margin-bottom:4px"></div>럭셔리</div>
+            <div class="filter-chip" data-filter="fresh" onclick="applyPreset(this,'fresh')"><div style="height:40px;border-radius:5px;background:linear-gradient(135deg,#e8f5e9,#b2dfdb);margin-bottom:4px"></div>프레시</div>
           </div>
-        </label>
+        </div>
+
+        <!-- Text overlay -->
+        <div class="ctrl-group">
+          <div class="ctrl-group-title">텍스트 오버레이</div>
+          <div class="fg" style="margin-bottom:8px">
+            <input id="textInput" type="text" placeholder="텍스트 입력" style="font-size:0.82rem;padding:8px 10px">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+            <div>
+              <div style="font-size:0.68rem;color:var(--text3);margin-bottom:4px">크기</div>
+              <input type="range" id="fontSize" min="10" max="120" value="32" oninput="document.getElementById('fontSizeVal').textContent=this.value+'px'">
+              <div style="font-size:0.65rem;color:var(--gold);font-family:'DM Mono',monospace" id="fontSizeVal">32px</div>
+            </div>
+            <div>
+              <div style="font-size:0.68rem;color:var(--text3);margin-bottom:4px">색상</div>
+              <input type="color" id="textColor" value="#ffffff" style="width:100%;height:30px;border:1px solid var(--border);border-radius:6px;background:var(--bg4);cursor:pointer">
+            </div>
+          </div>
+          <div style="display:flex;gap:5px;margin-bottom:8px">
+            <select id="fontStyle" style="flex:1;background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:0.75rem;outline:none">
+              <option value="normal">일반체</option>
+              <option value="bold">굵게</option>
+              <option value="italic">기울임</option>
+            </select>
+            <select id="textAlign" style="flex:1;background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:0.75rem;outline:none">
+              <option value="left">왼쪽</option>
+              <option value="center">가운데</option>
+              <option value="right">오른쪽</option>
+            </select>
+          </div>
+          <div style="font-size:0.68rem;color:var(--text3);margin-bottom:4px">배경</div>
+          <div style="display:flex;gap:5px;margin-bottom:8px">
+            <input type="color" id="textBg" value="#000000" style="width:36px;height:28px;border:1px solid var(--border);border-radius:5px;background:var(--bg4);cursor:pointer">
+            <input type="range" id="textBgOpacity" min="0" max="100" value="0" style="flex:1">
+            <span style="font-size:0.65rem;color:var(--text3);font-family:'DM Mono',monospace;min-width:24px" id="bgOpVal">0%</span>
+          </div>
+          <button class="tb-btn" style="width:100%;justify-content:center" onclick="addTextOverlay()">+ 텍스트 추가</button>
+          <div id="textLayerList" style="margin-top:8px"></div>
+        </div>
+
+        <!-- Crop/Resize presets -->
+        <div class="ctrl-group">
+          <div class="ctrl-group-title">크롭 / 비율</div>
+          <div class="preset-grid" id="ratioPresets">
+            <div class="preset-btn" onclick="setCrop(this,'free')">자유</div>
+            <div class="preset-btn on" onclick="setCrop(this,'orig')">원본</div>
+            <div class="preset-btn" onclick="setCrop(this,'1:1')">1:1<br><span style="font-size:0.6rem;color:var(--text3)">인스타</span></div>
+            <div class="preset-btn" onclick="setCrop(this,'4:5')">4:5<br><span style="font-size:0.6rem;color:var(--text3)">인스타세로</span></div>
+            <div class="preset-btn" onclick="setCrop(this,'16:9')">16:9<br><span style="font-size:0.6rem;color:var(--text3)">유튜브</span></div>
+            <div class="preset-btn" onclick="setCrop(this,'9:16')">9:16<br><span style="font-size:0.6rem;color:var(--text3)">쇼츠</span></div>
+            <div class="preset-btn" onclick="setCrop(this,'3:4')">3:4<br><span style="font-size:0.6rem;color:var(--text3)">블로그</span></div>
+            <div class="preset-btn" onclick="setCrop(this,'1:1.2')">쇼핑<br><span style="font-size:0.6rem;color:var(--text3)">상품이미지</span></div>
+          </div>
+        </div>
+
+        <!-- Watermark -->
+        <div class="ctrl-group">
+          <div class="ctrl-group-title">워터마크</div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <button class="tb-btn" style="width:100%;justify-content:center;font-size:0.75rem" onclick="addWatermark('RONAI')">RONAI 워터마크</button>
+            <button class="tb-btn" style="width:100%;justify-content:center;font-size:0.75rem" onclick="addWatermark('www.ronai.co.kr')">URL 워터마크</button>
+          </div>
+        </div>
       </div>
-      <canvas id="MC" style="display:none"></canvas>
-      <video id="VE" controls playsinline style="display:none;max-width:100%;max-height:100%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)"></video>
-    </div>
-    <!-- 줌 컨트롤 -->
-    <div class="zbar" id="ZB">
-      <button class="zb" onclick="zm(-0.1)">−</button>
-      <span class="zv" id="ZV">100%</span>
-      <button class="zb" onclick="zm(0.1)">+</button>
-      <button class="zb" onclick="fitScreen()">맞춤</button>
-    </div>
-    <!-- 하단 툴바 -->
-    <div class="ctb-wrap">
-      <span class="tb-info" id="MI">파일 없음</span>
-      <div id="IT" style="display:none;gap:5px">
-        <div style="width:1px;height:16px;background:rgba(255,255,255,.15)"></div>
-        <button class="ctb" onclick="rotI(-90)">↺ 회전</button>
-        <button class="ctb" onclick="rotI(90)">↻ 회전</button>
-        <button class="ctb" onclick="flpI('h')">↔ 반전</button>
-        <button class="ctb" onclick="flpI('v')">↕ 반전</button>
+
+      <!-- Video controls -->
+      <div id="vidControls" style="display:none">
+        <div class="ctrl-group">
+          <div class="ctrl-group-title">영상 트리밍</div>
+          <div id="timecode">00:00 / 00:00</div>
+          <div class="timeline" id="timeline" onclick="seekVideo(event)">
+            <div class="timeline-bar" id="timelineProgress"></div>
+            <div class="timeline-handle" id="trimStart" style="left:0" onmousedown="startTrim(event,'start')"></div>
+            <div class="timeline-handle" id="trimEnd" style="right:0;left:auto" onmousedown="startTrim(event,'end')"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px">
+            <div>
+              <div style="font-size:0.68rem;color:var(--text3)">시작</div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--gold)" id="trimStartTime">0.0s</div>
+            </div>
+            <div>
+              <div style="font-size:0.68rem;color:var(--text3)">끝</div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--gold)" id="trimEndTime">0.0s</div>
+            </div>
+          </div>
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-group-title">썸네일 추출</div>
+          <button class="tb-btn" style="width:100%;justify-content:center" onclick="extractThumb()">현재 프레임 이미지로 추출</button>
+        </div>
+        <div class="ctrl-group" style="background:rgba(224,82,82,0.07);border:1px solid rgba(224,82,82,0.15)">
+          <div style="font-size:0.72rem;color:var(--red);line-height:1.6">⚠️ 영상 필터/인코딩은 브라우저 한계로 지원이 어렵습니다. 썸네일 추출 후 이미지로 편집하거나, 영상은 트리밍 후 내보내기 해주세요.</div>
+        </div>
       </div>
-      <div style="flex:1"></div>
-      <button class="ctb gold" onclick="showSave()">💾 저장</button>
-    </div>
+
+    </div><!-- editorControls -->
   </div>
 
-  <!-- 레이어 패널 -->
-  <div class="layers">
-    <div class="lh">레이어</div>
-    <div class="lb" id="LL"><div style="font-size:.72rem;color:var(--ink3);text-align:center;margin-top:.8rem">레이어 없음</div></div>
-  </div>
-</div>
+  <!-- MAIN CANVAS AREA -->
+  <div class="editor-main">
+    <div class="editor-canvas-area" id="canvasArea">
+      <div class="no-media" id="noMediaMsg">
+        <div style="font-size:3rem;margin-bottom:1rem">🖼</div>
+        <div>왼쪽에서 사진 또는 영상을 불러오세요</div>
+      </div>
+      <div id="canvasWrap" style="display:none;position:relative">
+        <canvas id="mainCanvas"></canvas>
+        <!-- text overlays rendered here -->
+      </div>
+      <video id="videoEl" controls playsinline></video>
+    </div>
 
-<!-- 저장 모달 -->
-<div class="smodal" id="SM" onclick="if(event.target===this)closeSave()">
-  <div class="sbox fi">
-    <div class="stitle">💾 저장하기</div>
-    <div class="sopts">
-      <div class="sopt on" onclick="setSF(this,'jpeg')"><div class="sopt-ic">🖼</div><div class="sopt-nm">JPG</div><div class="sopt-dc">작은 용량<br>사진에 최적</div></div>
-      <div class="sopt" onclick="setSF(this,'png')"><div class="sopt-ic">🖼</div><div class="sopt-nm">PNG</div><div class="sopt-dc">투명 배경<br>고화질</div></div>
-      <div class="sopt" onclick="setSF(this,'webp')"><div class="sopt-ic">🌐</div><div class="sopt-nm">WebP</div><div class="sopt-dc">웹 최적화</div></div>
-      <div class="sopt" onclick="setSF(this,'copy')"><div class="sopt-ic">📋</div><div class="sopt-nm">클립보드</div><div class="sopt-dc">복사해서<br>바로 사용</div></div>
-    </div>
-    <div class="srow2">
-      <span class="slbl">화질</span>
-      <input type="range" id="SQ" min="0.5" max="1" step="0.05" value="0.92" style="flex:1" oninput="document.getElementById('SQV').textContent=Math.round(+this.value*100)+'%'">
-      <span style="font-size:.72rem;color:var(--gold);font-family:'DM Mono',monospace;min-width:36px" id="SQV">92%</span>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn full" onclick="closeSave()">취소</button>
-      <button class="btn gold full" onclick="doSave()">저장</button>
+    <!-- TOOLBAR -->
+    <div class="editor-toolbar">
+      <div id="tbImg" style="display:flex;gap:6px;align-items:center">
+        <button class="tb-btn" onclick="rotateImage(-90)">↺ 회전</button>
+        <button class="tb-btn" onclick="rotateImage(90)">↻ 회전</button>
+        <button class="tb-btn" onclick="flipImage('h')">↔ 좌우반전</button>
+        <button class="tb-btn" onclick="flipImage('v')">↕ 상하반전</button>
+        <button class="tb-btn danger" onclick="resetEdits()">↩ 초기화</button>
+        <div style="flex:1"></div>
+        <select id="exportFormat" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:0.75rem;outline:none">
+          <option value="jpeg">JPG (소용량)</option>
+          <option value="png">PNG (고화질)</option>
+          <option value="webp">WebP</option>
+        </select>
+        <select id="exportQuality" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:0.75rem;outline:none">
+          <option value="0.95">고품질</option>
+          <option value="0.8" selected>표준</option>
+          <option value="0.6">소용량</option>
+        </select>
+        <button class="tb-btn primary" onclick="exportImage()">⬇ 다운로드</button>
+      </div>
+      <div id="tbVid" style="display:none;flex;gap:6px;align-items:center">
+        <button class="tb-btn" onclick="togglePlay()">▶ 재생/정지</button>
+        <button class="tb-btn primary" onclick="extractThumb()">🖼 썸네일 추출</button>
+        <div style="flex:1"></div>
+        <button class="tb-btn danger" onclick="resetVideo()">↩ 초기화</button>
+      </div>
     </div>
   </div>
 </div>
+</div><!-- tc-editor -->
 
 <script>
-let OI=null,rot=0,fH=false,fV=false,cropR='orig';
-let A={brightness:0,contrast:0,saturation:0,warmth:0,blur:0,vignette:0};
-let layers=[],sel=-1,zl=1,px=0,py=0;
-let ip=false,psx=0,psy=0,pox=0,poy=0;
-let mode='photo',saveFmt='jpeg';
-let VE=null,tS=0,tE=0;
-const F={none:{b:0,c:0,s:0,w:0},bright:{b:25,c:5,s:8,w:18},cool:{b:8,c:8,s:-8,w:-30},warm:{b:10,c:8,s:15,w:35},vivid:{b:5,c:22,s:45,w:5},mono:{b:0,c:12,s:-100,w:0},soft:{b:22,c:-12,s:-12,w:15},luxury:{b:-12,c:18,s:-22,w:-10},fresh:{b:14,c:6,s:22,w:-18},fade:{b:18,c:-15,s:-20,w:5},drama:{b:-5,c:30,s:20,w:-5},golden:{b:15,c:10,s:30,w:50}};
+// ── STATE ──
+const ingrA = [], ingrB = [];
+let selSkin = [], selCtype = '상품 상세페이지', selComboSkin = '건성', selComboWorry = [];
 
-function openFile(f){if(!f)return;f.type.startsWith('video/')?loadVid(f):loadImg(f);}
-function dropF(e){e.preventDefault();const f=e.dataTransfer.files[0];if(f)openFile(f);}
-function loadImg(file){
-  const url=URL.createObjectURL(file);
-  const img=new Image();
-  img.onload=()=>{
-    OI=img;rot=0;fH=false;fV=false;layers=[];sel=-1;cropR='orig';
-    resetSliders();
-    document.getElementById('UM').style.display='none';
-    document.getElementById('MC').style.display='block';
-    document.getElementById('VE').style.display='none';
-    document.getElementById('MI').textContent=img.naturalWidth+'×'+img.naturalHeight+'px';
-    document.getElementById('IT').style.display='flex';
-    document.getElementById('ZB').style.display='flex';
-    setMode('photo');fitScreen();draw();renderL();renderOV();
-  };
-  img.src=url;
-}
-function loadVid(file){
-  VE=document.getElementById('VE');
-  const url=URL.createObjectURL(file);
-  VE.src=url;VE.style.display='block';
-  document.getElementById('MC').style.display='none';
-  document.getElementById('UM').style.display='none';
-  document.getElementById('MI').textContent=file.name;
-  document.getElementById('ZB').style.display='none';
-  document.getElementById('IT').style.display='none';
-  setMode('video');
-  VE.onloadedmetadata=()=>{
-    tS=0;tE=VE.duration;
-    document.getElementById('MI').textContent=VE.videoWidth+'×'+VE.videoHeight+' · '+fmt(VE.duration);
-    updateTrim();
-  };
-  VE.ontimeupdate=()=>{
-    if(!VE.duration)return;
-    const p=VE.currentTime/VE.duration;
-    document.getElementById('tlP').style.width=(p*100)+'%';
-    document.getElementById('tlC').style.left=(p*100)+'%';
-    document.getElementById('tcD').textContent=fmt(VE.currentTime)+' / '+fmt(VE.duration);
-    if(VE.currentTime>=tE&&tE<VE.duration){VE.pause();VE.currentTime=tS;}
-  };
-}
-function setMode(m){
-  mode=m;
-  document.getElementById('mPhoto').classList.toggle('on',m==='photo');
-  document.getElementById('mVideo').classList.toggle('on',m==='video');
-  document.getElementById('PT').style.display=m==='photo'?'block':'none';
-  document.getElementById('VT').style.display=m==='video'?'block':'none';
-}
-// ZOOM/PAN
-function fitScreen(){
-  const cv=document.getElementById('MC'),area=document.getElementById('CA');
-  if(!OI)return;
-  const{w,h}=getSize();
-  cv.width=w;cv.height=h;
-  const sx=(area.clientWidth-40)/w,sy=(area.clientHeight-40)/h;
-  zl=Math.min(sx,sy,1);
-  px=(area.clientWidth-w*zl)/2;py=(area.clientHeight-h*zl)/2;
-  applyT();draw();
-}
-function applyT(){
-  const cv=document.getElementById('MC');
-  cv.style.transform=`translate(${px}px,${py}px) scale(${zl})`;
-  document.getElementById('ZV').textContent=Math.round(zl*100)+'%';
-}
-function zm(d){
-  const area=document.getElementById('CA');
-  const cx=area.clientWidth/2,cy=area.clientHeight/2,prev=zl;
-  zl=Math.max(.05,Math.min(8,zl+d));
-  px=cx-(cx-px)*zl/prev;py=cy-(cy-py)*zl/prev;
-  applyT();renderOV();
-}
-function onWh(e){
-  if(!OI)return;e.preventDefault();
-  const d=e.deltaY>0?-.08:.08,area=document.getElementById('CA');
-  const r=area.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,prev=zl;
-  zl=Math.max(.05,Math.min(8,zl+d));
-  px=mx-(mx-px)*zl/prev;py=my-(my-py)*zl/prev;
-  applyT();renderOV();
-}
-function onPS(e){
-  if(e.target.classList.contains('ov')||e.target.classList.contains('ov-del'))return;
-  if(!OI)return;
-  ip=true;psx=e.clientX;psy=e.clientY;pox=px;poy=py;
-  document.getElementById('CA').classList.add('gb');
-  document.addEventListener('mousemove',onPM);document.addEventListener('mouseup',onPE);
-}
-function onPM(e){if(!ip)return;px=pox+(e.clientX-psx);py=poy+(e.clientY-psy);applyT();}
-function onPE(){ip=false;document.getElementById('CA').classList.remove('gb');document.removeEventListener('mousemove',onPM);document.removeEventListener('mouseup',onPE);}
-// DRAW
-function getSize(){
-  if(!OI)return{w:800,h:600};
-  let w=OI.naturalWidth,h=OI.naturalHeight;
-  const sc=Math.min(2400/Math.max(w,h),1);w=Math.round(w*sc);h=Math.round(h*sc);
-  if(cropR==='orig')return{w,h};
-  const[rw,rh]=cropR.split(':').map(Number),rat=rw/rh;
-  return w/h>rat?{w:Math.round(h*rat),h}:{w,h:Math.round(w/rat)};
-}
-function draw(){
-  if(!OI)return;
-  const{w,h}=getSize(),cv=document.getElementById('MC');
-  cv.width=w;cv.height=h;
-  const ctx=cv.getContext('2d');
-  ctx.save();ctx.translate(w/2,h/2);ctx.rotate(rot*Math.PI/180);
-  ctx.scale(fH?-1:1,fV?-1:1);
-  ctx.drawImage(OI,-OI.naturalWidth/2,-OI.naturalHeight/2,OI.naturalWidth,OI.naturalHeight);
-  ctx.restore();
-  const{brightness:b,contrast:c,saturation:s,warmth:wm,blur:bl}=A;
-  cv.style.filter=[`brightness(${1+b/100})`,`contrast(${1+c/100})`,`saturate(${Math.max(0,1+s/100)})`,wm>0?`sepia(${wm/250})`:'',bl>0?`blur(${bl*.4}px)`:''].filter(Boolean).join(' ');
-  if(A.vignette>0){const g=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.3,w/2,h/2,Math.max(w,h)*.75);g.addColorStop(0,'transparent');g.addColorStop(1,`rgba(0,0,0,${A.vignette/100*.8})`);ctx.fillStyle=g;ctx.fillRect(0,0,w,h);}
-  renderOV();
-}
-function sa(key,val,idx){A[key]=val;document.getElementById('lv'+idx).textContent=val;draw();}
-function resetSliders(){for(let i=0;i<6;i++){const e=document.getElementById('r'+i);if(e)e.value=0;const l=document.getElementById('lv'+i);if(l)l.textContent='0';}Object.keys(A).forEach(k=>A[k]=0);}
-function applyF(el,name){
-  document.querySelectorAll('.fc').forEach(c=>c.classList.remove('on'));el.classList.add('on');
-  const f=F[name]||F.none;A.brightness=f.b;A.contrast=f.c;A.saturation=f.s;A.warmth=f.w;
-  ['brightness','contrast','saturation','warmth'].forEach((k,i)=>{const e=document.getElementById('r'+i);if(e)e.value=A[k];const l=document.getElementById('lv'+i);if(l)l.textContent=A[k];});
-  draw();
-}
-function rotI(d){rot=(rot+d+360)%360;draw();}
-function flpI(dir){if(dir==='h')fH=!fH;else fV=!fV;draw();}
-function setCrop(el,r){cropR=r;document.querySelectorAll('.rb').forEach(b=>b.classList.remove('on'));el.classList.add('on');fitScreen();}
-function resetAll(){rot=0;fH=false;fV=false;cropR='orig';layers=[];sel=-1;resetSliders();document.querySelectorAll('.fc').forEach((c,i)=>c.classList.toggle('on',i===0));document.querySelectorAll('.rb').forEach((b,i)=>b.classList.toggle('on',i===0));if(OI)fitScreen();renderL();renderOV();}
-// REMOVE BG
-async function removeBg(){
-  if(!OI){alert('이미지를 먼저 불러오세요!');return;}
-  const key=document.getElementById('rbgKey').value.trim();
-  if(!key){alert('remove.bg API 키를 입력해주세요.\nhttps://www.remove.bg/api 에서 무료로 발급\n(무료: 50회/월)');return;}
-  const st=document.getElementById('rbgSt');
-  st.textContent='🔄 배경 제거 중...';st.style.color='var(--gold)';
-  try{
-    const{w,h}=getSize();const tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;
-    const ctx=tmp.getContext('2d');
-    ctx.save();ctx.translate(w/2,h/2);ctx.rotate(rot*Math.PI/180);ctx.scale(fH?-1:1,fV?-1:1);
-    ctx.drawImage(OI,-OI.naturalWidth/2,-OI.naturalHeight/2,OI.naturalWidth,OI.naturalHeight);ctx.restore();
-    const blob=await new Promise(r=>tmp.toBlob(r,'image/png'));
-    const fd=new FormData();fd.append('image_file',blob,'img.png');fd.append('size','auto');
-    const res=await fetch('https://api.remove.bg/v1.0/removebg',{method:'POST',headers:{'X-Api-Key':key},body:fd});
-    if(!res.ok){const e=await res.json();throw new Error(e.errors?.[0]?.title||'API 오류');}
-    const rb=await res.blob();const url=URL.createObjectURL(rb);
-    const img=new Image();
-    img.onload=()=>{OI=img;rot=0;fH=false;fV=false;st.textContent='✅ 배경 제거 완료!';st.style.color='var(--green)';fitScreen();draw();renderOV();};
-    img.src=url;
-  }catch(e){st.textContent='❌ '+e.message;st.style.color='var(--red)';}
-}
-function addBgColor(){
-  const color=prompt('배경색 (예: #ffffff)','#ffffff');if(!color||!OI)return;
-  const tmp=document.createElement('canvas');tmp.width=OI.naturalWidth;tmp.height=OI.naturalHeight;
-  const ctx=tmp.getContext('2d');ctx.fillStyle=color;ctx.fillRect(0,0,tmp.width,tmp.height);ctx.drawImage(OI,0,0);
-  const img=new Image();img.onload=()=>{OI=img;draw();};img.src=tmp.toDataURL();
-}
-// LAYERS
-function addTxt(){
-  const txt=document.getElementById('txtIn').value.trim();if(!txt||!OI)return;
-  layers.push({type:'text',text:txt,x:50,y:50,size:+document.getElementById('txtSz').value,color:document.getElementById('txtClr').value,style:document.getElementById('txtSt').value,bg:document.getElementById('txtBg').value,bgOp:+document.getElementById('txtBgOp').value/100});
-  document.getElementById('txtIn').value='';sel=layers.length-1;renderL();renderOV();
-}
-function addWM(t){if(!OI)return;layers.push({type:'text',text:t,x:75,y:92,size:14,color:'#fff',style:'normal',bg:'#000',bgOp:.45});sel=layers.length-1;renderL();renderOV();}
-function addStk(e){if(!OI)return;layers.push({type:'sticker',emoji:e,x:50,y:50,size:60});sel=layers.length-1;renderL();renderOV();}
-function delL(i){layers.splice(i,1);sel=Math.max(-1,sel-1);renderL();renderOV();}
-function renderL(){
-  const ll=document.getElementById('LL');
-  if(!layers.length){ll.innerHTML='<div style="font-size:.72rem;color:var(--ink3);text-align:center;margin-top:.8rem">레이어 없음</div>';return;}
-  ll.innerHTML=[...layers].reverse().map((l,ri)=>{const i=layers.length-1-ri;
-    return `<div class="lyr${i===sel?' sel':''}" onclick="sel=${i};renderL();renderOV()">
-      <span style="font-size:.85rem;flex-shrink:0">${l.type==='text'?'T':l.emoji}</span>
-      <span class="lyr-l">${l.type==='text'?l.text:l.emoji}</span>
-      <button class="ldel" onclick="event.stopPropagation();delL(${i})">✕</button></div>`;
-  }).join('');
-}
-function renderOV(){
-  const cv=document.getElementById('MC'),area=document.getElementById('CA');
-  document.querySelectorAll('.ov').forEach(e=>e.remove());
-  if(!OI||cv.style.display==='none')return;
-  const cr=cv.getBoundingClientRect(),ar=area.getBoundingClientRect();
-  const ox=cr.left-ar.left,oy=cr.top-ar.top;
-  layers.forEach((l,i)=>{
-    const div=document.createElement('div');div.className='ov'+(i===sel?' sel':'');
-    const lpx=ox+l.x/100*cr.width,lpy=oy+l.y/100*cr.height;
-    div.style.left=lpx+'px';div.style.top=lpy+'px';
-    if(l.type==='text'){
-      const fs=l.size*zl;
-      div.style.cssText+=`font-size:${fs}px;color:${l.color};font-weight:${l.style==='bold'?700:400};font-style:${l.style==='italic'?'italic':'normal'};white-space:nowrap;font-family:'Noto Sans KR',sans-serif;text-shadow:1px 1px 3px rgba(0,0,0,.5)`;
-      if(l.bgOp>0){div.style.background=hR(l.bg,l.bgOp);div.style.padding='2px 7px';div.style.borderRadius='3px';}
-      div.textContent=l.text;
-    }else{div.style.cssText+=`font-size:${l.size*zl}px;line-height:1`;div.textContent=l.emoji;}
-    const del=document.createElement('button');del.className='ov-del';del.textContent='✕';
-    del.onclick=e=>{e.stopPropagation();delL(i);};div.appendChild(del);
-    div.onmousedown=e=>{
-      if(e.target===del)return;e.stopPropagation();sel=i;renderL();
-      const sx=e.clientX,sy=e.clientY,ox2=l.x,oy2=l.y;
-      const mv=ev=>{l.x=Math.max(2,Math.min(95,ox2+(ev.clientX-sx)/cr.width*100));l.y=Math.max(2,Math.min(95,oy2+(ev.clientY-sy)/cr.height*100));div.style.left=(ox+l.x/100*cr.width)+'px';div.style.top=(oy+l.y/100*cr.height)+'px';};
-      const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);};
-      document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
-    };
-    area.appendChild(div);
+// ── CHIP LOGIC ──
+function initChips(groupId, multi=false, stateArr=null, stateStr=null, onChange=null) {
+  document.querySelectorAll(`#${groupId} .chip`).forEach(c => {
+    c.addEventListener('click', () => {
+      if (multi) {
+        c.classList.toggle('on');
+      } else {
+        document.querySelectorAll(`#${groupId} .chip`).forEach(x => x.classList.remove('on'));
+        c.classList.add('on');
+      }
+      if (onChange) onChange();
+    });
   });
 }
-function hR(hex,op){if(op<=0)return 'transparent';const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return `rgba(${r},${g},${b},${op})`;}
-// VIDEO
-function vidPlay(){if(VE)VE.paused?VE.play():VE.pause();}
-function vidBack(){if(VE)VE.currentTime=0;}
-function setVSp(v){if(VE)VE.playbackRate=v;document.getElementById('vSp').textContent=v+'x';}
-function setVVl(v){if(VE)VE.volume=v;document.getElementById('vVl').textContent=Math.round(v*100)+'%';}
-function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0');}
-function updateTrim(){
-  if(!VE||!VE.duration)return;const d=VE.duration;
-  const sp=(tS/d*100)+'%',ep=(tE/d*100)+'%';
-  document.getElementById('tlHS').style.left=sp;
-  document.getElementById('tlHE').style.right=(100-tE/d*100)+'%';
-  document.getElementById('tlHE').style.left='auto';
-  document.getElementById('tlS').style.left=sp;
-  document.getElementById('tlS').style.width=((tE-tS)/d*100)+'%';
-  document.getElementById('tSV').textContent=tS.toFixed(1)+'s';
-  document.getElementById('tEV').textContent=tE.toFixed(1)+'s';
-}
-function seekVid(e){if(!VE||!VE.duration)return;const r=e.currentTarget.getBoundingClientRect();VE.currentTime=(e.clientX-r.left)/r.width*VE.duration;}
-function startTrim(e,side){
-  e.stopPropagation();const tl=document.getElementById('tlW');
-  const mv=ev=>{const r=tl.getBoundingClientRect(),p=Math.max(0,Math.min(1,(ev.clientX-r.left)/r.width));if(side==='s')tS=Math.min(p*VE.duration,tE-.5);else tE=Math.max(p*VE.duration,tS+.5);updateTrim();};
-  const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);};
-  document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
-}
-function applyTrim(){
-  if(!VE)return;
-  VE.currentTime=tS;VE.play();
-  alert(`✂️ 구간 설정: ${fmt(tS)} ~ ${fmt(tE)}\n\n이 구간이 재생됩니다.\n정밀한 영상 편집은 캡컷, 프리미어 등을 권장합니다.\n\n현재 프레임을 이미지로 저장하려면 [썸네일] 버튼을 사용하세요.`);
-}
-function resetTrim(){if(!VE)return;tS=0;tE=VE.duration||0;updateTrim();}
-function exThumb(){
-  if(!VE){alert('영상을 먼저 불러오세요!');return;}
-  const cv=document.createElement('canvas');cv.width=VE.videoWidth;cv.height=VE.videoHeight;
-  cv.getContext('2d').drawImage(VE,0,0);
-  const img=new Image();
-  img.onload=()=>{OI=img;rot=0;fH=false;fV=false;layers=[];sel=-1;document.getElementById('VE').style.display='none';document.getElementById('MC').style.display='block';document.getElementById('ZB').style.display='flex';document.getElementById('IT').style.display='flex';document.getElementById('MI').textContent=img.naturalWidth+'×'+img.naturalHeight+'px';setMode('photo');resetSliders();fitScreen();draw();renderL();renderOV();};
-  img.src=cv.toDataURL();
-}
-// SAVE
-function showSave(){if(!OI&&(!VE||!VE.src)){alert('파일을 먼저 불러오세요!');return;}document.getElementById('SM').classList.add('on');}
-function closeSave(){document.getElementById('SM').classList.remove('on');}
-function setSF(el,fmt){saveFmt=fmt;document.querySelectorAll('.sopt').forEach(o=>o.classList.remove('on'));el.classList.add('on');}
-function clamp(v){return Math.max(0,Math.min(255,Math.round(v)));}
-async function doSave(){
-  closeSave();if(!OI){alert('이미지를 불러오세요!');return;}
-  const{w,h}=getSize();const exp=document.createElement('canvas');exp.width=w;exp.height=h;
-  const ctx=exp.getContext('2d');
-  ctx.save();ctx.translate(w/2,h/2);ctx.rotate(rot*Math.PI/180);ctx.scale(fH?-1:1,fV?-1:1);
-  ctx.drawImage(OI,-OI.naturalWidth/2,-OI.naturalHeight/2,OI.naturalWidth,OI.naturalHeight);ctx.restore();
-  const{brightness:b,contrast:c,saturation:s,warmth:wm}=A;
-  if(b||c||s||wm){const id=ctx.getImageData(0,0,w,h);const d=id.data;for(let i=0;i<d.length;i+=4){let r=d[i]+b*2.55,g=d[i+1]+b*2.55,bv=d[i+2]+b*2.55;const cf=(259*(c+255))/(255*(259-c));r=cf*(r-128)+128;g=cf*(g-128)+128;bv=cf*(bv-128)+128;const gr=.299*r+.587*g+.114*bv;const sf=1+s/100;r=gr+sf*(r-gr);g=gr+sf*(g-gr);bv=gr+sf*(bv-gr);r+=wm*.5;bv-=wm*.3;d[i]=clamp(r);d[i+1]=clamp(g);d[i+2]=clamp(bv);}ctx.putImageData(id,0,0);}
-  if(A.vignette>0){const g=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.3,w/2,h/2,Math.max(w,h)*.75);g.addColorStop(0,'transparent');g.addColorStop(1,`rgba(0,0,0,${A.vignette/100*.8})`);ctx.fillStyle=g;ctx.fillRect(0,0,w,h);}
-  const cv=document.getElementById('MC');const sx=w/cv.offsetWidth;
-  layers.forEach(l=>{const lpx=l.x/100*w,lpy=l.y/100*h;
-    if(l.type==='text'){const fs=l.size*sx;ctx.font=`${l.style==='bold'?'bold ':l.style==='italic'?'italic ':''}${fs}px 'Noto Sans KR',sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';if(l.bgOp>0){const tm=ctx.measureText(l.text);ctx.fillStyle=hR(l.bg,l.bgOp);ctx.fillRect(lpx-tm.width/2-8,lpy-fs/2-3,tm.width+16,fs+10);}ctx.fillStyle=l.color;ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=3;ctx.fillText(l.text,lpx,lpy);ctx.shadowBlur=0;}
-    else{ctx.font=`${l.size*sx}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(l.emoji,lpx,lpy);}
-  });
-  const q=+document.getElementById('SQ').value;
-  if(saveFmt==='copy'){exp.toBlob(async blob=>{try{await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);alert('✅ 클립보드에 복사됐어요!');}catch{alert('클립보드 복사는 HTTPS에서만 가능합니다.');}}, 'image/png');return;}
-  const a=document.createElement('a');a.download=`ronai-edit-${Date.now()}.${saveFmt==='jpeg'?'jpg':saveFmt}`;a.href=exp.toDataURL('image/'+saveFmt,q);a.click();
-}
-document.addEventListener('keydown',e=>{
-  if(e.key==='Delete'&&sel>=0)delL(sel);
-  if(e.key==='Escape'){sel=-1;renderL();renderOV();}
-  if(e.ctrlKey&&e.key==='z'&&layers.length){layers.pop();renderL();renderOV();}
-  if((e.ctrlKey||e.metaKey)&&e.key==='='){e.preventDefault();zm(.1);}
-  if((e.ctrlKey||e.metaKey)&&e.key==='-'){e.preventDefault();zm(-.1);}
-  if((e.ctrlKey||e.metaKey)&&e.key==='0'){e.preventDefault();fitScreen();}
+initChips('skinChips', true);
+initChips('ctypeChips', false, null, null, () => {
+  selCtype = document.querySelector('#ctypeChips .chip.on')?.dataset.v || '상품 상세페이지';
 });
+initChips('comboSkinChips', false, null, null, () => {
+  selComboSkin = document.querySelector('#comboSkinChips .chip.on')?.dataset.v || '건성';
+});
+initChips('comboWorryChips', true);
+initChips('seoToneChips', false);
+initChips('seoPlatformChips', false);
+initChips('seoIntentChips', false);
+
+// ── TABS ──
+function switchTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('tc-' + el.dataset.tab).classList.add('on');
+}
+function switchMode(m) {
+  document.getElementById('m1').classList.toggle('on', m==='content');
+  document.getElementById('m2').classList.toggle('on', m==='combo');
+  if (m === 'content') {
+    document.querySelector('[data-tab="write"]').click();
+  } else {
+    document.querySelector('[data-tab="conflict"]').click();
+  }
+}
+
+// ── INGREDIENT TAGS ──
+function addIngr(side) {
+  const input = document.getElementById(side + 'IngrInput');
+  const val = input.value.trim();
+  if (!val) return;
+  const arr = side === 'a' ? ingrA : ingrB;
+  if (!arr.includes(val)) {
+    arr.push(val);
+    renderIngrTags(side);
+  }
+  input.value = '';
+}
+function removeIngr(side, val) {
+  const arr = side === 'a' ? ingrA : ingrB;
+  const idx = arr.indexOf(val);
+  if (idx > -1) arr.splice(idx, 1);
+  renderIngrTags(side);
+}
+function renderIngrTags(side) {
+  const arr = side === 'a' ? ingrA : ingrB;
+  const wrap = document.getElementById(side + 'IngrTags');
+  wrap.innerHTML = arr.map(v =>
+    `<div class="ingr-tag">${v}<button onclick="removeIngr('${side}','${v}')">✕</button></div>`
+  ).join('');
+}
+
+// ── HELPERS ──
+function getSkinChips() {
+  return [...document.querySelectorAll('#skinChips .chip.on')].map(c => c.dataset.v);
+}
+function getComboWorry() {
+  return [...document.querySelectorAll('#comboWorryChips .chip.on')].map(c => c.dataset.v);
+}
+function setLoading(btnId, spinId) {
+  document.getElementById(btnId).disabled = true;
+  document.getElementById(btnId + 'Txt').style.display = 'none';
+  document.getElementById(spinId).style.display = 'block';
+}
+function stopLoading(btnId, spinId) {
+  document.getElementById(btnId).disabled = false;
+  document.getElementById(btnId + 'Txt').style.display = 'inline';
+  document.getElementById(spinId).style.display = 'none';
+}
+function skelCard(lines=3) {
+  return Array.from({length:lines}, (_,i) =>
+    `<div class="sk ${['w85','w70','w50'][i%3]}"></div>`
+  ).join('');
+}
+function cp(id, btn) {
+  const t = document.getElementById(id)?.textContent;
+  if (!t || t.length < 3) return;
+  navigator.clipboard.writeText(t);
+  const orig = btn.textContent;
+  btn.textContent = '✓ 완료!';
+  btn.classList.add('done');
+  setTimeout(() => { btn.textContent = orig; btn.classList.remove('done'); }, 1800);
+}
+function cpHTML(id, btn) {
+  const t = document.getElementById(id)?.textContent;
+  if (!t) return;
+  const html = '<p>' + t.split('\n\n').map(s => s.replace(/\n/g,'<br>')).join('</p><p>') + '</p>';
+  navigator.clipboard.writeText(html);
+  const orig = btn.textContent;
+  btn.textContent = '✓ 완료!';
+  btn.classList.add('done');
+  setTimeout(() => { btn.textContent = orig; btn.classList.remove('done'); }, 1800);
+}
+async function callAI(prompt) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  const data = await res.json();
+  const raw = data.content?.[0]?.text || '';
+  return JSON.parse(raw.replace(/```json|```/g,'').trim());
+}
+
+// ── CONTENT GEN ──
+async function genContent() {
+  const name = document.getElementById('iName').value.trim();
+  if (!name) { document.getElementById('iName').focus(); return; }
+  const brand = document.getElementById('iBrand').value;
+  const ptype = document.getElementById('iType').value;
+  const skin = getSkinChips();
+  const ingr = document.getElementById('iIngr').value;
+  const price = document.getElementById('iPrice').value;
+  const extra = document.getElementById('iExtra').value;
+  selCtype = document.querySelector('#ctypeChips .chip.on')?.dataset.v || '상품 상세페이지';
+
+  setLoading('btnContent', 'btnContentSpin');
+
+  // Build skeleton UI
+  document.getElementById('contentOutput').innerHTML = `
+    <div class="grid2">
+      <div class="out-card"><div class="out-card-head"><div class="out-card-title">📌 상품 제목</div></div><div class="out-card-body">${skelCard(2)}</div></div>
+      <div class="out-card"><div class="out-card-head"><div class="out-card-title">🏷 해시태그</div></div><div class="out-card-body">${skelCard(2)}</div></div>
+    </div>
+    <div class="out-card"><div class="out-card-head"><div class="out-card-title">📄 본문</div></div><div class="out-card-body">${skelCard(5)}</div></div>
+    <div class="grid2">
+      <div class="out-card"><div class="out-card-head"><div class="out-card-title">📱 SNS 문구</div></div><div class="out-card-body">${skelCard(3)}</div></div>
+      <div class="out-card"><div class="out-card-head"><div class="out-card-title">🎯 구매 유도 문구</div></div><div class="out-card-body">${skelCard(3)}</div></div>
+    </div>
+  `;
+
+  const prompt = `당신은 한국 화장품 자사몰 "로나이(ronai.co.kr)" 전문 마케터입니다.
+로나이는 피부를 위한 셀렉트샵으로, 리라신·브릴리에잇·노탈리·더라포·에크리크·듀베로·오바코·졸로픽스·오도라타 브랜드를 취급합니다.
+
+아래 제품의 ${selCtype} 콘텐츠를 작성하세요.
+
+제품명: ${name}
+브랜드: ${brand || '미입력'}
+제품 타입: ${ptype || '미입력'}
+피부 고민: ${skin.join(', ') || '미입력'}
+주요 성분: ${ingr || '미입력'}
+가격: ${price || '미입력'}
+추가 요청: ${extra || '없음'}
+
+반드시 JSON만 응답 (코드블록 없이):
+{
+  "title": "SEO 최적화 제목 (25-40자, 핵심 키워드 앞배치, 매력적으로)",
+  "tags": "#태그1 #태그2 #태그3 #태그4 #태그5 #태그6 #태그7 #태그8 #태그9 #태그10",
+  "body": "상세 본문 (700-900자, 단락은 \\n\\n 구분, 이모지 포함, 성분 효능 설명, 피부 고민 해결 강조, 구매 욕구 자극)",
+  "sns": "SNS 홍보 문구 (130-160자, 감성적, 해시태그 5개 포함)",
+  "cta": "구매 유도 문구 3가지 (줄바꿈 구분, 각 20자 이내)",
+  "seo_tip": "이 제품 SEO 팁 1줄 (50자 이내)"
+}`;
+
+  try {
+    const p = await callAI(prompt);
+    document.getElementById('contentOutput').innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem">
+        <div style="font-size:0.78rem;color:var(--text2)">✦ <strong style="color:var(--gold)">${name}</strong> 콘텐츠 완성</div>
+        <div style="font-size:0.72rem;font-family:'DM Mono',monospace;color:var(--text3)">${new Date().toLocaleTimeString('ko-KR')}</div>
+      </div>
+      ${p.seo_tip ? `<div style="background:rgba(201,169,110,0.08);border:1px solid var(--border-g);border-radius:8px;padding:10px 14px;font-size:0.78rem;color:var(--gold);margin-bottom:1.1rem">💡 SEO 팁: ${p.seo_tip}</div>` : ''}
+      <div class="grid2">
+        <div class="out-card ready">
+          <div class="out-card-head">
+            <div class="out-card-title">📌 상품 제목 <span class="char-pill" id="c-title">${(p.title||'').length}자</span></div>
+          </div>
+          <div class="out-card-body fu" id="o-title">${p.title||''}</div>
+          <div class="out-card-foot"><button class="btn-sm" onclick="cp('o-title',this)">복사</button></div>
+        </div>
+        <div class="out-card ready">
+          <div class="out-card-head">
+            <div class="out-card-title">🏷 해시태그</div>
+          </div>
+          <div class="out-card-body fu" id="o-tags">${p.tags||''}</div>
+          <div class="out-card-foot"><button class="btn-sm" onclick="cp('o-tags',this)">복사</button></div>
+        </div>
+      </div>
+      <div class="out-card ready">
+        <div class="out-card-head">
+          <div class="out-card-title">📄 상세 본문 <span class="char-pill">${(p.body||'').length}자</span></div>
+        </div>
+        <div class="out-card-body fu" id="o-body">${p.body||''}</div>
+        <div class="out-card-foot">
+          <button class="btn-sm" onclick="cp('o-body',this)">텍스트 복사</button>
+          <button class="btn-sm" onclick="cpHTML('o-body',this)">HTML 복사</button>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="out-card ready">
+          <div class="out-card-head"><div class="out-card-title">📱 SNS 문구 <span class="char-pill">${(p.sns||'').length}자</span></div></div>
+          <div class="out-card-body fu" id="o-sns">${p.sns||''}</div>
+          <div class="out-card-foot"><button class="btn-sm" onclick="cp('o-sns',this)">복사</button></div>
+        </div>
+        <div class="out-card ready">
+          <div class="out-card-head"><div class="out-card-title">🎯 구매 유도 문구</div></div>
+          <div class="out-card-body fu" id="o-cta">${p.cta||''}</div>
+          <div class="out-card-foot"><button class="btn-sm" onclick="cp('o-cta',this)">복사</button></div>
+        </div>
+      </div>
+    `;
+  } catch(e) {
+    document.getElementById('contentOutput').innerHTML = `<div style="padding:2rem;color:var(--red)">오류가 발생했습니다. 다시 시도해주세요.</div>`;
+  }
+  stopLoading('btnContent', 'btnContentSpin');
+}
+
+// ── COMBO GEN ──
+async function genCombo() {
+  const name = document.getElementById('cName').value.trim();
+  if (!name) { document.getElementById('cName').focus(); return; }
+  const ingr = document.getElementById('cIngr').value;
+  selComboSkin = document.querySelector('#comboSkinChips .chip.on')?.dataset.v || '건성';
+  const worry = getComboWorry();
+
+  setLoading('btnCombo', 'btnComboSpin');
+  document.getElementById('comboOutput').innerHTML = `<div style="padding:2rem">${skelCard(6)}</div>`;
+
+  const prompt = `당신은 화장품 성분 전문가이자 로나이(ronai.co.kr) 스킨케어 전문 에디터입니다.
+로나이 취급 브랜드: 리라신, 브릴리에잇, 노탈리, 더라포, 에크리크, 듀베로, 오바코, 졸로픽스, 오도라타
+제품 카테고리: 토너/스킨, 앰플/에센스, 로션/크림, 클렌징, 선케어, 바디/립/핸드, 팩트/쿠션, 아로마 오일
+
+기준 제품: ${name}
+주요 성분: ${ingr || '미입력'}
+피부 타입: ${selComboSkin}
+피부 고민: ${worry.join(', ') || '일반'}
+
+로나이 자사몰의 제품들과 어울리는 꿀조합을 3가지 추천해주세요.
+반드시 JSON만 응답 (코드블록 없이):
+{
+  "combos": [
+    {
+      "title": "조합 이름 (20자 이내)",
+      "products": ["기준제품명", "추천제품타입1", "추천제품타입2"],
+      "why": "시너지 이유 설명 (100자 이내)",
+      "order": "사용 순서 설명 (60자 이내)",
+      "effect": "기대 효과 (50자 이내)",
+      "caution": "주의사항 있으면 한 줄, 없으면 null"
+    }
+  ],
+  "avoid": [
+    {
+      "ingredient": "함께 쓰면 안 되는 성분명",
+      "reason": "이유 (60자 이내)"
+    }
+  ],
+  "routine_tip": "전체 루틴 팁 1줄 (80자 이내)"
+}`;
+
+  try {
+    const p = await callAI(prompt);
+    let html = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.4rem">
+        <div style="font-size:0.85rem;font-weight:700;color:var(--gold)">💡 ${name} 꿀조합 추천</div>
+      </div>
+    `;
+    if (p.routine_tip) {
+      html += `<div style="background:rgba(82,201,138,0.08);border:1px solid rgba(82,201,138,0.2);border-radius:8px;padding:10px 14px;font-size:0.78rem;color:var(--green);margin-bottom:1.2rem">🌿 루틴 팁: ${p.routine_tip}</div>`;
+    }
+    (p.combos||[]).forEach((c, i) => {
+      html += `
+        <div class="combo-card">
+          <div class="combo-title">✦ 조합 ${i+1}. ${c.title}</div>
+          <div class="combo-products">
+            ${(c.products||[]).map(pr => `<span class="combo-tag good">${pr}</span>`).join('')}
+          </div>
+          <div class="combo-desc" style="margin-top:10px"><strong style="color:var(--text);font-size:0.78rem">🔬 시너지 이유</strong><br>${c.why}</div>
+          <div class="combo-desc" style="margin-top:7px"><strong style="color:var(--text);font-size:0.78rem">📋 사용 순서</strong><br>${c.order}</div>
+          <div class="combo-desc" style="margin-top:7px"><strong style="color:var(--text);font-size:0.78rem">✨ 기대 효과</strong><br>${c.effect}</div>
+          ${c.caution ? `<div style="margin-top:8px;padding:7px 11px;background:rgba(224,82,82,0.08);border-radius:6px;font-size:0.76rem;color:var(--red)">⚠️ ${c.caution}</div>` : ''}
+        </div>
+      `;
+    });
+    if ((p.avoid||[]).length) {
+      html += `<div class="out-card" style="margin-top:0.5rem">
+        <div class="out-card-head"><div class="out-card-title" style="color:var(--red)">⛔ 함께 쓰면 안 되는 성분</div></div>
+        <div style="padding:0 16px">
+          ${p.avoid.map(a => `<div class="conflict-row"><div class="conflict-badge badge-danger">주의</div><div><strong style="color:var(--text)">${a.ingredient}</strong><br><span style="color:var(--text2);font-size:0.8rem">${a.reason}</span></div></div>`).join('')}
+        </div>
+      </div>`;
+    }
+    document.getElementById('comboOutput').innerHTML = html;
+  } catch(e) {
+    document.getElementById('comboOutput').innerHTML = `<div style="padding:2rem;color:var(--red)">오류가 발생했습니다. 다시 시도해주세요.</div>`;
+  }
+  stopLoading('btnCombo', 'btnComboSpin');
+}
+
+// ── CONFLICT CHECK ──
+async function genConflict() {
+  const aName = document.getElementById('aName').value.trim() || '제품 A';
+  const bName = document.getElementById('bName').value.trim() || '제품 B';
+  if (!ingrA.length && !ingrB.length) {
+    alert('성분을 하나 이상 입력해주세요!'); return;
+  }
+  setLoading('btnConflict', 'btnConflictSpin');
+  document.getElementById('conflictOutput').innerHTML = `<div style="padding:2rem">${skelCard(6)}</div>`;
+
+  const prompt = `당신은 화장품 성분 전문가입니다.
+두 제품의 성분 충돌 여부를 전문적으로 분석해주세요.
+
+제품 A: ${aName}
+성분: ${ingrA.join(', ') || '없음'}
+
+제품 B: ${bName}
+성분: ${ingrB.join(', ') || '없음'}
+
+반드시 JSON만 응답 (코드블록 없이):
+{
+  "overall": "safe" | "caution" | "danger",
+  "summary": "전체 요약 (80자 이내)",
+  "conflicts": [
+    {
+      "level": "danger" | "caution" | "ok",
+      "ingredients": "충돌하는 성분 조합",
+      "reason": "이유 설명 (80자 이내)",
+      "solution": "해결책 (60자 이내)"
+    }
+  ],
+  "use_order": "함께 써도 된다면 올바른 사용 순서 (80자 이내)",
+  "time_gap": "시간 간격 필요 여부 (예: 아침/저녁 분리 사용 권장 등)",
+  "tip": "전문가 팁 (70자 이내)"
+}`;
+
+  try {
+    const p = await callAI(prompt);
+    const overallColor = p.overall === 'danger' ? 'var(--red)' : p.overall === 'caution' ? 'var(--gold)' : 'var(--green)';
+    const overallLabel = p.overall === 'danger' ? '⛔ 함께 사용 위험' : p.overall === 'caution' ? '⚠️ 주의 필요' : '✅ 함께 사용 가능';
+    let html = `
+      <div style="background:rgba(0,0,0,0.2);border:1px solid ${overallColor}30;border-radius:12px;padding:1.2rem 1.5rem;margin-bottom:1.2rem;display:flex;gap:14px;align-items:flex-start">
+        <div style="font-size:1.8rem">🔬</div>
+        <div>
+          <div style="font-size:1rem;font-weight:700;color:${overallColor};margin-bottom:6px">${overallLabel}</div>
+          <div style="font-size:0.85rem;color:var(--text2);line-height:1.7">${p.summary}</div>
+        </div>
+      </div>
+    `;
+    if ((p.conflicts||[]).length) {
+      html += `<div class="out-card" style="margin-bottom:1.1rem">
+        <div class="out-card-head"><div class="out-card-title">🧬 성분 분석 결과</div></div>
+        <div style="padding:0 16px">
+          ${p.conflicts.map(c => {
+            const lvl = c.level === 'danger' ? 'badge-danger' : c.level === 'caution' ? 'badge-warn' : 'badge-ok';
+            const label = c.level === 'danger' ? '위험' : c.level === 'caution' ? '주의' : '안전';
+            return `<div class="conflict-row">
+              <div class="conflict-badge ${lvl}">${label}</div>
+              <div>
+                <strong style="color:var(--text);font-size:0.82rem">${c.ingredients}</strong><br>
+                <span style="color:var(--text2);font-size:0.78rem">${c.reason}</span><br>
+                <span style="color:var(--green);font-size:0.76rem">→ ${c.solution}</span>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }
+    html += `<div class="grid2">
+      <div class="out-card">
+        <div class="out-card-head"><div class="out-card-title">📋 사용 순서</div></div>
+        <div class="out-card-body" style="font-size:0.83rem">${p.use_order || '-'}</div>
+      </div>
+      <div class="out-card">
+        <div class="out-card-head"><div class="out-card-title">⏰ 시간 간격</div></div>
+        <div class="out-card-body" style="font-size:0.83rem">${p.time_gap || '-'}</div>
+      </div>
+    </div>`;
+    if (p.tip) {
+      html += `<div style="background:rgba(82,144,201,0.08);border:1px solid rgba(82,144,201,0.2);border-radius:8px;padding:10px 14px;font-size:0.78rem;color:var(--blue)">💊 전문가 팁: ${p.tip}</div>`;
+    }
+    document.getElementById('conflictOutput').innerHTML = html;
+  } catch(e) {
+    document.getElementById('conflictOutput').innerHTML = `<div style="padding:2rem;color:var(--red)">오류가 발생했습니다. 다시 시도해주세요.</div>`;
+  }
+  stopLoading('btnConflict', 'btnConflictSpin');
+}
+
+
+// ── MEDIA EDITOR ──
+let origImg = null, editCanvas = null, editCtx = null;
+let rotation = 0, flipH = false, flipV = false;
+let textLayers = [], selectedText = -1;
+let isDragging = false, dragOffX = 0, dragOffY = 0;
+let cropRatio = 'orig';
+let trimStartSec = 0, trimEndSec = 0, videoEl = null;
+let activePreset = 'none';
+
+const PRESETS = {
+  none:    { brightness:0, contrast:0, saturation:0, sharpness:0, warmth:0 },
+  bright:  { brightness:30, contrast:5, saturation:10, sharpness:10, warmth:20 },
+  cool:    { brightness:10, contrast:5, saturation:-5, sharpness:5, warmth:-30 },
+  warm:    { brightness:10, contrast:5, saturation:15, sharpness:5, warmth:35 },
+  vivid:   { brightness:5, contrast:20, saturation:40, sharpness:15, warmth:5 },
+  mono:    { brightness:0, contrast:10, saturation:-100, sharpness:10, warmth:0 },
+  soft:    { brightness:20, contrast:-10, saturation:-10, sharpness:0, warmth:15 },
+  luxury:  { brightness:-10, contrast:15, saturation:-20, sharpness:5, warmth:-10 },
+  fresh:   { brightness:15, contrast:5, saturation:20, sharpness:10, warmth:-15 }
+};
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) loadMedia(f);
+}
+
+function loadMedia(file) {
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const isVideo = file.type.startsWith('video/');
+  document.getElementById('noMediaMsg').style.display = 'none';
+  document.getElementById('editorControls').style.display = 'block';
+
+  if (isVideo) {
+    document.getElementById('canvasWrap').style.display = 'none';
+    videoEl = document.getElementById('videoEl');
+    videoEl.src = url;
+    videoEl.style.display = 'block';
+    document.getElementById('imgControls').style.display = 'none';
+    document.getElementById('vidControls').style.display = 'block';
+    document.getElementById('tbImg').style.display = 'none';
+    document.getElementById('tbVid').style.display = 'flex';
+    videoEl.onloadedmetadata = () => {
+      trimStartSec = 0;
+      trimEndSec = videoEl.duration;
+      updateTrimUI();
+    };
+    videoEl.ontimeupdate = () => {
+      const pct = videoEl.currentTime / videoEl.duration * 100;
+      document.getElementById('timelineProgress').style.width = pct + '%';
+      document.getElementById('timecode').textContent =
+        fmtTime(videoEl.currentTime) + ' / ' + fmtTime(videoEl.duration);
+    };
+  } else {
+    document.getElementById('videoEl').style.display = 'none';
+    document.getElementById('canvasWrap').style.display = 'inline-block';
+    document.getElementById('imgControls').style.display = 'block';
+    document.getElementById('vidControls').style.display = 'none';
+    document.getElementById('tbImg').style.display = 'flex';
+    document.getElementById('tbVid').style.display = 'none';
+    const img = new Image();
+    img.onload = () => {
+      origImg = img; rotation = 0; flipH = false; flipV = false; textLayers = [];
+      applyPreset(document.querySelector('.filter-chip[data-filter="none"]'), 'none');
+      resetSliders();
+      drawCanvas();
+      renderTextLayerList();
+    };
+    img.src = url;
+  }
+}
+
+function getCanvasSize() {
+  if (!origImg) return { w:800, h:600 };
+  let w = origImg.naturalWidth, h = origImg.naturalHeight;
+  const maxW = Math.min(w, 1200), maxH = Math.min(h, 1200);
+  const scale = Math.min(maxW/w, maxH/h, 1);
+  w = Math.round(w * scale); h = Math.round(h * scale);
+  if (cropRatio === 'orig' || cropRatio === 'free') return { w, h };
+  const [rw, rh] = cropRatio.split(':').map(Number);
+  const ratio = rw / rh;
+  if (w / h > ratio) return { w: Math.round(h * ratio), h };
+  return { w, h: Math.round(w / ratio) };
+}
+
+function drawCanvas() {
+  if (!origImg) return;
+  const { w, h } = getCanvasSize();
+  const cv = document.getElementById('mainCanvas');
+  cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d');
+
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  const rad = rotation * Math.PI / 180;
+  ctx.rotate(rad);
+  ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+
+  const sw = origImg.naturalWidth, sh = origImg.naturalHeight;
+  ctx.drawImage(origImg, -sw/2, -sh/2, sw, sh);
+  ctx.restore();
+
+  // Apply CSS filter (preview only — baked via pixel manipulation for export)
+  const b = +document.getElementById('sBrightness').value;
+  const c = +document.getElementById('sContrast').value;
+  const s = +document.getElementById('sSaturation').value;
+  const warm = +document.getElementById('sWarmth').value;
+
+  cv.style.filter = [
+    `brightness(${1 + b/100})`,
+    `contrast(${1 + c/100})`,
+    `saturate(${1 + s/100})`,
+    warm > 0 ? `sepia(${warm/200})` : ''
+  ].filter(Boolean).join(' ');
+
+  editCanvas = cv; editCtx = ctx;
+}
+
+function applyFilters() {
+  ['Brightness','Contrast','Saturation','Sharpness','Warmth'].forEach(k => {
+    document.getElementById('v'+k).textContent = document.getElementById('s'+k).value;
+  });
+  drawCanvas();
+}
+
+function applyPreset(el, name) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('on'));
+  if (el) el.classList.add('on');
+  activePreset = name;
+  const p = PRESETS[name];
+  if (!p) return;
+  document.getElementById('sBrightness').value = p.brightness;
+  document.getElementById('sContrast').value = p.contrast;
+  document.getElementById('sSaturation').value = p.saturation;
+  document.getElementById('sSharpness').value = p.sharpness;
+  document.getElementById('sWarmth').value = p.warmth;
+  applyFilters();
+}
+
+function resetSliders() {
+  ['sBrightness','sContrast','sSaturation','sSharpness','sWarmth'].forEach(id => {
+    document.getElementById(id).value = 0;
+  });
+  applyFilters();
+}
+
+function rotateImage(deg) {
+  rotation = (rotation + deg + 360) % 360;
+  drawCanvas();
+}
+function flipImage(dir) {
+  if (dir === 'h') flipH = !flipH;
+  else flipV = !flipV;
+  drawCanvas();
+}
+function resetEdits() {
+  rotation = 0; flipH = false; flipV = false; textLayers = [];
+  resetSliders();
+  applyPreset(document.querySelector('.filter-chip[data-filter="none"]'), 'none');
+  renderTextLayerList();
+}
+
+function setCrop(el, ratio) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  cropRatio = ratio;
+  drawCanvas();
+}
+
+// ── TEXT OVERLAY ──
+function addTextOverlay() {
+  const txt = document.getElementById('textInput').value.trim();
+  if (!txt) return;
+  const layer = {
+    text: txt,
+    x: 50, y: 50, // percent
+    size: +document.getElementById('fontSize').value,
+    color: document.getElementById('textColor').value,
+    style: document.getElementById('fontStyle').value,
+    align: document.getElementById('textAlign').value,
+    bg: document.getElementById('textBg').value,
+    bgOpacity: +document.getElementById('textBgOpacity').value / 100
+  };
+  textLayers.push(layer);
+  renderTextOverlays();
+  renderTextLayerList();
+  document.getElementById('textInput').value = '';
+}
+
+function renderTextOverlays() {
+  const wrap = document.getElementById('canvasWrap');
+  document.querySelectorAll('.text-overlay').forEach(el => el.remove());
+  const cv = document.getElementById('mainCanvas');
+
+  textLayers.forEach((layer, i) => {
+    const div = document.createElement('div');
+    div.className = 'text-overlay' + (i === selectedText ? ' selected' : '');
+    div.style.cssText = `
+      left:${layer.x}%; top:${layer.y}%;
+      font-size:${layer.size * (cv.offsetWidth / cv.width)}px;
+      color:${layer.color};
+      font-weight:${layer.style === 'bold' ? '700' : '400'};
+      font-style:${layer.style === 'italic' ? 'italic' : 'normal'};
+      text-align:${layer.align};
+      background:${hexToRgba(layer.bg, layer.bgOpacity)};
+      padding: ${layer.bgOpacity > 0 ? '4px 10px' : '0'};
+      border-radius:4px;
+      font-family:'Noto Sans KR',sans-serif;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    `;
+    div.textContent = layer.text;
+
+    // Del button
+    const del = document.createElement('div');
+    del.className = 'del-btn'; del.textContent = '✕';
+    del.onclick = (e) => { e.stopPropagation(); textLayers.splice(i,1); selectedText=-1; renderTextOverlays(); renderTextLayerList(); };
+    div.appendChild(del);
+
+    // Drag
+    div.onmousedown = (e) => {
+      e.stopPropagation();
+      selectedText = i;
+      renderTextOverlays();
+      const rect = wrap.getBoundingClientRect();
+      dragOffX = e.clientX - (layer.x / 100 * rect.width);
+      dragOffY = e.clientY - (layer.y / 100 * rect.height);
+      isDragging = true;
+
+      const onMove = (ev) => {
+        if (!isDragging) return;
+        const r = wrap.getBoundingClientRect();
+        layer.x = Math.max(0, Math.min(90, (ev.clientX - dragOffX) / r.width * 100));
+        layer.y = Math.max(0, Math.min(90, (ev.clientY - dragOffY) / r.height * 100));
+        div.style.left = layer.x + '%';
+        div.style.top = layer.y + '%';
+      };
+      const onUp = () => { isDragging = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    };
+
+    wrap.appendChild(div);
+  });
+}
+
+function renderTextLayerList() {
+  const list = document.getElementById('textLayerList');
+  list.innerHTML = textLayers.map((l,i) => `
+    <div class="text-item ${i===selectedText?'selected':''}" onclick="selectedText=${i};renderTextOverlays();renderTextLayerList()">
+      <span class="text-item-label">${l.text}</span>
+      <button onclick="event.stopPropagation();textLayers.splice(${i},1);selectedText=-1;renderTextOverlays();renderTextLayerList()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:0.8rem">✕</button>
+    </div>
+  `).join('');
+}
+
+function hexToRgba(hex, opacity) {
+  if (opacity <= 0) return 'transparent';
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${opacity})`;
+}
+
+document.getElementById('textBgOpacity').addEventListener('input', function() {
+  document.getElementById('bgOpVal').textContent = this.value + '%';
+});
+
+function addWatermark(text) {
+  textLayers.push({ text, x:70, y:90, size:16, color:'#ffffff', style:'normal', align:'center', bg:'#000000', bgOpacity:0.4 });
+  renderTextOverlays(); renderTextLayerList();
+}
+
+// ── EXPORT ──
+function exportImage() {
+  if (!origImg) return;
+  const { w, h } = getCanvasSize();
+  const exp = document.createElement('canvas');
+  exp.width = w; exp.height = h;
+  const ctx = exp.getContext('2d');
+
+  // Draw image with rotation/flip
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate(rotation * Math.PI / 180);
+  ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+  ctx.drawImage(origImg, -origImg.naturalWidth/2, -origImg.naturalHeight/2, origImg.naturalWidth, origImg.naturalHeight);
+  ctx.restore();
+
+  // Apply pixel-level adjustments
+  const b = +document.getElementById('sBrightness').value;
+  const c = +document.getElementById('sContrast').value;
+  const s = +document.getElementById('sSaturation').value;
+  const warm = +document.getElementById('sWarmth').value;
+  if (b !== 0 || c !== 0 || s !== 0 || warm !== 0) {
+    const id = ctx.getImageData(0,0,w,h);
+    const d = id.data;
+    for (let i = 0; i < d.length; i += 4) {
+      let r = d[i], g = d[i+1], bl = d[i+2];
+      // Brightness
+      r += b*2.55; g += b*2.55; bl += b*2.55;
+      // Contrast
+      const cf = (259*(c+255))/(255*(259-c));
+      r = cf*(r-128)+128; g = cf*(g-128)+128; bl = cf*(bl-128)+128;
+      // Saturation
+      const gray = 0.299*r + 0.587*g + 0.114*bl;
+      r = gray + (s/100+1)*(r-gray);
+      g = gray + (s/100+1)*(g-gray);
+      bl = gray + (s/100+1)*(bl-gray);
+      // Warmth
+      r += warm*0.5; bl -= warm*0.3;
+      d[i]   = Math.max(0,Math.min(255,r));
+      d[i+1] = Math.max(0,Math.min(255,g));
+      d[i+2] = Math.max(0,Math.min(255,bl));
+    }
+    ctx.putImageData(id, 0, 0);
+  }
+
+  // Bake text layers
+  const cvMain = document.getElementById('mainCanvas');
+  const scaleX = w / cvMain.offsetWidth;
+  const scaleY = h / cvMain.offsetHeight;
+  textLayers.forEach(layer => {
+    const px = layer.x / 100 * w;
+    const py = layer.y / 100 * h;
+    const fs = layer.size * scaleX;
+    ctx.font = `${layer.style === 'bold' ? 'bold' : layer.style === 'italic' ? 'italic' : 'normal'} ${fs}px 'Noto Sans KR', sans-serif`;
+    ctx.textAlign = layer.align;
+    if (layer.bgOpacity > 0) {
+      const tm = ctx.measureText(layer.text);
+      ctx.fillStyle = hexToRgba(layer.bg, layer.bgOpacity);
+      ctx.fillRect(px - (layer.align==='center'?tm.width/2:0) - 8, py - fs - 4, tm.width + 16, fs + 12);
+    }
+    ctx.fillStyle = layer.color;
+    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 3;
+    ctx.fillText(layer.text, px, py);
+    ctx.shadowBlur = 0;
+  });
+
+  const fmt = document.getElementById('exportFormat').value;
+  const q = +document.getElementById('exportQuality').value;
+  const a = document.createElement('a');
+  a.download = `ronai-edit-${Date.now()}.${fmt === 'jpeg' ? 'jpg' : fmt}`;
+  a.href = exp.toDataURL('image/' + fmt, q);
+  a.click();
+}
+
+// ── VIDEO ──
+function togglePlay() {
+  if (!videoEl) return;
+  videoEl.paused ? videoEl.play() : videoEl.pause();
+}
+function seekVideo(e) {
+  if (!videoEl || !videoEl.duration) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  videoEl.currentTime = pct * videoEl.duration;
+}
+function updateTrimUI() {
+  if (!videoEl) return;
+  document.getElementById('trimStartTime').textContent = trimStartSec.toFixed(1) + 's';
+  document.getElementById('trimEndTime').textContent = trimEndSec.toFixed(1) + 's';
+  document.getElementById('trimStart').style.left = (trimStartSec/videoEl.duration*100) + '%';
+  document.getElementById('trimEnd').style.left = (trimEndSec/videoEl.duration*100) + '%';
+}
+function startTrim(e, side) {
+  e.stopPropagation();
+  const tl = document.getElementById('timeline');
+  const onMove = (ev) => {
+    const rect = tl.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
+    if (side === 'start') trimStartSec = Math.min(pct * videoEl.duration, trimEndSec - 0.1);
+    else trimEndSec = Math.max(pct * videoEl.duration, trimStartSec + 0.1);
+    updateTrimUI();
+  };
+  const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+function fmtTime(s) {
+  const m = Math.floor(s/60); const sec = Math.floor(s%60);
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+function extractThumb() {
+  if (!videoEl) return;
+  const cv = document.createElement('canvas');
+  cv.width = videoEl.videoWidth; cv.height = videoEl.videoHeight;
+  cv.getContext('2d').drawImage(videoEl, 0, 0);
+  // Load into image editor
+  const img = new Image();
+  img.onload = () => {
+    origImg = img; rotation = 0; flipH = false; flipV = false; textLayers = [];
+    document.getElementById('videoEl').style.display = 'none';
+    document.getElementById('canvasWrap').style.display = 'inline-block';
+    document.getElementById('imgControls').style.display = 'block';
+    document.getElementById('vidControls').style.display = 'none';
+    document.getElementById('tbImg').style.display = 'flex';
+    document.getElementById('tbVid').style.display = 'none';
+    resetSliders();
+    drawCanvas();
+    renderTextLayerList();
+  };
+  img.src = cv.toDataURL();
+}
+function resetVideo() {
+  if (videoEl) { videoEl.currentTime = 0; videoEl.pause(); }
+  trimStartSec = 0;
+  if (videoEl) trimEndSec = videoEl.duration;
+  updateTrimUI();
+}
+
+
+async function genSEO() {
+  const topic = document.getElementById('seoTopic').value.trim();
+  const keyword = document.getElementById('seoKeyword').value.trim();
+  if (!topic || !keyword) {
+    alert('주제와 메인 키워드를 입력해주세요!'); return;
+  }
+  const lsi = document.getElementById('seoLSI').value;
+  const reader = document.getElementById('seoReader').value;
+  const tone = document.querySelector('#seoToneChips .chip.on')?.dataset.v || '친근체';
+  const platform = document.querySelector('#seoPlatformChips .chip.on')?.dataset.v || '네이버';
+  const intent = document.querySelector('#seoIntentChips .chip.on')?.dataset.v || '정보형';
+  const diff = document.getElementById('seoDiff').value;
+
+  setLoading('btnSEO', 'btnSEOSpin');
+  document.getElementById('seoOutput').innerHTML = `<div style="padding:2rem">${skelCard(8)}</div>`;
+
+  const prompt = `당신은 한국 최고 수준의 SEO 전략가이자 블로그 작가입니다.
+로나이(ronai.co.kr) 화장품 자사몰 전문 블로그 글을 작성합니다.
+AI 티가 나지 않는 자연스러운 한국어로 작성합니다.
+클리셰 표현, 흔한 인사말, 뻔한 문장은 절대 금지입니다.
+
+[입력 정보]
+주제: ${topic}
+메인 키워드: ${keyword}
+LSI 키워드: ${lsi || '자동 선정'}
+타겟 독자: ${reader || '화장품에 관심 있는 20~40대'}
+글 톤: ${tone}
+플랫폼: ${platform}
+검색 의도: ${intent}
+경쟁 차별화 포인트: ${diff || '로나이 자사몰 제품 기반 실제 경험'}
+
+반드시 JSON만 응답 (코드블록 없이):
+{
+  "analysis": {
+    "difficulty": "상/중/하 중 하나",
+    "possibility": "상위노출 가능성 판단 이유 (50자)",
+    "niche_keywords": ["틈새키워드1", "틈새키워드2", "틈새키워드3"],
+    "timing": { "now": ["지금 쓸 키워드1","지금 쓸 키워드2"], "later": ["나중에 쓸 키워드1","나중에 쓸 키워드2"] }
+  },
+  "cluster": {
+    "pillar": "필러 콘텐츠 제목",
+    "supporting": ["서포팅 콘텐츠1","서포팅 콘텐츠2","서포팅 콘텐츠3","서포팅 콘텐츠4","서포팅 콘텐츠5"],
+    "role": "이번 글의 클러스터 역할 (40자)"
+  },
+  "persona": {
+    "profile": "나이/상황/고민 (60자)",
+    "next_action": "글 읽은 후 취할 행동 (40자)",
+    "cta_direction": "CTA 방향 (30자)"
+  },
+  "titles": {
+    "t1": "숫자+결과형 제목",
+    "t2": "궁금증 유발형 제목",
+    "t3": "타겟 직접 지칭형 제목"
+  },
+  "summary": "핵심 요약 2~3문장 (글 최상단용)",
+  "body": "본문 1200~1500자. 첫 100자에 키워드+혜택+궁금증. 도입은 공감/문제제기로. 소제목 3~4개(## 표시). 리스트나 표 포함. LSI키워드 자연 분산. 직접 경험 문장 포함. 수치/날짜/장소 포함. 신뢰도 표현 포함. 트렌드 반영. 볼드(**단어**) 처리. 내부링크 [링크텍스트](링크위치) 형식 2개. 모바일 고려 짧은 문단. 자연스러운 CTA. 마무리에 다음 편 예고.",
+  "faq": [
+    { "q": "질문1", "a": "답변 2~3문장" },
+    { "q": "질문2", "a": "답변 2~3문장" },
+    { "q": "질문3", "a": "답변 2~3문장" }
+  ],
+  "schema": "추천 Schema Markup 타입과 이유",
+  "images": [
+    { "filename": "english-filename-with-keyword.jpg", "alt": "한글 alt 텍스트 20자이내" },
+    { "filename": "english-filename2.jpg", "alt": "한글 alt 텍스트" },
+    { "filename": "english-filename3.jpg", "alt": "한글 alt 텍스트" }
+  ],
+  "hashtags": { "big": ["대형태그1","대형태그2","대형태그3"], "mid": ["중형1","중형2","중형3","중형4","중형5"], "small": ["소형1","소형2","소형3","소형4","소형5","소형6","소형7"] },
+  "meta": "메타 설명 160자 이내",
+  "best_time": "발행 최적 시간대와 이유",
+  "checklist": { "url": "서치콘솔 URL 등록 팁", "channels": ["공유채널1","공유채널2","공유채널3"], "first_comment": "첫 댓글 예시문" },
+  "next_posts": ["연결글1","연결글2","연결글3"],
+  "ab_titles": { "short": "짧은버전 15자이내", "long": "긴버전 35자이상" },
+  "reuse": {
+    "insta": "인스타 캡션 300자",
+    "shorts": "쇼츠/릴스 60초 스크립트",
+    "kakao": "카카오톡 채널 메시지 100자"
+  }
+}`;
+
+  try {
+    const p = await callAI(prompt);
+
+    const diffColor = p.analysis?.difficulty === '상' ? 'var(--red)' : p.analysis?.difficulty === '중' ? 'var(--gold)' : 'var(--green)';
+
+    let html = `
+    <!-- 분석 섹션 -->
+    <div style="margin-bottom:1.6rem">
+      <div style="font-size:0.68rem;font-family:'DM Mono',monospace;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:1rem">STEP 1 · 사전 분석</div>
+      <div class="grid2" style="margin-bottom:1rem">
+        <div class="out-card ready">
+          <div class="out-card-head"><div class="out-card-title">📊 키워드 난이도</div></div>
+          <div class="out-card-body" style="font-size:0.83rem">
+            <div style="font-size:1.6rem;font-weight:900;color:${diffColor};margin-bottom:6px">${p.analysis?.difficulty || '-'}</div>
+            <div style="color:var(--text2)">${p.analysis?.possibility || ''}</div>
+            <div style="margin-top:10px">
+              <div style="font-size:0.72rem;color:var(--text3);margin-bottom:5px">틈새 키워드</div>
+              ${(p.analysis?.niche_keywords||[]).map(k => `<span style="display:inline-block;padding:3px 10px;margin:3px 3px 0 0;background:var(--gold-dim);border:1px solid var(--border-g);border-radius:12px;font-size:0.73rem;color:var(--gold)">${k}</span>`).join('')}
+            </div>
+          </div>
+        </div>
+        <div class="out-card ready">
+          <div class="out-card-head"><div class="out-card-title">👤 독자 페르소나</div></div>
+          <div class="out-card-body" style="font-size:0.83rem">
+            <div style="color:var(--text);margin-bottom:6px">${p.persona?.profile || ''}</div>
+            <div style="color:var(--text2);font-size:0.78rem;margin-bottom:4px">→ ${p.persona?.next_action || ''}</div>
+            <div style="color:var(--green);font-size:0.76rem">CTA: ${p.persona?.cta_direction || ''}</div>
+          </div>
+        </div>
+      </div>
+      <div class="out-card ready">
+        <div class="out-card-head"><div class="out-card-title">🗺 콘텐츠 클러스터</div></div>
+        <div class="out-card-body" style="font-size:0.83rem">
+          <div style="margin-bottom:8px"><span style="color:var(--gold);font-weight:700">필러:</span> ${p.cluster?.pillar || ''}</div>
+          <div style="margin-bottom:8px"><span style="color:var(--text2);font-size:0.76rem">이번 글 역할:</span> ${p.cluster?.role || ''}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">${(p.cluster?.supporting||[]).map((s,i) => `<span style="padding:3px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;font-size:0.73rem;color:var(--text2)">서포팅${i+1}: ${s}</span>`).join('')}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 제목 후보 -->
+    <div style="font-size:0.68rem;font-family:'DM Mono',monospace;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:1rem">STEP 2 · 제목 & 요약</div>
+    <div class="out-card ready" style="margin-bottom:1rem">
+      <div class="out-card-head">
+        <div class="out-card-title">✅ 제목 후보 3개</div>
+        <button class="btn-sm" onclick="cp('o-titles',this)">복사</button>
+      </div>
+      <div class="out-card-body fu" id="o-titles" style="font-size:0.85rem">
+        <div style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3);font-size:0.72rem;font-family:'DM Mono',monospace">01 숫자+결과형</span><br><strong style="color:var(--gold)">${p.titles?.t1||''}</strong></div>
+        <div style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3);font-size:0.72rem;font-family:'DM Mono',monospace">02 궁금증 유발형</span><br><strong>${p.titles?.t2||''}</strong></div>
+        <div style="padding:8px 0"><span style="color:var(--text3);font-size:0.72rem;font-family:'DM Mono',monospace">03 타겟 직접 지칭형</span><br><strong>${p.titles?.t3||''}</strong></div>
+      </div>
+    </div>
+
+    <!-- 핵심 요약 -->
+    <div class="out-card ready" style="margin-bottom:1rem">
+      <div class="out-card-head">
+        <div class="out-card-title">💬 핵심 요약 (최상단)</div>
+        <button class="btn-sm" onclick="cp('o-summary',this)">복사</button>
+      </div>
+      <div class="out-card-body fu" id="o-summary">${p.summary||''}</div>
+    </div>
+
+    <!-- 본문 -->
+    <div style="font-size:0.68rem;font-family:'DM Mono',monospace;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:1rem">STEP 3 · 본문</div>
+    <div class="out-card ready" style="margin-bottom:1rem">
+      <div class="out-card-head">
+        <div class="out-card-title">📄 본문 <span class="char-pill">${(p.body||'').length}자</span></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn-sm" onclick="cp('o-body-seo',this)">텍스트 복사</button>
+          <button class="btn-sm" onclick="cpHTML('o-body-seo',this)">HTML 복사</button>
+        </div>
+      </div>
+      <div class="out-card-body fu" id="o-body-seo" style="min-height:200px">${p.body||''}</div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="out-card ready" style="margin-bottom:1rem">
+      <div class="out-card-head">
+        <div class="out-card-title">❓ FAQ 3개</div>
+        <button class="btn-sm" onclick="cp('o-faq',this)">복사</button>
+      </div>
+      <div class="out-card-body fu" id="o-faq" style="font-size:0.83rem">
+        ${(p.faq||[]).map(f => `<div style="padding:8px 0;border-bottom:1px solid var(--border)"><div style="color:var(--gold);font-weight:700;margin-bottom:4px">Q. ${f.q}</div><div style="color:var(--text2)">${f.a}</div></div>`).join('')}
+      </div>
+    </div>
+
+    <!-- SEO 기술 섹션 -->
+    <div style="font-size:0.68rem;font-family:'DM Mono',monospace;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:1rem">STEP 4 · SEO 기술 요소</div>
+    <div class="grid2" style="margin-bottom:1rem">
+      <div class="out-card ready">
+        <div class="out-card-head"><div class="out-card-title">🔖 Schema & 메타</div></div>
+        <div class="out-card-body" style="font-size:0.8rem">
+          <div style="margin-bottom:8px"><span style="color:var(--gold);font-size:0.72rem">SCHEMA</span><br>${p.schema||''}</div>
+          <div style="border-top:1px solid var(--border);padding-top:8px"><span style="color:var(--gold);font-size:0.72rem">META (${(p.meta||'').length}자)</span><br><span style="color:var(--text2)">${p.meta||''}</span></div>
+        </div>
+        <div class="out-card-foot"><button class="btn-sm" onclick="cp('o-meta',this)">메타 복사</button></div>
+      </div>
+      <div class="out-card ready" id="o-meta" style="display:none">${p.meta||''}</div>
+      <div class="out-card ready">
+        <div class="out-card-head"><div class="out-card-title">🖼 이미지 가이드</div></div>
+        <div class="out-card-body" style="font-size:0.8rem">
+          ${(p.images||[]).map((img,i) => `<div style="padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3);font-size:0.7rem">${i+1}</span> <code style="color:var(--green);font-family:'DM Mono',monospace;font-size:0.73rem">${img.filename}</code><br><span style="color:var(--text2);font-size:0.76rem">alt: ${img.alt}</span></div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- 해시태그 -->
+    <div class="out-card ready" style="margin-bottom:1rem">
+      <div class="out-card-head">
+        <div class="out-card-title">🏷 해시태그 15개</div>
+        <button class="btn-sm" onclick="cp('o-hash',this)">복사</button>
+      </div>
+      <div class="out-card-body fu" id="o-hash" style="font-size:0.82rem">
+        <div style="margin-bottom:6px"><span style="color:var(--red);font-size:0.7rem;font-family:'DM Mono',monospace">대형 (3)</span><br>${(p.hashtags?.big||[]).map(h=>`<span style="display:inline-block;margin:2px;color:var(--red)">#${h.replace('#','')}</span>`).join('')}</div>
+        <div style="margin-bottom:6px"><span style="color:var(--gold);font-size:0.7rem;font-family:'DM Mono',monospace">중형 (5)</span><br>${(p.hashtags?.mid||[]).map(h=>`<span style="display:inline-block;margin:2px;color:var(--gold)">#${h.replace('#','')}</span>`).join('')}</div>
+        <div><span style="color:var(--text2);font-size:0.7rem;font-family:'DM Mono',monospace">소형 (7)</span><br>${(p.hashtags?.small||[]).map(h=>`<span style="display:inline-block;margin:2px;color:var(--text2)">#${h.replace('#','')}</span>`).join('')}</div>
+      </div>
+    </div>
+
+    <!-- 발행 전략 -->
+    <div style="font-size:0.68rem;font-family:'DM Mono',monospace;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:1rem">STEP 5 · 발행 전략</div>
+    <div class="grid2" style="margin-bottom:1rem">
+      <div class="out-card ready">
+        <div class="out-card-head"><div class="out-card-title">⏰ 발행 최적 시간</div></div>
+        <div class="out-card-body" style="font-size:0.83rem;color:var(--text2)">${p.best_time||''}</div>
+      </div>
+      <div class="out-card ready">
+        <div class="out-card-head"><div class="out-card-title">✅ 발행 후 체크리스트</div></div>
+        <div class="out-card-body" style="font-size:0.8rem">
+          <div style="margin-bottom:6px;color:var(--text2)">📌 ${p.checklist?.url||''}</div>
+          <div style="margin-bottom:6px">${(p.checklist?.channels||[]).map(c=>`<span style="display:inline-block;padding:2px 8px;margin:2px;background:var(--bg3);border-radius:8px;font-size:0.72rem;color:var(--text2)">${c}</span>`).join('')}</div>
+          <div style="color:var(--green);font-size:0.76rem">💬 첫 댓글: "${p.checklist?.first_comment||''}"</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A/B 제목 + 연결글 -->
+    <div class="grid2" style="margin-bottom:1rem">
+      <div class="out-card ready">
+        <div class="out-card-head"><div class="out-card-title">🔀 A/B 테스트 제목</div></div>
+        <div class="out-card-body" style="font-size:0.83rem">
+          <div style="padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3);font-size:0.7rem">SHORT (15자↓)</span><br><strong>${p.ab_titles?.short||''}</strong></div>
+          <div style="padding:6px 0"><span style="color:var(--text3);font-size:0.7rem">LONG (35자↑)</span><br><strong>${p.ab_titles?.long||''}</strong></div>
+        </div>
+      </div>
+      <div class="out-card ready">
+        <div class="out-card-head"><div class="out-card-title">🔗 다음 연결글 3개</div></div>
+        <div class="out-card-body" style="font-size:0.83rem">
+          ${(p.next_posts||[]).map((n,i)=>`<div style="padding:5px 0;border-bottom:1px solid var(--border);color:var(--text2)"><span style="color:var(--gold)">${i+1}.</span> ${n}</div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- 콘텐츠 재활용 -->
+    <div style="font-size:0.68rem;font-family:'DM Mono',monospace;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:1rem">STEP 6 · 콘텐츠 재활용</div>
+    <div class="out-card ready" style="margin-bottom:1rem">
+      <div class="out-card-head">
+        <div class="out-card-title">📱 인스타 캡션 <span class="char-pill">${(p.reuse?.insta||'').length}자</span></div>
+        <button class="btn-sm" onclick="cp('o-insta',this)">복사</button>
+      </div>
+      <div class="out-card-body fu" id="o-insta">${p.reuse?.insta||''}</div>
+    </div>
+    <div class="grid2">
+      <div class="out-card ready">
+        <div class="out-card-head">
+          <div class="out-card-title">🎬 쇼츠/릴스 스크립트</div>
+          <button class="btn-sm" onclick="cp('o-shorts',this)">복사</button>
+        </div>
+        <div class="out-card-body fu" id="o-shorts" style="font-size:0.83rem">${p.reuse?.shorts||''}</div>
+      </div>
+      <div class="out-card ready">
+        <div class="out-card-head">
+          <div class="out-card-title">💬 카카오톡 채널 <span class="char-pill">${(p.reuse?.kakao||'').length}자</span></div>
+          <button class="btn-sm" onclick="cp('o-kakao',this)">복사</button>
+        </div>
+        <div class="out-card-body fu" id="o-kakao">${p.reuse?.kakao||''}</div>
+      </div>
+    </div>
+    `;
+
+    document.getElementById('seoOutput').innerHTML = html;
+    // 숨겨진 메타 카드에 텍스트 넣기
+    document.getElementById('o-meta').textContent = p.meta || '';
+
+  } catch(e) {
+    document.getElementById('seoOutput').innerHTML = `<div style="padding:2rem;color:var(--red)">오류가 발생했습니다. 다시 시도해주세요.</div>`;
+  }
+  stopLoading('btnSEO', 'btnSEOSpin');
+}
 </script>
+
 </body>
 </html>
