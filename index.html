@@ -391,6 +391,22 @@ header {
   </div>
 </header>
 
+<!-- API KEY BANNER -->
+<div id="apiBanner" style="background:#1c1814;border-bottom:1px solid rgba(184,146,74,0.25);padding:8px 2rem;display:flex;align-items:center;gap:10px;flex-wrap:nowrap">
+  <span style="font-size:0.75rem;color:var(--gold);font-weight:700;white-space:nowrap;flex-shrink:0">🔑 API 키</span>
+  <input id="apiKeyInput" type="password"
+    placeholder="sk-ant-api... 입력하면 Claude.ai 한도와 분리됩니다"
+    style="flex:1;min-width:0;background:#2a2218;border:1px solid rgba(184,146,74,0.3);border-radius:6px;padding:6px 10px;color:#e8c98a;font-family:'DM Mono',monospace;font-size:0.75rem;outline:none"
+    onkeydown="if(event.key==='Enter')saveApiKey()"
+    onfocus="this.style.borderColor='var(--gold)'"
+    onblur="this.style.borderColor='rgba(184,146,74,0.3)'">
+  <button onclick="saveApiKey()"
+    style="padding:6px 14px;background:var(--gold);border:none;border-radius:6px;font-family:'Noto Sans KR',sans-serif;font-size:0.75rem;font-weight:700;color:#1a1208;cursor:pointer;white-space:nowrap;flex-shrink:0">저장</button>
+  <span id="apiStatus" style="font-size:0.72rem;color:#555;font-family:'DM Mono',monospace;white-space:nowrap;flex-shrink:0">미입력</span>
+  <a href="https://console.anthropic.com/api-keys" target="_blank"
+    style="font-size:0.68rem;color:rgba(184,146,74,0.6);white-space:nowrap;flex-shrink:0;text-decoration:none">키 발급 →</a>
+</div>
+
 <div class="tabs-wrap" id="tabsWrap">
   <div class="tab on" data-tab="write" onclick="switchTab(this)">✍️ 콘텐츠 작성</div>
   <div class="tab" data-tab="combo" onclick="switchTab(this)">💡 꿀조합 추천</div>
@@ -456,10 +472,22 @@ header {
       <div class="sec-label">콘텐츠 유형</div>
       <div class="chips" id="ctypeChips">
         <div class="chip on" data-v="상품 상세페이지">🛍 상세페이지</div>
-        <div class="chip" data-v="블로그 포스팅">📝 블로그</div>
         <div class="chip" data-v="이벤트/공지">📢 이벤트</div>
         <div class="chip" data-v="SNS 홍보">📱 SNS</div>
         <div class="chip" data-v="스레드">🧵 스레드</div>
+      </div>
+
+      <!-- 블로그 → SEO 탭 안내 -->
+      <div onclick="switchTab(document.querySelector('[data-tab=seo]'))"
+        style="margin-top:0.8rem;padding:11px 14px;background:rgba(184,146,74,0.08);border:1.5px solid var(--border-g);border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s"
+        onmouseover="this.style.background='rgba(184,146,74,0.16)'"
+        onmouseout="this.style.background='rgba(184,146,74,0.08)'">
+        <span style="font-size:1.1rem">📝</span>
+        <div>
+          <div style="font-size:0.78rem;font-weight:700;color:var(--gold)">블로그 글 작성 → SEO 블로그 탭</div>
+          <div style="font-size:0.7rem;color:var(--text3);margin-top:2px">키워드 분석·본문·발행전략·재활용까지 한번에</div>
+        </div>
+        <span style="margin-left:auto;color:var(--gold)">→</span>
       </div>
 
       <!-- 스레드 전용 옵션 (스레드 선택 시 표시) -->
@@ -1130,10 +1158,31 @@ function cpHTML(id, btn) {
   btn.classList.add('done');
   setTimeout(() => { btn.textContent = orig; btn.classList.remove('done'); }, 1800);
 }
+
+// ── API KEY ──
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) { alert('API 키를 입력해주세요.'); return; }
+  if (!key.startsWith('sk-ant-')) {
+    alert('올바른 Anthropic API 키 형식이 아닙니다.\nsk-ant-api... 형식이어야 해요.'); return;
+  }
+  sessionStorage.setItem('ronai_api_key', key);
+  document.getElementById('apiKeyInput').value = '';
+  document.getElementById('apiStatus').textContent = '✅ 저장됨';
+  document.getElementById('apiStatus').style.color = '#3a8a5a';
+}
+function getApiKey() {
+  return sessionStorage.getItem('ronai_api_key') || null;
+}
+
 async function callAI(prompt, maxTokens=4000) {
+  const userKey = getApiKey();
+  const headers = { 'Content-Type': 'application/json' };
+  if (userKey) headers['x-api-key'] = userKey;
+
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
       max_tokens: maxTokens,
@@ -1141,14 +1190,26 @@ async function callAI(prompt, maxTokens=4000) {
     })
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
+  if (!res.ok) {
+    const msg = data?.error?.message || `HTTP ${res.status}`;
+    const isAuth = msg.includes('401') || msg.includes('auth') || msg.includes('permission');
+    if (isAuth) throw new Error('API 키 오류입니다. 상단에서 올바른 키를 입력해주세요.');
+    throw new Error(msg);
+  }
   const raw = data.content?.[0]?.text || '';
-  // 코드블록 제거 후 JSON 파싱
   const cleaned = raw.replace(/```json|```/g,'').trim();
   const start = cleaned.indexOf('{'), end = cleaned.lastIndexOf('}');
-  if (start === -1 || end === -1) throw new Error('JSON을 찾을 수 없습니다');
+  if (start === -1 || end === -1) throw new Error('응답 파싱 오류, 다시 시도해주세요.');
   return JSON.parse(cleaned.slice(start, end+1));
 }
+
+// 페이지 로드시 저장된 키 상태 표시
+document.addEventListener('DOMContentLoaded', () => {
+  if (sessionStorage.getItem('ronai_api_key')) {
+    document.getElementById('apiStatus').textContent = '✅ 저장됨';
+    document.getElementById('apiStatus').style.color = '#3a8a5a';
+  }
+});
 
 // ── THREADS GEN ──
 const THREADS_TYPES = {
@@ -1211,7 +1272,7 @@ ${count === 1
   : '{"v1":"버전1","v2":"버전2","v3":"버전3"}'}`;
 
   try {
-    const p = await callAI(prompt, 1500);
+    const p = await callAI(prompt, 2000);
     const versions = count === 1 ? [p.v1 || ''] : [p.v1 || '', p.v2 || '', p.v3 || ''];
 
     document.getElementById('contentOutput').innerHTML = `
@@ -1272,6 +1333,8 @@ async function genContent() {
     </div>
   `;
 
+  const isBlog = false; // 블로그는 SEO 탭으로 이동됨
+
   const prompt = `당신은 한국 화장품 자사몰 "로나이(ronai.co.kr)" 전문 마케터입니다.
 로나이는 피부를 위한 셀렉트샵으로, 리라신·브릴리에잇·노탈리·더라포·에크리크·듀베로·오바코·졸로픽스·오도라타 브랜드를 취급합니다.
 
@@ -1289,14 +1352,16 @@ async function genContent() {
 {
   "title": "SEO 최적화 제목 (25-40자, 핵심 키워드 앞배치, 매력적으로)",
   "tags": "#태그1 #태그2 #태그3 #태그4 #태그5 #태그6 #태그7 #태그8 #태그9 #태그10",
-  "body": "상세 본문 (700-900자, 단락은 \\n\\n 구분, 이모지 포함, 성분 효능 설명, 피부 고민 해결 강조, 구매 욕구 자극)",
+  "body": "${isBlog
+    ? '블로그 본문 (2500자 이상 필수. 단락은 \\\\n\\\\n 구분. 소제목 3~4개(## 표시). 성분 효능 상세 설명. 피부 고민별 해결책. 사용법·꿀팁 포함. 이모지 자연스럽게. 구매 욕구 자극. 볼드(**단어**) 처리. 모바일 고려 짧은 문단. 마지막에 구매 CTA)'
+    : '상세 본문 (700-900자, 단락은 \\\\n\\\\n 구분, 이모지 포함, 성분 효능 설명, 피부 고민 해결 강조, 구매 욕구 자극)'}",
   "sns": "SNS 홍보 문구 (130-160자, 감성적, 해시태그 5개 포함)",
   "cta": "구매 유도 문구 3가지 (줄바꿈 구분, 각 20자 이내)",
   "seo_tip": "이 제품 SEO 팁 1줄 (50자 이내)"
 }`;
 
   try {
-    const p = await callAI(prompt);
+    const p = await callAI(prompt, isBlog ? 6000 : 4000);
     document.getElementById('contentOutput').innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem">
         <div style="font-size:0.78rem;color:var(--text2)">✦ <strong style="color:var(--gold)">${name}</strong> 콘텐츠 완성</div>
@@ -1361,22 +1426,33 @@ async function genCombo() {
 
   const prompt = `당신은 화장품 성분 전문가이자 로나이(ronai.co.kr) 스킨케어 전문 에디터입니다.
 로나이 취급 브랜드: 리라신, 브릴리에잇, 노탈리, 더라포, 에크리크, 듀베로, 오바코, 졸로픽스, 오도라타
-제품 카테고리: 토너/스킨, 앰플/에센스, 로션/크림, 클렌징, 선케어, 바디/립/핸드, 팩트/쿠션, 아로마 오일
 
-기준 제품: ${name}
+## 기준 제품
+제품명: ${name}
 주요 성분: ${ingr || '미입력'}
 피부 타입: ${selComboSkin}
 피부 고민: ${worry.join(', ') || '일반'}
 
-로나이 자사몰의 제품들과 어울리는 꿀조합을 3가지 추천해주세요.
+## 요청
+기준 제품과 시너지가 좋은 꿀조합을 3가지 추천해주세요.
+- 제품명을 지어내지 말 것 (없는 제품명 절대 금지)
+- 대신 "어떤 성분이 들어간 어떤 카테고리" 형태로 추천
+  예시: "세라마이드 함유 크림", "BHA 토너", "나이아신아마이드 앰플", "SPF50+ 선크림"
+- 로나이 브랜드 중 어울리는 브랜드명은 언급 가능 (단, 구체적 제품명은 금지)
+- 왜 이 조합이 좋은지 성분 관점에서 구체적으로 설명
+
 반드시 JSON만 응답 (코드블록 없이):
 {
   "combos": [
     {
-      "title": "조합 이름 (20자 이내)",
-      "products": ["기준제품명", "추천제품타입1", "추천제품타입2"],
-      "why": "시너지 이유 설명 (100자 이내)",
-      "order": "사용 순서 설명 (60자 이내)",
+      "title": "조합 이름 (20자 이내, 감각적으로)",
+      "products": [
+        {"name": "${name}", "role": "베이스", "brand": ""},
+        {"name": "추천 성분+카테고리", "role": "보완", "brand": "어울리는 로나이 브랜드명 또는 빈값"},
+        {"name": "추천 성분+카테고리", "role": "마무리", "brand": "어울리는 로나이 브랜드명 또는 빈값"}
+      ],
+      "why": "성분 관점 시너지 이유 (100자 이내)",
+      "order": "아침/저녁 사용 순서 (70자 이내)",
       "effect": "기대 효과 (50자 이내)",
       "caution": "주의사항 있으면 한 줄, 없으면 null"
     }
@@ -1391,7 +1467,7 @@ async function genCombo() {
 }`;
 
   try {
-    const p = await callAI(prompt);
+    const p = await callAI(prompt, 4000);
     let html = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.4rem">
         <div style="font-size:0.85rem;font-weight:700;color:var(--gold)">💡 ${name} 꿀조합 추천</div>
@@ -1401,13 +1477,23 @@ async function genCombo() {
       html += `<div style="background:rgba(82,201,138,0.08);border:1px solid rgba(82,201,138,0.2);border-radius:8px;padding:10px 14px;font-size:0.78rem;color:var(--green);margin-bottom:1.2rem">🌿 루틴 팁: ${p.routine_tip}</div>`;
     }
     (p.combos||[]).forEach((c, i) => {
+      const products = c.products || [];
       html += `
         <div class="combo-card">
           <div class="combo-title">✦ 조합 ${i+1}. ${c.title}</div>
-          <div class="combo-products">
-            ${(c.products||[]).map(pr => `<span class="combo-tag good">${pr}</span>`).join('')}
+          <div style="margin:10px 0">
+            ${products.map((pr, pi) => {
+              const pname = typeof pr === 'object' ? pr.name : pr;
+              const prole = typeof pr === 'object' ? pr.role : '';
+              const pbrand = typeof pr === 'object' && pr.brand ? pr.brand : '';
+              return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <span style="font-size:0.7rem;padding:2px 8px;border-radius:10px;font-weight:700;white-space:nowrap;${pi===0?'background:rgba(184,146,74,0.15);color:var(--gold);border:1px solid var(--border-g)':'background:var(--bg3);color:var(--text2);border:1px solid var(--border)'}">${pi===0?'📦 기준':'💡 '+(prole||'추천')}</span>
+                <span style="font-size:0.84rem;font-weight:${pi===0?700:500};color:var(--text)">${pname}</span>
+                ${pbrand?`<span style="font-size:0.7rem;color:var(--text3);margin-left:auto">${pbrand}</span>`:''}
+              </div>`;
+            }).join('')}
           </div>
-          <div class="combo-desc" style="margin-top:10px"><strong style="color:var(--text);font-size:0.78rem">🔬 시너지 이유</strong><br>${c.why}</div>
+          <div class="combo-desc" style="margin-top:8px"><strong style="color:var(--text);font-size:0.78rem">🔬 시너지 이유</strong><br>${c.why}</div>
           <div class="combo-desc" style="margin-top:7px"><strong style="color:var(--text);font-size:0.78rem">📋 사용 순서</strong><br>${c.order}</div>
           <div class="combo-desc" style="margin-top:7px"><strong style="color:var(--text);font-size:0.78rem">✨ 기대 효과</strong><br>${c.effect}</div>
           ${c.caution ? `<div style="margin-top:8px;padding:7px 11px;background:rgba(224,82,82,0.08);border-radius:6px;font-size:0.76rem;color:var(--red)">⚠️ ${c.caution}</div>` : ''}
@@ -1466,7 +1552,7 @@ async function genConflict() {
 }`;
 
   try {
-    const p = await callAI(prompt);
+    const p = await callAI(prompt, 4000);
     const overallColor = p.overall === 'danger' ? 'var(--red)' : p.overall === 'caution' ? 'var(--gold)' : 'var(--green)';
     const overallLabel = p.overall === 'danger' ? '⛔ 함께 사용 위험' : p.overall === 'caution' ? '⚠️ 주의 필요' : '✅ 함께 사용 가능';
     let html = `
@@ -2010,7 +2096,7 @@ LSI 키워드: ${lsi || '자동 선정'}
 }`;
 
   try {
-    const p = await callAI(prompt);
+    const p = await callAI(prompt, 8000);
 
     const diffColor = p.analysis?.difficulty === '상' ? 'var(--red)' : p.analysis?.difficulty === '중' ? 'var(--gold)' : 'var(--green)';
 
