@@ -1188,6 +1188,7 @@ async function callAI(prompt, maxTokens=4000) {
   const headers = { 'Content-Type': 'application/json' };
   if (userKey) {
     headers['x-api-key'] = userKey;
+    headers['anthropic-version'] = '2023-06-01';
     headers['anthropic-dangerous-direct-browser-access'] = 'true';
   }
 
