@@ -1161,18 +1161,26 @@ function cpHTML(id, btn) {
 
 // ── API KEY ──
 function saveApiKey() {
-  const key = document.getElementById('apiKeyInput').value.trim();
+  const raw = document.getElementById('apiKeyInput').value;
+  const key = raw.replace(/\s+/g, '').trim(); // 공백·줄바꿈 모두 제거
   if (!key) { alert('API 키를 입력해주세요.'); return; }
   if (!key.startsWith('sk-ant-')) {
     alert('올바른 Anthropic API 키 형식이 아닙니다.\nsk-ant-api... 형식이어야 해요.'); return;
   }
-  sessionStorage.setItem('ronai_api_key', key);
+  localStorage.setItem('ronai_api_key', key);
   document.getElementById('apiKeyInput').value = '';
+  document.getElementById('apiKeyInput').placeholder = key.slice(0,18) + '...';
   document.getElementById('apiStatus').textContent = '✅ 저장됨';
   document.getElementById('apiStatus').style.color = '#3a8a5a';
 }
+function clearApiKey() {
+  localStorage.removeItem('ronai_api_key');
+  document.getElementById('apiKeyInput').placeholder = 'sk-ant-api... 입력하면 Claude.ai 한도와 분리됩니다';
+  document.getElementById('apiStatus').textContent = '삭제됨';
+  document.getElementById('apiStatus').style.color = '#c94040';
+}
 function getApiKey() {
-  return sessionStorage.getItem('ronai_api_key') || null;
+  return localStorage.getItem('ronai_api_key') || null;
 }
 
 async function callAI(prompt, maxTokens=4000) {
@@ -1183,20 +1191,30 @@ async function callAI(prompt, maxTokens=4000) {
     headers['anthropic-dangerous-direct-browser-access'] = 'true';
   }
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: maxTokens,
-      messages: [{ role: 'user', content: prompt }]
-    })
-  });
+  let res;
+  try {
+    res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+  } catch(fetchErr) {
+    if (!userKey) {
+      throw new Error('API 키가 없습니다. 상단 검은 배너에 sk-ant-api... 키를 입력 후 저장해주세요.\n\n키 발급: console.anthropic.com/api-keys');
+    }
+    throw new Error('네트워크 오류입니다. 인터넷 연결을 확인해주세요.\n상세: ' + fetchErr.message);
+  }
+
   const data = await res.json();
   if (!res.ok) {
     const msg = data?.error?.message || `HTTP ${res.status}`;
-    const isAuth = msg.includes('401') || msg.includes('auth') || msg.includes('permission');
-    if (isAuth) throw new Error('API 키 오류입니다. 상단에서 올바른 키를 입력해주세요.');
+    if (res.status === 401) throw new Error('API 키가 유효하지 않습니다. 상단에서 키를 다시 입력해주세요.');
+    if (res.status === 429) throw new Error('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
+    if (res.status === 529) throw new Error('Anthropic 서버가 혼잡합니다. 잠시 후 다시 시도해주세요.');
     throw new Error(msg);
   }
   const raw = data.content?.[0]?.text || '';
@@ -1208,7 +1226,9 @@ async function callAI(prompt, maxTokens=4000) {
 
 // 페이지 로드시 저장된 키 상태 표시
 document.addEventListener('DOMContentLoaded', () => {
-  if (sessionStorage.getItem('ronai_api_key')) {
+  const saved = localStorage.getItem('ronai_api_key');
+  if (saved) {
+    document.getElementById('apiKeyInput').placeholder = saved.slice(0,18) + '...';
     document.getElementById('apiStatus').textContent = '✅ 저장됨';
     document.getElementById('apiStatus').style.color = '#3a8a5a';
   }
