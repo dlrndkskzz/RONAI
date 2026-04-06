@@ -1178,7 +1178,10 @@ function getApiKey() {
 async function callAI(prompt, maxTokens=4000) {
   const userKey = getApiKey();
   const headers = { 'Content-Type': 'application/json' };
-  if (userKey) headers['x-api-key'] = userKey;
+  if (userKey) {
+    headers['x-api-key'] = userKey;
+    headers['anthropic-dangerous-direct-browser-access'] = 'true';
+  }
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
