@@ -602,7 +602,12 @@ header {
       <div class="sec-label">제품 A</div>
       <div class="fg">
         <label>제품명</label>
-        <input id="aName" type="text" placeholder="예: 비타민C 세럼" />
+        <div style="display:flex;gap:6px">
+          <input id="aName" type="text" placeholder="예: 비타민C 세럼" style="flex:1" />
+          <button onclick="lookupIngr('a')" id="btnLookupA"
+            style="padding:0 12px;background:var(--gold);border:none;border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:0.72rem;font-weight:700;color:#1a1208;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s"
+            title="제품명으로 성분 자동 검색">🔍 성분 찾기</button>
+        </div>
       </div>
       <div class="ingr-area" style="margin-bottom:1.1rem">
         <div class="ingr-label">성분 입력</div>
@@ -617,7 +622,12 @@ header {
       <div class="sec-label">제품 B</div>
       <div class="fg">
         <label>제품명</label>
-        <input id="bName" type="text" placeholder="예: 레티놀 앰플" />
+        <div style="display:flex;gap:6px">
+          <input id="bName" type="text" placeholder="예: 레티놀 앰플" style="flex:1" />
+          <button onclick="lookupIngr('b')" id="btnLookupB"
+            style="padding:0 12px;background:var(--gold);border:none;border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:0.72rem;font-weight:700;color:#1a1208;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s"
+            title="제품명으로 성분 자동 검색">🔍 성분 찾기</button>
+        </div>
       </div>
       <div class="ingr-area">
         <div class="ingr-label">성분 입력</div>
@@ -1554,6 +1564,72 @@ async function genContent() {
     </div>`;
   }
   stopLoading('btnContent', 'btnContentSpin');
+}
+
+// ── 성분 자동 검색 ──
+async function lookupIngr(side) {
+  const nameEl = document.getElementById(side + 'Name');
+  const name = nameEl.value.trim();
+  if (!name) { nameEl.focus(); alert('제품명을 먼저 입력해주세요!'); return; }
+
+  const btn = document.getElementById('btnLookup' + side.toUpperCase());
+  const origTxt = btn.textContent;
+  btn.textContent = '검색 중...';
+  btn.disabled = true;
+
+  try {
+    const prompt = `당신은 화장품 성분 전문가입니다.
+"${name}" 제품의 주요 성분을 분석해주세요.
+로나이(ronai.co.kr)에서 판매하는 제품일 수 있습니다.
+
+이 제품의 핵심 기능 성분을 10개 이내로 추출해주세요.
+일반적인 화장품 성분 지식을 바탕으로 이 제품 타입에 맞는 성분을 추정해도 됩니다.
+
+JSON만 응답 (코드블록 없이):
+{
+  "ingredients": ["성분1", "성분2", "성분3", "성분4", "성분5"],
+  "product_type": "제품 타입 (예: 수분 앰플, 레티놀 크림 등)",
+  "note": "성분 정보 출처 또는 주의사항 한 줄"
+}`;
+
+    const p = await callAI(prompt, 1000);
+    const ingrs = p.ingredients || [];
+
+    // 기존 성분 초기화 후 추가
+    if (side === 'a') { ingrA.length = 0; }
+    else { ingrB.length = 0; }
+
+    ingrs.forEach(ing => {
+      const arr = side === 'a' ? ingrA : ingrB;
+      if (ing && !arr.includes(ing)) arr.push(ing);
+    });
+
+    renderIngrTags(side);
+
+    // 노트 표시
+    if (p.note) {
+      const tagsEl = document.getElementById(side + 'IngrTags');
+      const noteEl = document.createElement('div');
+      noteEl.style.cssText = 'font-size:0.7rem;color:var(--text3);margin-top:5px;padding:5px 8px;background:var(--bg3);border-radius:6px;line-height:1.5';
+      noteEl.textContent = '💡 ' + p.note;
+      tagsEl.after(noteEl);
+      setTimeout(() => noteEl.remove(), 5000);
+    }
+
+  } catch(e) {
+    alert('성분 검색 실패: ' + e.message);
+  }
+
+  btn.textContent = origTxt;
+  btn.disabled = false;
+}
+
+function renderIngrTags(side) {
+  const arr = side === 'a' ? ingrA : ingrB;
+  const el = document.getElementById(side + 'IngrTags');
+  el.innerHTML = arr.map(v =>
+    `<span class="ingr-tag">${v}<button onclick="removeIngr('${side}','${v}')">✕</button></span>`
+  ).join('');
 }
 
 // ── COMBO GEN ──
