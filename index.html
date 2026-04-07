@@ -412,6 +412,7 @@ header {
   <div class="tab" data-tab="combo" onclick="switchTab(this)">💡 꿀조합 추천</div>
   <div class="tab" data-tab="conflict" onclick="switchTab(this)">⚠️ 성분 충돌 체크</div>
   <div class="tab" data-tab="seo" onclick="switchTab(this)">📈 SEO 블로그</div>
+  <div class="tab" data-tab="history" onclick="switchTab(this)">📋 글 목록</div>
   <div class="tab" data-tab="editor" onclick="switchTab(this)">🎨 미디어 편집</div>
 </div>
 
@@ -704,6 +705,25 @@ header {
       <div class="empty-hero">
         <div class="ei">📈</div>
         <p>주제와 키워드를 입력하면<br><strong>사전 분석 → 본문 → 해시태그 →<br>발행 전략 → 재활용 패키지</strong>까지<br>한번에 완성됩니다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TAB: 글 목록 ===================== -->
+<div class="tab-content" id="tc-history">
+  <div style="max-width:900px;margin:0 auto;padding:2rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+      <div>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--text)">📋 작성한 글 목록</div>
+        <div style="font-size:0.78rem;color:var(--text3);margin-top:4px">생성한 콘텐츠가 자동으로 저장됩니다</div>
+      </div>
+      <button onclick="clearHistory()" style="padding:6px 14px;background:transparent;border:1px solid rgba(201,64,64,0.3);border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:0.75rem;color:var(--red);cursor:pointer">전체 삭제</button>
+    </div>
+    <div id="historyList">
+      <div class="empty-hero" style="margin-top:3rem">
+        <div class="ei">📋</div>
+        <p>아직 작성한 글이 없어요.<br>콘텐츠를 생성하면 여기에 자동으로 저장됩니다.</p>
       </div>
     </div>
   </div>
@@ -1233,7 +1253,98 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('apiStatus').textContent = '✅ 저장됨';
     document.getElementById('apiStatus').style.color = '#3a8a5a';
   }
+  renderHistory();
 });
+
+// ── HISTORY ──
+function saveToHistory(type, title, body, extra={}) {
+  const history = JSON.parse(localStorage.getItem('ronai_history') || '[]');
+  history.unshift({
+    id: Date.now(),
+    type,        // 'content' | 'seo' | 'threads'
+    title,
+    body,
+    extra,
+    date: new Date().toLocaleString('ko-KR')
+  });
+  // 최대 50개 보관
+  if (history.length > 50) history.pop();
+  localStorage.setItem('ronai_history', JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!list) return;
+  const history = JSON.parse(localStorage.getItem('ronai_history') || '[]');
+  if (!history.length) {
+    list.innerHTML = `<div class="empty-hero" style="margin-top:3rem"><div class="ei">📋</div><p>아직 작성한 글이 없어요.<br>콘텐츠를 생성하면 여기에 자동으로 저장됩니다.</p></div>`;
+    return;
+  }
+  const typeLabel = { content:'✍️ 콘텐츠', seo:'📈 SEO 블로그', threads:'🧵 스레드' };
+  const typeColor = { content:'var(--gold)', seo:'var(--blue)', threads:'var(--text2)' };
+  list.innerHTML = history.map(h => `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.4rem;margin-bottom:0.8rem;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 2px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:0.6rem">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <span style="font-size:0.7rem;padding:2px 8px;border-radius:10px;background:var(--bg3);color:${typeColor[h.type]};font-weight:700;border:1px solid var(--border);white-space:nowrap">${typeLabel[h.type]||h.type}</span>
+            <span style="font-size:0.7rem;color:var(--text3);font-family:'DM Mono',monospace">${h.date}</span>
+          </div>
+          <div style="font-size:0.92rem;font-weight:700;color:var(--text);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.title}</div>
+          <div style="font-size:0.78rem;color:var(--text3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${(h.body||'').replace(/\n/g,' ').slice(0,120)}...</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <button onclick="viewHistory(${h.id})" style="padding:5px 12px;background:var(--gold);border:none;border-radius:7px;font-family:'Noto Sans KR',sans-serif;font-size:0.73rem;font-weight:700;color:#1a1208;cursor:pointer">보기</button>
+          <button onclick="deleteHistory(${h.id})" style="padding:5px 10px;background:transparent;border:1px solid var(--border);border-radius:7px;font-size:0.73rem;color:var(--text3);cursor:pointer">삭제</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function viewHistory(id) {
+  const history = JSON.parse(localStorage.getItem('ronai_history') || '[]');
+  const h = history.find(x => x.id === id);
+  if (!h) return;
+  const typeLabel = { content:'✍️ 콘텐츠', seo:'📈 SEO 블로그', threads:'🧵 스레드' };
+  // 모달로 보기
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem';
+  modal.innerHTML = `
+    <div style="background:var(--bg2);border-radius:16px;width:100%;max-width:700px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 10px 50px rgba(0,0,0,0.3)">
+      <div style="padding:1.2rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+        <div>
+          <div style="font-size:0.72rem;color:var(--text3);margin-bottom:3px">${typeLabel[h.type]} · ${h.date}</div>
+          <div style="font-size:1rem;font-weight:700;color:var(--text)">${h.title}</div>
+        </div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:0.8rem;cursor:pointer;color:var(--text2)">✕ 닫기</button>
+      </div>
+      <div style="padding:1.5rem;overflow-y:auto;flex:1">
+        <div style="white-space:pre-wrap;font-size:0.85rem;color:var(--text);line-height:1.9">${h.body||''}</div>
+        ${h.extra?.tags ? `<div style="margin-top:1.2rem;padding:10px 14px;background:var(--bg3);border-radius:8px;font-size:0.78rem;color:var(--text2)">${h.extra.tags}</div>` : ''}
+      </div>
+      <div style="padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0">
+        <button onclick="navigator.clipboard.writeText(document.querySelector('[style*=pre-wrap]').textContent);this.textContent='✓ 복사됨!';setTimeout(()=>this.textContent='📋 본문 복사',1500)" style="padding:8px 18px;background:var(--gold);border:none;border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:0.8rem;font-weight:700;color:#1a1208;cursor:pointer">📋 본문 복사</button>
+        ${h.extra?.tags ? `<button onclick="navigator.clipboard.writeText('${h.extra.tags.replace(/'/g,"\\'")}');this.textContent='✓ 복사됨!';setTimeout(()=>this.textContent='🏷 태그 복사',1500)" style="padding:8px 18px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:0.8rem;cursor:pointer;color:var(--text2)">🏷 태그 복사</button>` : ''}
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function deleteHistory(id) {
+  let history = JSON.parse(localStorage.getItem('ronai_history') || '[]');
+  history = history.filter(h => h.id !== id);
+  localStorage.setItem('ronai_history', JSON.stringify(history));
+  renderHistory();
+}
+
+function clearHistory() {
+  if (!confirm('작성한 글 목록을 전부 삭제할까요?')) return;
+  localStorage.removeItem('ronai_history');
+  renderHistory();
+}
 
 // ── THREADS GEN ──
 const THREADS_TYPES = {
@@ -1318,13 +1429,12 @@ ${count === 1
           </div>
         </div>`).join('')}
     `;
+    saveToHistory('threads', `${name} · ${typeInfo.name}`, versions.join('\n\n---\n\n'));
   } catch(e) {
     document.getElementById('contentOutput').innerHTML = `<div style="padding:2rem;color:var(--red)">오류: ${e.message}</div>`;
   }
   stopLoading('btnContent', 'btnContentSpin');
 }
-
-// ── CONTENT GEN ──
 async function genContent() {
   const name = document.getElementById('iName').value.trim();
   if (!name) { document.getElementById('iName').focus(); return; }
@@ -1431,6 +1541,7 @@ async function genContent() {
         </div>
       </div>
     `;
+    saveToHistory('content', p.title || name, p.body || '', { tags: p.tags, sns: p.sns, ctype: selCtype });
   } catch(e) {
     document.getElementById('contentOutput').innerHTML = `<div style="padding:1.5rem;background:rgba(201,64,64,0.06);border:1px solid rgba(201,64,64,0.2);border-radius:10px;margin:1rem">
       <div style="font-weight:700;color:var(--red);margin-bottom:8px">⚠️ 오류가 발생했습니다</div>
@@ -2325,8 +2436,8 @@ LSI 키워드: ${lsi || '자동 선정'}
     `;
 
     document.getElementById('seoOutput').innerHTML = html;
-    // 숨겨진 메타 카드에 텍스트 넣기
     document.getElementById('o-meta').textContent = p.meta || '';
+    saveToHistory('seo', (p.titles?.t1 || topic), p.body || '', { tags: Object.values(p.hashtags||{}).flat().map(t=>'#'+t).join(' ') });
 
   } catch(e) {
     document.getElementById('seoOutput').innerHTML = `<div style="padding:1.5rem;background:rgba(201,64,64,0.06);border:1px solid rgba(201,64,64,0.2);border-radius:10px;margin:1rem">
@@ -2341,6 +2452,7 @@ LSI 키워드: ${lsi || '자동 선정'}
   }
   stopLoading('btnSEO', 'btnSEOSpin');
 }
+</script>
 </script>
 
 </body>
