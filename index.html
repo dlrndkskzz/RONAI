@@ -1492,15 +1492,21 @@ async function genContent() {
 가격: ${price || '미입력'}
 추가 요청: ${extra || '없음'}
 
+## 아임웹 SEO 작성 가이드 (본문 작성 시 반드시 준수)
+1. 제목은 게시글의 주제가 드러나도록 20~60자 이내
+2. 키워드는 게시물과 직접 관련된 단어나 구문을 5~10개 입력
+3. 본문은 '단락'의 제목을 H2~H6 태그 순서에 맞게 작성, 번호 건너뛰거나 중복 사용 최대한 지양
+4. 모든 이미지에 대체 텍스트(alt) 포함 권장
+
 반드시 JSON만 응답 (코드블록 없이):
 {
-  "title": "SEO 최적화 제목 (25-40자, 핵심 키워드 앞배치, 매력적으로)",
+  "title": "SEO 제목 (20-60자, 핵심 키워드 앞배치, 아임웹 가이드 준수)",
   "tags": "#태그1 #태그2 #태그3 #태그4 #태그5 #태그6 #태그7 #태그8 #태그9 #태그10",
-  "body": "${isBlog
-    ? '블로그 본문 (2500자 이상 필수. 단락은 \\\\n\\\\n 구분. 소제목 3~4개(## 표시). 성분 효능 상세 설명. 피부 고민별 해결책. 사용법·꿀팁 포함. 이모지 자연스럽게. 구매 욕구 자극. 볼드(**단어**) 처리. 모바일 고려 짧은 문단. 마지막에 구매 CTA)'
-    : '상세 본문 (700-900자, 단락은 \\\\n\\\\n 구분, 이모지 포함, 성분 효능 설명, 피부 고민 해결 강조, 구매 욕구 자극)'}",
+  "body": "상세 본문 (700-900자. ## 소제목 2~3개 포함. 단락 \\n\\n 구분. 이모지 포함. 성분 효능 설명. 피부 고민 해결 강조. 구매 욕구 자극. H태그 순서 준수)",
   "sns": "SNS 홍보 문구 (130-160자, 감성적, 해시태그 5개 포함)",
   "cta": "구매 유도 문구 3가지 (줄바꿈 구분, 각 20자 이내)",
+  "youtube": "유튜브/쇼츠 대사 10줄 내외. 자연스러운 구어체. 1줄=1컷 기준. 도입(공감)-본론(제품소개·성분·효과)-마무리(구매유도) 구조. 각 줄 앞에 번호 표기.",
+  "alt_text": "대표 이미지 alt 텍스트 3개 (줄바꿈 구분, 각 20자 이내, 키워드 포함)",
   "seo_tip": "이 제품 SEO 팁 1줄 (50자 이내)"
 }`;
 
@@ -1515,15 +1521,13 @@ async function genContent() {
       <div class="grid2">
         <div class="out-card ready">
           <div class="out-card-head">
-            <div class="out-card-title">📌 상품 제목 <span class="char-pill" id="c-title">${(p.title||'').length}자</span></div>
+            <div class="out-card-title">📌 제목 <span class="char-pill">${(p.title||'').length}자</span></div>
           </div>
           <div class="out-card-body fu" id="o-title">${p.title||''}</div>
           <div class="out-card-foot"><button class="btn-sm" onclick="cp('o-title',this)">복사</button></div>
         </div>
         <div class="out-card ready">
-          <div class="out-card-head">
-            <div class="out-card-title">🏷 해시태그</div>
-          </div>
+          <div class="out-card-head"><div class="out-card-title">🏷 해시태그 / 키워드</div></div>
           <div class="out-card-body fu" id="o-tags">${p.tags||''}</div>
           <div class="out-card-foot"><button class="btn-sm" onclick="cp('o-tags',this)">복사</button></div>
         </div>
@@ -1538,6 +1542,11 @@ async function genContent() {
           <button class="btn-sm" onclick="cpHTML('o-body',this)">HTML 복사</button>
         </div>
       </div>
+      ${p.alt_text ? `<div class="out-card ready">
+        <div class="out-card-head"><div class="out-card-title">🖼 이미지 alt 텍스트 <span class="char-pill" style="background:rgba(58,96,144,0.12);color:var(--blue)">아임웹 SEO</span></div></div>
+        <div class="out-card-body fu" id="o-alt" style="font-size:0.82rem;line-height:1.9">${p.alt_text}</div>
+        <div class="out-card-foot"><button class="btn-sm" onclick="cp('o-alt',this)">복사</button></div>
+      </div>` : ''}
       <div class="grid2">
         <div class="out-card ready">
           <div class="out-card-head"><div class="out-card-title">📱 SNS 문구 <span class="char-pill">${(p.sns||'').length}자</span></div></div>
@@ -1549,6 +1558,11 @@ async function genContent() {
           <div class="out-card-body fu" id="o-cta">${p.cta||''}</div>
           <div class="out-card-foot"><button class="btn-sm" onclick="cp('o-cta',this)">복사</button></div>
         </div>
+      </div>
+      <div class="out-card ready">
+        <div class="out-card-head"><div class="out-card-title">🎬 유튜브 / 쇼츠 대사 <span class="char-pill" style="background:rgba(201,64,64,0.1);color:var(--red)">10줄 내외</span></div></div>
+        <div class="out-card-body fu" id="o-youtube" style="white-space:pre-wrap;line-height:2;font-size:0.84rem">${p.youtube||''}</div>
+        <div class="out-card-foot"><button class="btn-sm" onclick="cp('o-youtube',this)">복사</button></div>
       </div>
     `;
     saveToHistory('content', p.title || name, p.body || '', { tags: p.tags, sns: p.sns, ctype: selCtype });
