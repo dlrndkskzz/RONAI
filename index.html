@@ -476,6 +476,7 @@ header {
         <div class="chip" data-v="이벤트/공지">📢 이벤트</div>
         <div class="chip" data-v="SNS 홍보">📱 SNS</div>
         <div class="chip" data-v="스레드">🧵 스레드</div>
+        <div class="chip" data-v="유튜브/쇼츠">🎬 유튜브/쇼츠</div>
       </div>
 
       <!-- 블로그 → SEO 탭 안내 -->
@@ -491,7 +492,7 @@ header {
         <span style="margin-left:auto;color:var(--gold)">→</span>
       </div>
 
-      <!-- 스레드 전용 옵션 (스레드 선택 시 표시) -->
+      <!-- 스레드 전용 옵션 -->
       <div id="threadsOpts" style="display:none;margin-top:1rem">
         <div class="sec-label">스레드 유형</div>
         <div class="chips" id="threadsTypeChips" style="margin-bottom:0.8rem">
@@ -512,6 +513,25 @@ header {
             <div class="chip on" data-v="1">1개</div>
             <div class="chip" data-v="3">3개 버전</div>
           </div>
+        </div>
+      </div>
+
+      <!-- 유튜브/쇼츠 전용 옵션 -->
+      <div id="youtubeOpts" style="display:none;margin-top:1rem">
+        <div class="sec-label">영상 유형</div>
+        <div class="chips" id="youtubeTypeChips" style="margin-bottom:0.8rem">
+          <div class="chip on" data-v="쇼츠">📱 쇼츠 (60초)</div>
+          <div class="chip" data-v="일반">🎬 일반 영상 (3~5분)</div>
+        </div>
+        <div class="sec-label">대사 스타일</div>
+        <div class="chips" id="youtubeStyleChips" style="margin-bottom:0.8rem">
+          <div class="chip on" data-v="친근한 말투">😊 친근하게</div>
+          <div class="chip" data-v="전문가 말투">💼 전문적으로</div>
+          <div class="chip" data-v="감성적 말투">✨ 감성적으로</div>
+        </div>
+        <div class="fg">
+          <label>강조할 포인트 <span style="font-weight:400;color:var(--text3)">(선택)</span></label>
+          <input id="youtubeFocus" type="text" placeholder="예: 성분 설명 위주, 전후 변화, 사용법" />
         </div>
       </div>
 
@@ -1093,9 +1113,12 @@ initChips('skinChips', true);
 initChips('ctypeChips', false, null, null, () => {
   selCtype = document.querySelector('#ctypeChips .chip.on')?.dataset.v || '상품 상세페이지';
   document.getElementById('threadsOpts').style.display = selCtype === '스레드' ? 'block' : 'none';
+  document.getElementById('youtubeOpts').style.display = selCtype === '유튜브/쇼츠' ? 'block' : 'none';
 });
 initChips('threadsTypeChips', false);
 initChips('threadsCountChips', false);
+initChips('youtubeTypeChips', false);
+initChips('youtubeStyleChips', false);
 initChips('comboSkinChips', false, null, null, () => {
   selComboSkin = document.querySelector('#comboSkinChips .chip.on')?.dataset.v || '건성';
 });
@@ -1356,6 +1379,93 @@ function clearHistory() {
   renderHistory();
 }
 
+// ── YOUTUBE GEN ──
+async function genYoutube(name, brand, ptype, skin, ingr, price, extra) {
+  const vidType = document.querySelector('#youtubeTypeChips .chip.on')?.dataset.v || '쇼츠';
+  const style = document.querySelector('#youtubeStyleChips .chip.on')?.dataset.v || '친근한 말투';
+  const focus = document.getElementById('youtubeFocus')?.value || '';
+  const isShorts = vidType === '쇼츠';
+
+  setLoading('btnContent', 'btnContentSpin');
+  document.getElementById('contentOutput').innerHTML = `<div style="padding:2rem">${skelCard(6)}</div>`;
+
+  const prompt = `당신은 로나이(ronai.co.kr) 화장품 자사몰의 유튜브 콘텐츠 전문 작가입니다.
+
+## 제품 정보
+제품명: ${name} | 브랜드: ${brand||'미입력'} | 타입: ${ptype||'미입력'}
+피부 고민: ${skin.join(', ')||'일반'} | 성분: ${ingr||'미입력'} | 가격: ${price||'미입력'}
+추가 요청: ${extra||'없음'} | 강조 포인트: ${focus||'없음'}
+
+## 영상 설정
+- 유형: ${vidType} ${isShorts ? '(60초 이내, 세로 영상)' : '(3~5분 가로 영상)'}
+- 말투: ${style}
+
+## 대사 작성 규칙
+- ${isShorts ? '10줄 내외 (1줄 = 약 5~7초 분량)' : '20~30줄 (1줄 = 1컷/장면)'}
+- 1줄 = 화면에 나오는 1컷 기준
+- 구어체, 자연스럽게 말하는 느낌
+- 도입(공감/훅) → 본론(제품·성분·효과) → 마무리(구매유도) 구조
+- 각 줄 앞에 번호와 [장면 설명] 포함
+- 광고 티 나지 않게, 정보 전달하듯이
+
+반드시 JSON만 응답 (코드블록 없이):
+{
+  "title": "유튜브 제목 (클릭률 높은 제목, 40~60자, 키워드 포함)",
+  "thumbnail_text": "썸네일 텍스트 3가지 안 (각 15자 이내, 줄바꿈 구분)",
+  "script": "대사 전체 (줄바꿈으로 구분, 번호+[장면]+대사 형식)",
+  "hashtags": "#태그1 #태그2 #태그3 #태그4 #태그5",
+  "description": "유튜브 영상 설명란 (200자 이내, 키워드 포함, 링크 안내 포함)"
+}`;
+
+  try {
+    const p = await callAI(prompt, 3000);
+    document.getElementById('contentOutput').innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem">
+        <div style="font-size:0.78rem;color:var(--text2)">🎬 <strong style="color:var(--gold)">${name}</strong> · ${vidType} 대사 완성</div>
+        <div style="font-size:0.72rem;font-family:'DM Mono',monospace;color:var(--text3)">${new Date().toLocaleTimeString('ko-KR')}</div>
+      </div>
+      <div class="grid2">
+        <div class="out-card ready">
+          <div class="out-card-head"><div class="out-card-title">📌 유튜브 제목</div></div>
+          <div class="out-card-body fu" id="yt-title">${p.title||''}</div>
+          <div class="out-card-foot"><button class="btn-sm" onclick="cp('yt-title',this)">복사</button></div>
+        </div>
+        <div class="out-card ready">
+          <div class="out-card-head"><div class="out-card-title">🖼 썸네일 텍스트 안</div></div>
+          <div class="out-card-body fu" id="yt-thumb" style="white-space:pre-wrap;font-size:0.83rem">${p.thumbnail_text||''}</div>
+          <div class="out-card-foot"><button class="btn-sm" onclick="cp('yt-thumb',this)">복사</button></div>
+        </div>
+      </div>
+      <div class="out-card ready">
+        <div class="out-card-head">
+          <div class="out-card-title">🎬 영상 대사 <span class="char-pill" style="background:rgba(201,64,64,0.1);color:var(--red)">${vidType}</span></div>
+        </div>
+        <div class="out-card-body fu" id="yt-script" style="white-space:pre-wrap;line-height:2.1;font-size:0.84rem">${p.script||''}</div>
+        <div class="out-card-foot"><button class="btn-sm" onclick="cp('yt-script',this)">📋 대사 복사</button></div>
+      </div>
+      <div class="grid2">
+        <div class="out-card ready">
+          <div class="out-card-head"><div class="out-card-title">📝 영상 설명란</div></div>
+          <div class="out-card-body fu" id="yt-desc">${p.description||''}</div>
+          <div class="out-card-foot"><button class="btn-sm" onclick="cp('yt-desc',this)">복사</button></div>
+        </div>
+        <div class="out-card ready">
+          <div class="out-card-head"><div class="out-card-title">🏷 해시태그</div></div>
+          <div class="out-card-body fu" id="yt-tags">${p.hashtags||''}</div>
+          <div class="out-card-foot"><button class="btn-sm" onclick="cp('yt-tags',this)">복사</button></div>
+        </div>
+      </div>
+    `;
+    saveToHistory('content', `🎬 ${name} ${vidType}`, p.script||'', { tags: p.hashtags, ctype: '유튜브/쇼츠' });
+  } catch(e) {
+    document.getElementById('contentOutput').innerHTML = `<div style="padding:1.5rem;background:rgba(201,64,64,0.06);border:1px solid rgba(201,64,64,0.2);border-radius:10px;margin:1rem">
+      <div style="font-weight:700;color:var(--red);margin-bottom:8px">⚠️ 오류가 발생했습니다</div>
+      <div style="font-size:0.82rem;color:var(--text2)">${e.message}</div>
+    </div>`;
+  }
+  stopLoading('btnContent', 'btnContentSpin');
+}
+
 // ── THREADS GEN ──
 const THREADS_TYPES = {
   '1': { name: '제품 소개형', guide: '제품 특징·성분·효능을 자연스럽게 소개. 구체적 성분/효과 최소 1가지 포함.' },
@@ -1459,6 +1569,11 @@ async function genContent() {
   // ── 스레드 전용 분기 ──
   if (selCtype === '스레드') {
     await genThreads(name, brand, ptype, skin, ingr, price, extra);
+    return;
+  }
+  // ── 유튜브/쇼츠 전용 분기 ──
+  if (selCtype === '유튜브/쇼츠') {
+    await genYoutube(name, brand, ptype, skin, ingr, price, extra);
     return;
   }
 
