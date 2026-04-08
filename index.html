@@ -374,6 +374,26 @@ header {
   .panel-left { height: auto; position: static; }
   .panel-right { height: auto; }
   .grid2 { grid-template-columns: 1fr; }
+  /* 탭 모바일 스크롤 */
+  .tabs-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+  .tabs-wrap::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 12px 16px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  /* API 배너 모바일 */
+  #apiBanner {
+    padding: 7px 1rem;
+    gap: 7px;
+  }
+  #apiBanner a { display: none; }
 }
 </style>
 </head>
