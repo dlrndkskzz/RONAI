@@ -314,6 +314,7 @@ header {
 /* SPIN */
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { width: 15px; height: 15px; border: 2px solid rgba(26,18,8,0.3); border-top-color: #1a1208; border-radius: 50%; animation: spin 0.7s linear infinite; }
+.drag-over { border-color: var(--gold) !important; background: rgba(184,146,74,0.1) !important; }
 
 @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 .fu { animation: fadeUp 0.3s ease forwards; }
@@ -440,6 +441,45 @@ header {
 <div class="tab-content on" id="tc-write">
   <div class="layout">
     <aside class="panel-left">
+
+      <!-- 파일 분석 영역 -->
+      <div style="margin-bottom:1.4rem">
+        <div class="sec-label" style="display:flex;align-items:center;justify-content:space-between">
+          <span>📎 파일/사진으로 자동 분석</span>
+          <span style="font-size:0.68rem;color:var(--text3);font-weight:400">선택사항</span>
+        </div>
+        <div id="dropZone"
+          onclick="document.getElementById('fileAnalysisInput').click()"
+          ondragover="event.preventDefault();this.classList.add('drag-over')"
+          ondragleave="this.classList.remove('drag-over')"
+          ondrop="this.classList.remove('drag-over');handleAnalysisFiles(event.dataTransfer.files)"
+          style="border:2px dashed var(--border-g);border-radius:10px;padding:1.2rem;text-align:center;cursor:pointer;transition:all .2s;background:rgba(184,146,74,0.04);position:relative">
+          <div style="font-size:2rem;margin-bottom:6px">📎</div>
+          <div style="font-size:0.82rem;color:var(--text);font-weight:700;margin-bottom:4px">사진 · 파일 업로드</div>
+          <div style="font-size:0.71rem;color:var(--text3);line-height:1.7">제품 사진, 성분표, 상세페이지 캡처<br>JPG · PNG · PDF · TXT · 드래그&드롭</div>
+          <div style="margin-top:8px;display:inline-block;padding:5px 14px;background:var(--gold);border-radius:6px;font-size:0.74rem;font-weight:700;color:#1a1208">파일 선택하기</div>
+          <input type="file" id="fileAnalysisInput" multiple accept="image/*,.pdf,.txt"
+            style="display:none" onchange="handleAnalysisFiles(this.files)">
+        </div>
+
+        <!-- 업로드된 파일 목록 -->
+        <div id="fileList" style="margin-top:8px;display:none">
+          <div id="fileItems"></div>
+          <button onclick="analyzeFiles()" id="btnAnalyze"
+            style="width:100%;margin-top:8px;padding:9px;background:var(--gold);border:none;border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:0.8rem;font-weight:700;color:#1a1208;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+            <span id="btnAnalyzeTxt">🔍 분석해서 제품 정보 자동 입력</span>
+            <div class="spin" id="analyzeSpin" style="display:none"></div>
+          </button>
+          <button onclick="clearFiles()"
+            style="width:100%;margin-top:5px;padding:7px;background:transparent;border:1px solid var(--border);border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:0.75rem;color:var(--text3);cursor:pointer">
+            파일 초기화
+          </button>
+        </div>
+
+        <!-- 분석 결과 미리보기 -->
+        <div id="analyzeResult" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(184,146,74,0.06);border:1px solid var(--border-g);border-radius:8px;font-size:0.76rem;color:var(--text2);line-height:1.8"></div>
+      </div>
+
       <div class="sec-label">제품 정보</div>
 
       <div class="fg">
@@ -1308,6 +1348,197 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   renderHistory();
 });
+
+// ── FILE ANALYSIS ──
+let analysisFiles = [];
+
+// 클립보드 붙여넣기로 이미지 업로드
+document.addEventListener('paste', (e) => {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  const imageItems = Array.from(items).filter(i => i.type.startsWith('image/'));
+  if (!imageItems.length) return;
+  const files = imageItems.map(i => i.getAsFile()).filter(Boolean);
+  if (files.length) {
+    handleAnalysisFiles(files);
+    // 콘텐츠 작성 탭에 있을 때만 안내
+    const writeTab = document.getElementById('tc-write');
+    if (writeTab?.classList.contains('on')) {
+      const zone = document.getElementById('dropZone');
+      zone.style.borderColor = 'var(--gold)';
+      zone.style.background = 'rgba(184,146,74,0.1)';
+      setTimeout(() => {
+        zone.style.borderColor = '';
+        zone.style.background = '';
+      }, 1000);
+    }
+  }
+});
+
+function handleAnalysisFiles(files) {
+  for (const f of files) {
+    if (analysisFiles.length >= 5) { alert('최대 5개까지 업로드 가능해요!'); break; }
+    if (!analysisFiles.find(x => x.name === f.name)) analysisFiles.push(f);
+  }
+  renderFileList();
+}
+
+function renderFileList() {
+  const listEl = document.getElementById('fileList');
+  const itemsEl = document.getElementById('fileItems');
+  if (!analysisFiles.length) { listEl.style.display = 'none'; return; }
+  listEl.style.display = 'block';
+  itemsEl.innerHTML = analysisFiles.map((f, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;margin-bottom:4px;font-size:0.76rem">
+      <span>${f.type.startsWith('image/') ? '🖼' : f.type.includes('pdf') ? '📄' : '📝'}</span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)">${f.name}</span>
+      <span style="color:var(--text3);flex-shrink:0">${(f.size/1024).toFixed(0)}KB</span>
+      <button onclick="removeAnalysisFile(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:0.8rem;padding:0;line-height:1">✕</button>
+    </div>`).join('');
+}
+
+function removeAnalysisFile(i) {
+  analysisFiles.splice(i, 1);
+  renderFileList();
+  if (!analysisFiles.length) document.getElementById('analyzeResult').style.display = 'none';
+}
+
+function clearFiles() {
+  analysisFiles = [];
+  renderFileList();
+  document.getElementById('analyzeResult').style.display = 'none';
+  document.getElementById('fileAnalysisInput').value = '';
+}
+
+async function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function analyzeFiles() {
+  if (!analysisFiles.length) return;
+  const userKey = getApiKey();
+
+  document.getElementById('btnAnalyzeTxt').textContent = '분석 중...';
+  document.getElementById('analyzeSpin').style.display = 'block';
+  document.getElementById('btnAnalyze').disabled = true;
+  document.getElementById('analyzeResult').style.display = 'none';
+
+  try {
+    // 메시지 내용 구성
+    const content = [];
+
+    for (const f of analysisFiles) {
+      if (f.type.startsWith('image/')) {
+        const b64 = await fileToBase64(f);
+        content.push({
+          type: 'image',
+          source: { type: 'base64', media_type: f.type, data: b64 }
+        });
+      } else if (f.type === 'text/plain') {
+        const text = await f.text();
+        content.push({ type: 'text', text: `[파일: ${f.name}]\n${text}` });
+      } else if (f.type === 'application/pdf') {
+        const b64 = await fileToBase64(f);
+        content.push({
+          type: 'document',
+          source: { type: 'base64', media_type: 'application/pdf', data: b64 }
+        });
+      }
+    }
+
+    content.push({
+      type: 'text',
+      text: `위 파일(들)을 분석해서 화장품 제품 정보를 추출해주세요.
+이미지라면 제품 사진, 성분표, 상세페이지 등을 읽어주세요.
+
+반드시 JSON만 응답 (코드블록 없이):
+{
+  "product_name": "제품명 (없으면 빈 문자열)",
+  "brand": "브랜드명 (없으면 빈 문자열)",
+  "product_type": "제품 타입 (예: 수분크림, 앰플 등)",
+  "skin_concerns": ["피부고민1", "피부고민2"],
+  "ingredients": "주요 성분 (쉼표 구분, 없으면 빈 문자열)",
+  "price": "가격 (없으면 빈 문자열)",
+  "features": "특징/효능 요약 (100자 이내)",
+  "summary": "파일에서 읽은 내용 요약 (150자 이내)"
+}`
+    });
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (userKey) {
+      headers['x-api-key'] = userKey;
+      headers['anthropic-version'] = '2023-06-01';
+      headers['anthropic-dangerous-direct-browser-access'] = 'true';
+    }
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content }]
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
+    const raw = data.content?.[0]?.text || '';
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+    const start = cleaned.indexOf('{'), end = cleaned.lastIndexOf('}');
+    const p = JSON.parse(cleaned.slice(start, end + 1));
+
+    // 제품 정보 자동 입력
+    if (p.product_name) document.getElementById('iName').value = p.product_name;
+    if (p.brand) document.getElementById('iBrand').value = p.brand;
+    if (p.product_type) document.getElementById('iType').value = p.product_type;
+    if (p.ingredients) document.getElementById('iIngr').value = p.ingredients;
+    if (p.price) document.getElementById('iPrice').value = p.price;
+    if (p.features) document.getElementById('iExtra').value = p.features;
+
+    // 피부 고민 칩 자동 선택
+    if (p.skin_concerns?.length) {
+      const skinMap = {
+        '트러블': '트러블/민감', '민감': '트러블/민감',
+        '수분': '수분/악건성', '건성': '수분/악건성', '건조': '수분/악건성',
+        '모공': '모공/각질', '각질': '모공/각질',
+        '탄력': '탄력/주름', '주름': '탄력/주름', '안티에이징': '탄력/주름',
+        '미백': '미백/톤업', '톤업': '미백/톤업', '브라이트닝': '미백/톤업',
+        '피부장벽': '피부장벽/홍조/예민', '홍조': '피부장벽/홍조/예민', '예민': '피부장벽/홍조/예민'
+      };
+      document.querySelectorAll('#skinChips .chip').forEach(c => c.classList.remove('on'));
+      p.skin_concerns.forEach(concern => {
+        Object.entries(skinMap).forEach(([key, val]) => {
+          if (concern.includes(key)) {
+            const chip = document.querySelector(`#skinChips .chip[data-v="${val}"]`);
+            if (chip) chip.classList.add('on');
+          }
+        });
+      });
+    }
+
+    // 결과 미리보기
+    const resultEl = document.getElementById('analyzeResult');
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = `
+      <div style="font-weight:700;color:var(--gold);margin-bottom:6px">✅ 분석 완료 — 제품 정보가 자동 입력됐어요!</div>
+      <div style="color:var(--text3)">${p.summary || '파일에서 제품 정보를 추출했어요.'}</div>`;
+
+  } catch(e) {
+    document.getElementById('analyzeResult').style.display = 'block';
+    document.getElementById('analyzeResult').innerHTML =
+      `<div style="color:var(--red)">⚠️ 분석 실패: ${e.message}</div>`;
+  }
+
+  document.getElementById('btnAnalyzeTxt').textContent = '🔍 분석해서 제품 정보 자동 입력';
+  document.getElementById('analyzeSpin').style.display = 'none';
+  document.getElementById('btnAnalyze').disabled = false;
+}
 
 // ── HISTORY ──
 function saveToHistory(type, title, body, extra={}) {
