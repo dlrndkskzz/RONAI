@@ -372,7 +372,7 @@ textarea.f-in{resize:vertical;min-height:80px;line-height:1.55}
 </div><!-- /cv -->
 
 <!-- ═══════ 히스토리 탭 ═══════ -->
-<div id="hv">
+<div id="hv" style="display:none">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
     <div style="font-size:1rem;font-weight:700">생성 히스토리</div>
     <button class="btn-s ol" onclick="clearHist()" style="font-size:.72rem;padding:6px 12px;min-height:0">전체 삭제</button>
@@ -430,12 +430,19 @@ function toggleType(el){
 
 // ── INIT ──
 (async()=>{
-  const sk=await rGet('ronai:saved_kws');if(sk){savedKws=sk;renderSvKws();}
-  const h=await rGet('ronai:hist');if(h){hist=h;}
+  try{
+    const sk=await rGet('ronai:saved_kws');if(sk){savedKws=sk;renderSvKws();}
+  }catch(e){console.warn('즐겨찾기 로드 실패',e);}
+  try{
+    const h=await rGet('ronai:hist');if(h){hist=h;}
+  }catch(e){console.warn('히스토리 로드 실패',e);}
+  // imgZone은 숨겨진 상태일 수 있으므로 null 체크
   const z=document.getElementById('imgZone');
-  z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('drag')});
-  z.addEventListener('dragleave',()=>z.classList.remove('drag'));
-  z.addEventListener('drop',e=>{e.preventDefault();z.classList.remove('drag');handleImgs(e.dataTransfer.files)});
+  if(z){
+    z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('drag')});
+    z.addEventListener('dragleave',()=>z.classList.remove('drag'));
+    z.addEventListener('drop',e=>{e.preventDefault();z.classList.remove('drag');handleImgs(e.dataTransfer.files)});
+  }
 })();
 
 // ── TAB ──
@@ -444,9 +451,12 @@ async function switchTab(t){
   document.getElementById('cv').style.display=t==='c'?'':'none';
   document.getElementById('hv').style.display=t==='h'?'':'none';
   if(t==='h'){
-    // 히스토리 탭 열 때마다 Redis에서 최신 데이터 다시 로드
-    const latest=await rGet('ronai:hist');
-    if(latest) hist=latest;
+    const el=document.getElementById('histList');
+    el.innerHTML='<div style="text-align:center;padding:32px;color:var(--g5);font-size:.85rem">🔄 불러오는 중...</div>';
+    try{
+      const latest=await rGet('ronai:hist');
+      if(latest && Array.isArray(latest)) hist=latest;
+    }catch(e){console.warn('히스토리 로드 실패',e);}
     renderHist();
   }
 }
