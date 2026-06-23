@@ -355,7 +355,7 @@ textarea.f-in{resize:vertical;min-height:80px;line-height:1.55}
   </div>
 
   <!-- RESULT -->
-  <div id="rv">
+  <div id="rv" style="display:none">
     <div class="r-hdr">
       <div><div class="r-title" id="rTitle">콘텐츠 생성 완료</div><div class="r-meta" id="rMeta"></div></div>
       <button class="r-back" onclick="resetForm()">← 다시 작성</button>
@@ -400,23 +400,32 @@ const TYPE_LBL = {
   threads:'스레드',card_news:'카드뉴스',product_detail:'제품 상세페이지',smart_store:'스마트스토어'
 };
 
-// ── REDIS ──
+// ── REDIS (Upstash REST API - POST pipeline 방식) ──
+async function rCmd(cmd){
+  // Upstash pipeline: POST /pipeline with array of commands
+  try{
+    const r=await fetch(REDIS+'/pipeline',{
+      method:'POST',
+      headers:{Authorization:'Bearer '+RTOKEN,'Content-Type':'application/json'},
+      body:JSON.stringify([cmd])
+    });
+    const d=await r.json();
+    return d[0]?.result??null;
+  }catch(e){console.warn('rCmd error',e);return null;}
+}
 async function rGet(k){
   try{
-    const r=await fetch(REDIS+'/get/'+encodeURIComponent(k),{headers:{Authorization:'Bearer '+RTOKEN}});
-    const d=await r.json();
-    if(!d.result)return null;
-    try{return JSON.parse(d.result);}catch{return d.result;}
+    const result=await rCmd(['GET',k]);
+    if(!result)return null;
+    try{return JSON.parse(result);}catch{return result;}
   }catch(e){console.warn('rGet error',e);return null;}
 }
 async function rSet(k,v){
   try{
     const val=JSON.stringify(v);
-    const url=REDIS+'/set/'+encodeURIComponent(k)+'/'+encodeURIComponent(val);
-    const r=await fetch(url,{headers:{Authorization:'Bearer '+RTOKEN}});
-    const d=await r.json();
-    console.log('rSet result:',k,d.result);
-    return d.result;
+    const result=await rCmd(['SET',k,val]);
+    console.log('rSet:',k,'→',result);
+    return result;
   }catch(e){console.warn('rSet error',e);return null;}
 }
 
