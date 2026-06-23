@@ -386,8 +386,8 @@ textarea.f-in{resize:vertical;min-height:80px;line-height:1.55}
 <script>
 // ── CONFIG ──
 const WORKER = 'https://ronai-claude.dlrndkskzz.workers.dev';
-const REDIS  = 'YOUR_UPSTASH_URL';
-const RTOKEN = 'YOUR_UPSTASH_TOKEN';
+const REDIS  = 'https://destined-hornet-42955.upstash.io';
+const RTOKEN = 'AafLAAIgcDE1OGY1NTUyNTdiNTQ0N2FhYjg5NzQzZWExNzgyNzdhZg';
 
 // ── STATE ──
 let selTypes = new Set();
@@ -1152,7 +1152,8 @@ function renderResult(topic,types,allRaw,verifyRaw,intent,tone){
 // ── 섹션 카드 렌더 (공통) ──
 function renderSection(sec,idx,cont){
   const tm=sec.match(/^##\s+(.+)/);
-  const title=tm?tm[1].trim():`섹션 ${idx+1}`;
+  if(!tm)return; // ## 헤더 없으면 스킵 (섹션1 방지)
+  const title=tm[1].trim();
   const content=sec.replace(/^##\s+.+\n?/,'').trim();
   if(!content)return;
 
