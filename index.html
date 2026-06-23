@@ -525,16 +525,17 @@ async function searchProduct(){
   const t=document.getElementById('topic').value.trim();
   if(!t){toast('제품명 또는 주제를 먼저 입력해주세요');return;}
   const box=document.getElementById('pInfo'),txt=document.getElementById('pInfoTxt');
-  box.classList.add('show');txt.textContent='🔍 ronai.co.kr에서 정보 수집 중...';
+  box.classList.add('show');txt.textContent='🔍 웹서치로 제품 정보 수집 중...';
   try{
+    const prompt=`"${t}" 화장품/스킨케어 제품을 웹에서 검색해줘. ronai.co.kr에 있으면 거기 정보를 우선으로, 없으면 브랜드 공식 사이트나 신뢰할 수 있는 뷰티 사이트에서 찾아줘. 아래 항목을 찾아서 200자 이내로 정리해줘: 제품명(정확한 풀네임), 주요 성분, 피부 효능/특징, 가격·용량(있으면), 피부 타입. 정보가 전혀 없으면 "검색 결과 없음 — 추가 정보 칸에 직접 입력해주세요"라고만 답해줘.`;
     const r=await fetch(WORKER,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       model:'claude-sonnet-4-6',max_tokens:1000,
       tools:[{type:'web_search_20250305',name:'web_search'}],
-      messages:[{role:'user',content:`ronai.co.kr 사이트에서 "${t}" 제품 정보를 검색해서 제품명, 주요 성분, 피부 효능, 가격, 용량, 특징을 200자 이내로 정리해줘. 없으면 "해당 제품을 찾을 수 없습니다"라고만 해줘.`}]
+      messages:[{role:'user',content:prompt}]
     })});
     const d=await r.json();
     txt.textContent=(d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('')||'제품 정보를 가져올 수 없었어요.';
-  }catch{txt.textContent='검색 중 오류가 발생했습니다. 직접 정보를 입력해주세요.';}
+  }catch{txt.textContent='검색 중 오류가 발생했습니다. 추가 정보 칸에 직접 입력해주세요.';}
 }
 
 // ── GENERATE ──
