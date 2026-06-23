@@ -392,6 +392,7 @@ const RTOKEN = 'AafLAAIgcDE1OGY1NTUyNTdiNTQ0N2FhYjg5NzQzZWExNzgyNzdhZg';
 // ── STATE ──
 let selTypes = new Set();
 let mKws=[], lKws=[], imgs=[], savedKws=[], hist=[];
+const rawStore = new Map(); // 섹션 raw 텍스트 저장
 
 const TYPE_LBL = {
   naver_blog:'네이버 블로그',tistory:'티스토리',insta_feed:'인스타 피드',
@@ -1077,24 +1078,36 @@ VERIFY_RESULT:
     }
 
     clearInterval(tt);clearInterval(pt);
-    renderResult(topic,types,allRaw,verifyRaw,intent,tone);
 
-    // 히스토리 저장
-    hist.unshift({topic,types,intent,tone,ts:Date.now(),preview:topic});
-    if(hist.length>30)hist.pop();
-    const saved = await rSet('ronai:hist',hist);
-    console.log('히스토리 저장:', saved);
-
+    // 화면 전환 먼저 (에러 있어도 결과는 보여줌)
     setStep(3);
     document.getElementById('ld').classList.remove('show');
     document.getElementById('rv').style.display='block';
+
+    // 결과 렌더링 (에러 나도 화면은 유지)
+    try{
+      renderResult(topic,types,allRaw,verifyRaw,intent,tone);
+    }catch(re){
+      console.error('renderResult 에러:', re);
+      document.getElementById('secCont').innerHTML='<div style="padding:20px;color:var(--red)">결과 표시 중 오류가 발생했어요. 내용은 생성됐으니 히스토리에서 확인해주세요.</div>';
+    }
+
+    // 히스토리 저장 (별도 처리)
+    try{
+      hist.unshift({topic,types,intent,tone,ts:Date.now(),preview:topic});
+      if(hist.length>30)hist.pop();
+      await rSet('ronai:hist',hist);
+      toast('✅ 히스토리 저장 완료');
+    }catch(he){
+      console.warn('히스토리 저장 실패:', he);
+    }
 
   }catch(e){
     clearInterval(tt);clearInterval(pt);
     setStep(1);
     document.getElementById('ld').classList.remove('show');
     document.getElementById('fv').style.display='';
-    toast('생성 중 오류가 발생했어요. 다시 시도해주세요.');
+    toast('생성 중 오류가 발생했어요: '+e.message);
     console.error(e);
   }
 }
@@ -1207,7 +1220,10 @@ function renderSection(sec,idx,cont){
 
   const card=document.createElement('div');
   card.className='sec-card';
-  card.dataset.raw=content;
+  // raw 텍스트는 dataset 대신 JS Map으로 관리 (HTML 특수문자 안전)
+  const cardId='sec-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+  card.dataset.id=cardId;
+  rawStore.set(cardId, content);
   card.innerHTML=`
     <div class="sec-head" onclick="toggleSec(this)">
       <div class="sec-name"><span class="sec-ico">${icon}</span>${title}</div>
@@ -1223,7 +1239,7 @@ function renderSection(sec,idx,cont){
 function toggleSec(h){const b=h.nextElementSibling;h.classList.toggle('open');b.classList.toggle('open');}
 function copyS(btn){
   const c=btn.closest('.sec-card');
-  const t=c.dataset.raw||c.querySelector('.sec-body').innerText;
+  const t=rawStore.get(c.dataset.id)||c.querySelector('.sec-body').innerText;
   navigator.clipboard.writeText(t).then(()=>{btn.textContent='✅ 복사됨';btn.classList.add('ok');setTimeout(()=>{btn.textContent='📋 복사';btn.classList.remove('ok');},2000);});
 }
 
