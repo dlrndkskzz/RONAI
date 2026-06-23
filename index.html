@@ -401,12 +401,22 @@ const TYPE_LBL = {
 
 // ── REDIS ──
 async function rGet(k){
-  if(REDIS==='YOUR_UPSTASH_URL')return null;
-  try{const r=await fetch(`${REDIS}/get/${encodeURIComponent(k)}`,{headers:{Authorization:`Bearer ${RTOKEN}`}});const d=await r.json();if(!d.result)return null;try{return JSON.parse(d.result)}catch{return d.result}}catch{return null}
+  try{
+    const r=await fetch(REDIS+'/get/'+encodeURIComponent(k),{headers:{Authorization:'Bearer '+RTOKEN}});
+    const d=await r.json();
+    if(!d.result)return null;
+    try{return JSON.parse(d.result);}catch{return d.result;}
+  }catch(e){console.warn('rGet error',e);return null;}
 }
 async function rSet(k,v){
-  if(REDIS==='YOUR_UPSTASH_URL')return;
-  try{await fetch(`${REDIS}/set/${encodeURIComponent(k)}`,{method:'POST',headers:{Authorization:`Bearer ${RTOKEN}`,'Content-Type':'application/json'},body:JSON.stringify(JSON.stringify(v))})}catch{}
+  try{
+    const val=JSON.stringify(v);
+    const url=REDIS+'/set/'+encodeURIComponent(k)+'/'+encodeURIComponent(val);
+    const r=await fetch(url,{headers:{Authorization:'Bearer '+RTOKEN}});
+    const d=await r.json();
+    console.log('rSet result:',k,d.result);
+    return d.result;
+  }catch(e){console.warn('rSet error',e);return null;}
 }
 
 // ── TYPE TOGGLE ──
@@ -428,11 +438,16 @@ function toggleType(el){
 })();
 
 // ── TAB ──
-function switchTab(t){
+async function switchTab(t){
   document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&t==='c')||(i===1&&t==='h')));
   document.getElementById('cv').style.display=t==='c'?'':'none';
   document.getElementById('hv').style.display=t==='h'?'':'none';
-  if(t==='h')renderHist();
+  if(t==='h'){
+    // 히스토리 탭 열 때마다 Redis에서 최신 데이터 다시 로드
+    const latest=await rGet('ronai:hist');
+    if(latest) hist=latest;
+    renderHist();
+  }
 }
 
 // ── IMG SEC ──
@@ -1065,9 +1080,10 @@ VERIFY_RESULT:
     renderResult(topic,types,allRaw,verifyRaw,intent,tone);
 
     // 히스토리 저장
-    hist.unshift({topic,types,intent,tone,ts:Date.now(),preview:allRaw.slice(0,200)});
+    hist.unshift({topic,types,intent,tone,ts:Date.now(),preview:topic});
     if(hist.length>30)hist.pop();
-    await rSet('ronai:hist',hist);
+    const saved = await rSet('ronai:hist',hist);
+    console.log('히스토리 저장:', saved);
 
     setStep(3);
     document.getElementById('ld').classList.remove('show');
