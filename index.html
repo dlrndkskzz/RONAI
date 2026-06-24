@@ -267,12 +267,24 @@ textarea.f-in{resize:vertical;min-height:80px;line-height:1.55}
     <div class="card">
       <div class="card-title">주제 또는 제품</div>
       <div class="field">
-        <div class="f-label">제품명 또는 주제 <span class="f-opt">예: 비타민C 세럼 / 피부가 건조해지는 이유?</span></div>
+        <div class="f-label">제품명 또는 주제 <span class="f-opt">예: 힉스테인 레티날 크림 / 피부가 건조해지는 이유?</span></div>
         <div class="ps-wrap">
           <input type="text" class="f-in" id="topic" placeholder="제품명 또는 질문을 입력하세요" style="padding-right:82px">
           <button class="ps-btn" onclick="searchProduct()">🔍 검색</button>
         </div>
         <div class="p-info" id="pInfo"><div class="p-info-lbl">🛒 RONAI 제품 정보</div><div id="pInfoTxt"></div></div>
+      </div>
+
+      <!-- 제품 상세페이지 이미지 업로드 (선택) -->
+      <div class="field">
+        <div class="f-label">제품 상세페이지 이미지 <span class="f-opt">선택 · 업로드 시 이미지에서 제품 정보 자동 추출</span></div>
+        <div class="img-zone" id="pImgZone" style="padding:16px">
+          <input type="file" id="pImgFiles" accept="image/*" multiple onchange="handlePImgs(this.files)">
+          <div style="font-size:1.4rem;margin-bottom:6px">🖼️</div>
+          <div style="font-size:.78rem;color:var(--g7)">상세페이지·성분표·제품컷 이미지 업로드</div>
+          <div style="font-size:.68rem;color:var(--g5);margin-top:3px">업로드하면 이미지 기반으로 제품 정보 자동 추출 · 없으면 RONAI 사이트에서 검색</div>
+        </div>
+        <div class="img-grid" id="pImgPreview"></div>
       </div>
     </div>
 
@@ -391,7 +403,7 @@ const RTOKEN = 'AafLAAIgcDE1OGY1NTUyNTdiNTQ0N2FhYjg5NzQzZWExNzgyNzdhZg';
 
 // ── STATE ──
 let selTypes = new Set();
-let mKws=[], lKws=[], imgs=[], savedKws=[], hist=[];
+let mKws=[], lKws=[], imgs=[], pImgs=[], savedKws=[], hist=[];
 const rawStore = new Map(); // 섹션 raw 텍스트 저장
 
 const TYPE_LBL = {
@@ -451,6 +463,12 @@ function toggleType(el){
     z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('drag')});
     z.addEventListener('dragleave',()=>z.classList.remove('drag'));
     z.addEventListener('drop',e=>{e.preventDefault();z.classList.remove('drag');handleImgs(e.dataTransfer.files)});
+  }
+  const pz=document.getElementById('pImgZone');
+  if(pz){
+    pz.addEventListener('dragover',e=>{e.preventDefault();pz.classList.add('drag')});
+    pz.addEventListener('dragleave',()=>pz.classList.remove('drag'));
+    pz.addEventListener('drop',e=>{e.preventDefault();pz.classList.remove('drag');handlePImgs(e.dataTransfer.files)});
   }
 })();
 
@@ -520,14 +538,80 @@ function renderImgPrev(){
 }
 function rmImg(i){imgs.splice(i,1);renderImgPrev();}
 
+// ── 제품 이미지 ──
+async function handlePImgs(files){
+  const add=Array.from(files).slice(0, 5-pImgs.length);
+  if(!add.length){toast('이미지는 최대 5장까지 가능해요');return;}
+  for(const f of add){
+    const b64=await f2b(f);
+    pImgs.push({b64:b64.split(',')[1],name:f.name,mt:f.type});
+  }
+  renderPImgPrev();
+  // 업로드 즉시 자동 추출
+  extractProductInfo();
+}
+function renderPImgPrev(){
+  const grid=document.getElementById('pImgPreview');
+  if(!grid)return;
+  grid.innerHTML=pImgs.map((img,i)=>`
+    <div class="img-thumb">
+      <img src="data:${img.mt};base64,${img.b64}">
+      <button class="img-rm" onclick="rmPImg(${i})">×</button>
+    </div>`).join('');
+}
+function rmPImg(i){pImgs.splice(i,1);renderPImgPrev();}
+
+// 이미지에서 제품 정보 자동 추출
+async function extractProductInfo(){
+  const box=document.getElementById('pInfo'),txt=document.getElementById('pInfoTxt');
+  box.classList.add('show');
+  txt.textContent='🖼️ 이미지에서 제품 정보 추출 중...';
+  try{
+    const uc=[];
+    for(const img of pImgs){
+      uc.push({type:'image',source:{type:'base64',media_type:img.mt,data:img.b64}});
+    }
+    uc.push({type:'text',text:`이 이미지들은 스킨케어 제품의 상세페이지 또는 성분표예요.
+아래 항목을 찾아서 정리해줘 (없는 항목은 생략):
+- 제품명 (정확한 풀네임)
+- 브랜드명
+- 주요 성분 (핵심 성분 위주)
+- 피부 효능/특징
+- 가격·용량 (있으면)
+- 권장 피부 타입
+- 사용법 (있으면)
+200자 이내로 간결하게.`});
+    const r=await fetch(WORKER,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      model:'claude-sonnet-4-6',max_tokens:1000,
+      messages:[{role:'user',content:uc}]
+    })});
+    const d=await r.json();
+    const result=(d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('')||'이미지에서 정보를 추출할 수 없었어요.';
+    txt.textContent=result;
+    // 제품명 자동 입력 (topic이 비어있을 때만)
+    const topicEl=document.getElementById('topic');
+    if(!topicEl.value.trim()){
+      const nameMatch=result.match(/제품명[:\s]+([^
+]+)/);
+      if(nameMatch) topicEl.value=nameMatch[1].trim();
+    }
+  }catch(e){
+    txt.textContent='이미지 분석 중 오류가 발생했습니다.';
+    console.error(e);
+  }
+}
+
 // ── PRODUCT SEARCH ──
 async function searchProduct(){
+  // 이미지가 있으면 이미지 분석 우선
+  if(pImgs.length>0){extractProductInfo();return;}
+
   const t=document.getElementById('topic').value.trim();
   if(!t){toast('제품명 또는 주제를 먼저 입력해주세요');return;}
   const box=document.getElementById('pInfo'),txt=document.getElementById('pInfoTxt');
-  box.classList.add('show');txt.textContent='🔍 웹서치로 제품 정보 수집 중...';
+  box.classList.add('show');txt.textContent='🔍 RONAI 사이트에서 제품 정보 검색 중...';
   try{
-    const prompt=`"${t}" 화장품/스킨케어 제품을 웹에서 검색해줘. ronai.co.kr에 있으면 거기 정보를 우선으로, 없으면 브랜드 공식 사이트나 신뢰할 수 있는 뷰티 사이트에서 찾아줘. 아래 항목을 찾아서 200자 이내로 정리해줘: 제품명(정확한 풀네임), 주요 성분, 피부 효능/특징, 가격·용량(있으면), 피부 타입. 정보가 전혀 없으면 "검색 결과 없음 — 추가 정보 칸에 직접 입력해주세요"라고만 답해줘.`;
+    const prompt='ronai.co.kr 사이트에서 "'+t+'" 제품을 검색해줘. site:ronai.co.kr 검색으로 찾고, 아래 항목을 200자 이내로 정리해줘: 제품명(정확한 풀네임), 브랜드명, 주요 성분, 피부 효능/특징, 가격·용량(있으면), 권장 피부 타입. ronai.co.kr에서 찾을 수 없으면 "RONAI 사이트에서 찾을 수 없어요. 이미지를 업로드하거나 추가 정보 칸에 직접 입력해주세요."라고만 답해줘.';
     const r=await fetch(WORKER,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       model:'claude-sonnet-4-6',max_tokens:1000,
       tools:[{type:'web_search_20250305',name:'web_search'}],
@@ -535,7 +619,7 @@ async function searchProduct(){
     })});
     const d=await r.json();
     txt.textContent=(d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('')||'제품 정보를 가져올 수 없었어요.';
-  }catch{txt.textContent='검색 중 오류가 발생했습니다. 추가 정보 칸에 직접 입력해주세요.';}
+  }catch{txt.textContent='검색 중 오류가 발생했습니다. 이미지를 업로드하거나 추가 정보 칸에 직접 입력해주세요.';}
 }
 
 // ── GENERATE ──
@@ -1054,6 +1138,11 @@ A:
       const useSearch = ['naver_blog','tistory','product_detail'].includes(t);
 
       const msgContent = [];
+      // 제품 이미지가 있으면 모든 유형에 포함 (제품 정보 파악용)
+      if(pImgs.length>0){
+        for(const img of pImgs){ msgContent.push({type:'image',source:{type:'base64',media_type:img.mt,data:img.b64}}); }
+      }
+      // 블로그 전용 이미지 추가
       if((t==='naver_blog'||t==='tistory') && imgs.length>0){
         for(const img of imgs){ msgContent.push({type:'image',source:{type:'base64',media_type:img.mt,data:img.b64}}); }
       }
