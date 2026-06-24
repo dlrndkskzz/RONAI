@@ -23,12 +23,12 @@ button{cursor:pointer;font-family:inherit;border:none;background:none}
 input,textarea,select{font-family:inherit;font-size:1rem}
 
 /* HEADER */
-.hdr{background:var(--navy);color:#fff;padding:0 16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(26,26,46,.22)}
+.hdr{background:var(--navy);color:#fff;padding:0 16px;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(26,26,46,.22)}
 .hdr-in{max-width:720px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:54px}
 .logo{font-size:.72rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
 .logo-dot{width:7px;height:7px;border-radius:50%;background:var(--lav);flex-shrink:0}
 .hdr-tabs{display:flex;gap:2px}
-.tab-btn{color:#9fa8c0;font-size:.82rem;font-weight:500;padding:6px 14px;border-radius:20px;transition:var(--tr)}
+.tab-btn{color:#9fa8c0;font-size:.82rem;font-weight:500;padding:6px 14px;border-radius:20px;transition:var(--tr);-webkit-tap-highlight-color:transparent;touch-action:manipulation;cursor:pointer;position:relative;z-index:101}
 .tab-btn.active{background:var(--lav);color:var(--navy);font-weight:700}
 
 /* LAYOUT */
@@ -225,8 +225,8 @@ textarea.f-in{resize:vertical;min-height:80px;line-height:1.55}
   <div class="hdr-in">
     <div class="logo"><div class="logo-dot"></div>RONAI 콘텐츠 제작소</div>
     <div class="hdr-tabs">
-      <button class="tab-btn active" onclick="switchTab('c')">✏️ 제작</button>
-      <button class="tab-btn" onclick="switchTab('h')">🗂 히스토리</button>
+      <button class="tab-btn active" id="tabC" type="button">✏️ 제작</button>
+      <button class="tab-btn" id="tabH" type="button">🗂 히스토리</button>
     </div>
   </div>
 </header>
@@ -487,6 +487,10 @@ function toggleType(el){
 
 // ── INIT ──
 (function(){
+  // 탭 버튼 이벤트 (onclick 대신 addEventListener - 모바일 호환)
+  document.getElementById('tabC').addEventListener('click', function(){switchTab('c');});
+  document.getElementById('tabH').addEventListener('click', function(){switchTab('h');});
+
   // localStorage에서 즉시 로드 (동기, 빠름)
   const sk = lsGet('ronai:saved_kws');
   if(sk && Array.isArray(sk)){savedKws=sk;renderSvKws();}
