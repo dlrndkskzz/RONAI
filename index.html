@@ -225,8 +225,8 @@ textarea.f-in{resize:vertical;min-height:80px;line-height:1.55}
   <div class="hdr-in">
     <div class="logo"><div class="logo-dot"></div>RONAI 콘텐츠 제작소</div>
     <div class="hdr-tabs">
-      <button class="tab-btn active" id="tabC" type="button">✏️ 제작</button>
-      <button class="tab-btn" id="tabH" type="button">🗂 히스토리</button>
+      <button class="tab-btn active" id="tabC" type="button" onclick="switchTab('c')">✏️ 제작</button>
+      <button class="tab-btn" id="tabH" type="button" onclick="switchTab('h')">🗂 히스토리</button>
     </div>
   </div>
 </header>
@@ -523,18 +523,21 @@ function toggleType(el){
 // ── TAB ──
 function switchTab(t){
   document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&t==='c')||(i===1&&t==='h')));
-  document.getElementById('cv').style.display=t==='c'?'':'none';
-  document.getElementById('hv').style.display=t==='h'?'':'none';
+  // display:'' 대신 명시적으로 'block'/'none' 지정 (인라인 스타일 override 방지)
+  document.getElementById('cv').style.display = t==='c' ? 'block' : 'none';
+  document.getElementById('hv').style.display = t==='h' ? 'block' : 'none';
   if(t==='h'){
-    const el=document.getElementById('histList');
-    // localStorage에서 즉시 표시 (빠름)
+    // localStorage에서 최신 hist 즉시 로드 후 렌더
     const localHist = lsGet('ronai:hist');
-    if(localHist && Array.isArray(localHist)) hist=localHist;
+    if(localHist && Array.isArray(localHist)){
+      // 메모리와 합쳐서 더 많은 쪽 사용
+      if(localHist.length >= hist.length) hist = localHist;
+    }
     renderHist();
     // Redis에서 최신 데이터 백그라운드 업데이트
     rGet('ronai:hist').then(latest=>{
       if(latest && Array.isArray(latest) && latest.length >= hist.length){
-        hist=latest;
+        hist = latest;
         lsSet('ronai:hist', hist);
         renderHist();
       }
@@ -1269,7 +1272,7 @@ VERIFY_RESULT:
     clearInterval(tt);clearInterval(pt);
     setStep(1);
     document.getElementById('ld').classList.remove('show');
-    document.getElementById('fv').style.display='';
+    document.getElementById('fv').style.display='block';
     toast('생성 중 오류가 발생했어요: '+e.message);
     console.error(e);
   }
@@ -1427,6 +1430,11 @@ function loadHist(i){
   selTypes=new Set(h.types||[]);
   document.querySelectorAll('.ct-chip').forEach(c=>{const has=selTypes.has(c.dataset.t);c.classList.toggle('sel',has);});
   toggleImgSec();
+  // 제작 탭으로 전환 + 폼 노출 (결과/로딩 숨기기)
+  document.getElementById('fv').style.display='block';
+  document.getElementById('rv').style.display='none';
+  document.getElementById('ld').classList.remove('show');
+  setStep(1);
   switchTab('c');
   toast(`"${h.topic}" 설정 불러옴`);
 }
@@ -1451,7 +1459,7 @@ function setStep(n){
 }
 function resetForm(){
   setStep(1);
-  document.getElementById('fv').style.display='';
+  document.getElementById('fv').style.display='block';
   document.getElementById('rv').style.display='none';
   document.getElementById('ld').classList.remove('show');
 }
