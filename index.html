@@ -412,33 +412,69 @@ const TYPE_LBL = {
   threads:'스레드',card_news:'카드뉴스',product_detail:'제품 상세페이지',smart_store:'스마트스토어'
 };
 
-// ── REDIS (Upstash REST API - POST pipeline 방식) ──
-async function rCmd(cmd){
-  // Upstash pipeline: POST /pipeline with array of commands
+// ── 스토리지 (localStorage 우선 + Redis 백업) ──
+// localStorage: 즉시 저장, 기기별 영구 보관 (2주 TTL)
+// Redis: 기기간 동기화 (연결 실패해도 localStorage로 동작)
+
+const STORAGE_TTL = 14 * 24 * 60 * 60 * 1000; // 2주
+
+function lsSet(k, v){
   try{
-    const r=await fetch(REDIS+'/pipeline',{
+    localStorage.setItem(k, JSON.stringify({v, ts: Date.now()}));
+  }catch(e){console.warn('localStorage 저장 실패',e);}
+}
+
+function lsGet(k){
+  try{
+    const raw = localStorage.getItem(k);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    // 2주 지났으면 삭제
+    if(Date.now() - obj.ts > STORAGE_TTL){
+      localStorage.removeItem(k);
+      return null;
+    }
+    return obj.v;
+  }catch(e){return null;}
+}
+
+async function rGet(k){
+  // localStorage 먼저
+  const local = lsGet(k);
+  if(local !== null) return local;
+  // Redis 시도
+  try{
+    const r = await fetch(REDIS+'/pipeline',{
       method:'POST',
       headers:{Authorization:'Bearer '+RTOKEN,'Content-Type':'application/json'},
-      body:JSON.stringify([cmd])
+      body: JSON.stringify([['GET',k]])
     });
-    const d=await r.json();
-    return d[0]?.result??null;
-  }catch(e){console.warn('rCmd error',e);return null;}
+    const d = await r.json();
+    const result = d[0]?.result;
+    if(!result) return null;
+    const parsed = JSON.parse(result);
+    lsSet(k, parsed); // Redis 데이터를 localStorage에도 캐시
+    return parsed;
+  }catch(e){
+    console.warn('Redis 연결 실패, localStorage만 사용');
+    return null;
+  }
 }
-async function rGet(k){
+
+async function rSet(k, v){
+  // localStorage 즉시 저장 (항상)
+  lsSet(k, v);
+  // Redis 백그라운드 저장 (실패해도 무시)
   try{
-    const result=await rCmd(['GET',k]);
-    if(!result)return null;
-    try{return JSON.parse(result);}catch{return result;}
-  }catch(e){console.warn('rGet error',e);return null;}
-}
-async function rSet(k,v){
-  try{
-    const val=JSON.stringify(v);
-    const result=await rCmd(['SET',k,val]);
-    console.log('rSet:',k,'→',result);
-    return result;
-  }catch(e){console.warn('rSet error',e);return null;}
+    await fetch(REDIS+'/pipeline',{
+      method:'POST',
+      headers:{Authorization:'Bearer '+RTOKEN,'Content-Type':'application/json'},
+      body: JSON.stringify([['SET', k, JSON.stringify(v)]])
+    });
+  }catch(e){
+    console.warn('Redis 저장 실패, localStorage에만 저장됨');
+  }
+  return 'OK';
 }
 
 // ── TYPE TOGGLE ──
@@ -450,14 +486,14 @@ function toggleType(el){
 }
 
 // ── INIT ──
-(async()=>{
-  try{
-    const sk=await rGet('ronai:saved_kws');if(sk){savedKws=sk;renderSvKws();}
-  }catch(e){console.warn('즐겨찾기 로드 실패',e);}
-  try{
-    const h=await rGet('ronai:hist');if(h){hist=h;}
-  }catch(e){console.warn('히스토리 로드 실패',e);}
-  // imgZone은 숨겨진 상태일 수 있으므로 null 체크
+(function(){
+  // localStorage에서 즉시 로드 (동기, 빠름)
+  const sk = lsGet('ronai:saved_kws');
+  if(sk && Array.isArray(sk)){savedKws=sk;renderSvKws();}
+  const h = lsGet('ronai:hist');
+  if(h && Array.isArray(h)){hist=h;}
+
+  // 드래그앤드롭
   const z=document.getElementById('imgZone');
   if(z){
     z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('drag')});
@@ -470,21 +506,35 @@ function toggleType(el){
     pz.addEventListener('dragleave',()=>pz.classList.remove('drag'));
     pz.addEventListener('drop',e=>{e.preventDefault();pz.classList.remove('drag');handlePImgs(e.dataTransfer.files)});
   }
+
+  // Redis에서 최신 데이터 백그라운드 동기화
+  rGet('ronai:saved_kws').then(sk2=>{
+    if(sk2 && Array.isArray(sk2)){savedKws=sk2;lsSet('ronai:saved_kws',sk2);renderSvKws();}
+  }).catch(()=>{});
+  rGet('ronai:hist').then(h2=>{
+    if(h2 && Array.isArray(h2) && h2.length>=hist.length){hist=h2;lsSet('ronai:hist',h2);}
+  }).catch(()=>{});
 })();
 
 // ── TAB ──
-async function switchTab(t){
+function switchTab(t){
   document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&t==='c')||(i===1&&t==='h')));
   document.getElementById('cv').style.display=t==='c'?'':'none';
   document.getElementById('hv').style.display=t==='h'?'':'none';
   if(t==='h'){
     const el=document.getElementById('histList');
-    el.innerHTML='<div style="text-align:center;padding:32px;color:var(--g5);font-size:.85rem">🔄 불러오는 중...</div>';
-    try{
-      const latest=await rGet('ronai:hist');
-      if(latest && Array.isArray(latest)) hist=latest;
-    }catch(e){console.warn('히스토리 로드 실패',e);}
+    // localStorage에서 즉시 표시 (빠름)
+    const localHist = lsGet('ronai:hist');
+    if(localHist && Array.isArray(localHist)) hist=localHist;
     renderHist();
+    // Redis에서 최신 데이터 백그라운드 업데이트
+    rGet('ronai:hist').then(latest=>{
+      if(latest && Array.isArray(latest) && latest.length >= hist.length){
+        hist=latest;
+        lsSet('ronai:hist', hist);
+        renderHist();
+      }
+    }).catch(()=>{});
   }
 }
 
