@@ -485,13 +485,30 @@ function toggleType(el){
   toggleImgSec();
 }
 
-// ── INIT ──
-(function(){
-  // 탭 버튼 이벤트 (onclick 대신 addEventListener - 모바일 호환)
-  document.getElementById('tabC').addEventListener('click', function(){switchTab('c');});
-  document.getElementById('tabH').addEventListener('click', function(){switchTab('h');});
+// ── TAB ── (INIT보다 앞에 선언해야 onclick에서 호출 가능)
+function switchTab(t){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&t==='c')||(i===1&&t==='h')));
+  document.getElementById('cv').style.display = t==='c' ? 'block' : 'none';
+  document.getElementById('hv').style.display = t==='h' ? 'block' : 'none';
+  if(t==='h'){
+    // localStorage에서 최신 hist 즉시 로드
+    const localHist = lsGet('ronai:hist');
+    if(localHist && Array.isArray(localHist) && localHist.length >= hist.length) hist = localHist;
+    renderHist();
+    // Redis 백그라운드 동기화
+    rGet('ronai:hist').then(latest=>{
+      if(latest && Array.isArray(latest) && latest.length >= hist.length){
+        hist = latest;
+        lsSet('ronai:hist', hist);
+        renderHist();
+      }
+    }).catch(()=>{});
+  }
+}
 
-  // localStorage에서 즉시 로드 (동기, 빠름)
+// ── INIT (DOMContentLoaded로 변경 - IIFE 제거) ──
+document.addEventListener('DOMContentLoaded', function(){
+  // localStorage에서 즉시 로드
   const sk = lsGet('ronai:saved_kws');
   if(sk && Array.isArray(sk)){savedKws=sk;renderSvKws();}
   const h = lsGet('ronai:hist');
@@ -511,39 +528,14 @@ function toggleType(el){
     pz.addEventListener('drop',e=>{e.preventDefault();pz.classList.remove('drag');handlePImgs(e.dataTransfer.files)});
   }
 
-  // Redis에서 최신 데이터 백그라운드 동기화
+  // Redis 백그라운드 동기화
   rGet('ronai:saved_kws').then(sk2=>{
     if(sk2 && Array.isArray(sk2)){savedKws=sk2;lsSet('ronai:saved_kws',sk2);renderSvKws();}
   }).catch(()=>{});
   rGet('ronai:hist').then(h2=>{
     if(h2 && Array.isArray(h2) && h2.length>=hist.length){hist=h2;lsSet('ronai:hist',h2);}
   }).catch(()=>{});
-})();
-
-// ── TAB ──
-function switchTab(t){
-  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&t==='c')||(i===1&&t==='h')));
-  // display:'' 대신 명시적으로 'block'/'none' 지정 (인라인 스타일 override 방지)
-  document.getElementById('cv').style.display = t==='c' ? 'block' : 'none';
-  document.getElementById('hv').style.display = t==='h' ? 'block' : 'none';
-  if(t==='h'){
-    // localStorage에서 최신 hist 즉시 로드 후 렌더
-    const localHist = lsGet('ronai:hist');
-    if(localHist && Array.isArray(localHist)){
-      // 메모리와 합쳐서 더 많은 쪽 사용
-      if(localHist.length >= hist.length) hist = localHist;
-    }
-    renderHist();
-    // Redis에서 최신 데이터 백그라운드 업데이트
-    rGet('ronai:hist').then(latest=>{
-      if(latest && Array.isArray(latest) && latest.length >= hist.length){
-        hist = latest;
-        lsSet('ronai:hist', hist);
-        renderHist();
-      }
-    }).catch(()=>{});
-  }
-}
+});
 
 // ── IMG SEC ──
 function toggleImgSec(){
@@ -1430,7 +1422,6 @@ function loadHist(i){
   selTypes=new Set(h.types||[]);
   document.querySelectorAll('.ct-chip').forEach(c=>{const has=selTypes.has(c.dataset.t);c.classList.toggle('sel',has);});
   toggleImgSec();
-  // 제작 탭으로 전환 + 폼 노출 (결과/로딩 숨기기)
   document.getElementById('fv').style.display='block';
   document.getElementById('rv').style.display='none';
   document.getElementById('ld').classList.remove('show');
