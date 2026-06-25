@@ -1541,20 +1541,60 @@ async function searchProduct() {
 // ─────────────────────────────────────────
 // IMAGE HANDLING
 // ─────────────────────────────────────────
-async function fileToBase64(file) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result.split(',')[1]);
-    r.onerror = () => rej(new Error('read error'));
-    r.readAsDataURL(file);
+// ── 이미지 리사이즈 + base64 변환 (최대 1568px, API 제한 대응)
+const IMG_MAX_PX  = 1568;  // Anthropic 권장 최대 긴쪽 px
+const IMG_MAX_MB  = 4.5;   // base64 디코딩 후 바이트 기준 (~5MB 한도)
+const IMG_QUALITY = 0.88;  // JPEG 품질
+
+async function resizeAndEncode(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width: w, height: h } = img;
+
+      // 긴 쪽이 IMG_MAX_PX 초과 시 비율 유지해서 축소
+      if (w > IMG_MAX_PX || h > IMG_MAX_PX) {
+        const ratio = IMG_MAX_PX / Math.max(w, h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width  = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+
+      // JPEG로 변환 (PNG 포함 모두 JPEG로 통일해 용량 절감)
+      const dataUrl = canvas.toDataURL('image/jpeg', IMG_QUALITY);
+      const b64 = dataUrl.split(',')[1];
+
+      // 용량 초과 시 품질 한 단계 더 낮춤
+      if (b64.length * 0.75 > IMG_MAX_MB * 1024 * 1024) {
+        const dataUrl2 = canvas.toDataURL('image/jpeg', 0.70);
+        resolve({ b64: dataUrl2.split(',')[1], mimeType: 'image/jpeg', w, h });
+      } else {
+        resolve({ b64, mimeType: 'image/jpeg', w, h });
+      }
+    };
+    img.onerror = () => reject(new Error('이미지 로드 실패'));
+    img.src = url;
   });
 }
 
 async function handleProductImages(e) {
   const files = Array.from(e.target.files).slice(0, 5 - productImages.length);
+  if (!files.length) return;
+  showToast('🔄 이미지 처리 중...');
   for (const f of files) {
-    const b64 = await fileToBase64(f);
-    productImages.push({ file: f, base64: b64, name: f.name, type: f.type });
+    try {
+      const { b64, mimeType } = await resizeAndEncode(f);
+      productImages.push({ base64: b64, name: f.name, type: mimeType });
+    } catch(err) {
+      showToast(`⚠️ ${f.name} 처리 실패`);
+    }
   }
   renderProductImgPreviews();
   if (productImages.length && !document.getElementById('topicInput').value.trim()) {
@@ -1564,9 +1604,15 @@ async function handleProductImages(e) {
 
 async function handleBlogImages(e) {
   const files = Array.from(e.target.files).slice(0, 5 - blogImages.length);
+  if (!files.length) return;
+  showToast('🔄 이미지 처리 중...');
   for (const f of files) {
-    const b64 = await fileToBase64(f);
-    blogImages.push({ file: f, base64: b64, name: f.name, type: f.type });
+    try {
+      const { b64, mimeType } = await resizeAndEncode(f);
+      blogImages.push({ base64: b64, name: f.name, type: mimeType });
+    } catch(err) {
+      showToast(`⚠️ ${f.name} 처리 실패`);
+    }
   }
   renderBlogImgPreviews();
 }
