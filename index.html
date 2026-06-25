@@ -769,6 +769,13 @@
   }
   .history-del:hover { color: var(--red); }
 
+  .history-item[data-has-result="false"] {
+    opacity: 0.7;
+  }
+  .history-item[data-has-result="false"] .history-icon {
+    background: var(--gray-light);
+  }
+
   .history-header {
     display: flex;
     align-items: center;
@@ -1356,9 +1363,47 @@ function lsGet(key) {
     const raw = localStorage.getItem(key);
     if (!raw) return null;
     const obj = JSON.parse(raw);
+    // ts 없는 구형 포맷이면 그냥 null 처리
+    if (!obj || typeof obj.ts !== 'number') return null;
     if (Date.now() - obj.ts > TTL_MS) { localStorage.removeItem(key); return null; }
     return obj.v;
   } catch(e) { return null; }
+}
+// 결과 저장 전용 (TTL 없이 영구 보관, 용량 초과 시 조용히 실패)
+function lsSetResult(id, results) {
+  try {
+    const json = JSON.stringify(results);
+    // 개당 5MB 초과 방지
+    if (json.length > 5 * 1024 * 1024) {
+      console.warn('결과 용량 초과, 저장 생략');
+      return false;
+    }
+    localStorage.setItem('ronai:result:' + id, json);
+    return true;
+  } catch(e) {
+    // QuotaExceededError 등 - 오래된 결과 정리 후 재시도
+    try { pruneOldResults(); localStorage.setItem('ronai:result:' + id, JSON.stringify(results)); return true; } catch(e2) {}
+    return false;
+  }
+}
+function lsGetResult(id) {
+  try {
+    const raw = localStorage.getItem('ronai:result:' + id);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch(e) { return null; }
+}
+function pruneOldResults() {
+  // 'ronai:result:' 키 중 가장 오래된 것부터 삭제
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('ronai:result:')) {
+      keys.push({ k, id: Number(k.replace('ronai:result:','')) });
+    }
+  }
+  keys.sort((a,b) => a.id - b.id); // 오래된 순
+  keys.slice(0, Math.ceil(keys.length / 2)).forEach(item => localStorage.removeItem(item.k));
 }
 async function rGet(key) {
   const local = lsGet(key);
@@ -1733,7 +1778,7 @@ async function startGenerate() {
   document.getElementById('loadingBar').style.width = '100%';
 
   // save history
-  await saveHistory({ topic, types: selectedTypes, date: new Date().toISOString() });
+  await saveHistory({ topic, types: selectedTypes, date: new Date().toISOString(), results });
 
   // show result
   setTimeout(() => {
@@ -2437,8 +2482,22 @@ function goBack() {
 // ─────────────────────────────────────────
 async function saveHistory(entry) {
   let hist = await rGet('ronai:hist') || [];
-  hist.unshift({ ...entry, id: Date.now() });
-  if (hist.length > HIST_MAX) hist = hist.slice(0, HIST_MAX);
+  const id = Date.now();
+  const record = { id, topic: entry.topic, types: entry.types, date: entry.date };
+
+  // 결과는 별도 키로 localStorage에만 저장 (Redis 용량 절감)
+  if (entry.results && Object.keys(entry.results).length) {
+    const saved = lsSetResult(id, entry.results);
+    record.hasResult = saved; // 저장 성공 여부 기록
+  }
+
+  hist.unshift(record);
+  if (hist.length > HIST_MAX) {
+    hist.slice(HIST_MAX).forEach(h => {
+      try { localStorage.removeItem('ronai:result:' + h.id); } catch(e){}
+    });
+    hist = hist.slice(0, HIST_MAX);
+  }
   await rSet('ronai:hist', hist);
 }
 
@@ -2454,22 +2513,34 @@ async function loadHistory() {
     </div>`;
     return;
   }
-  list.innerHTML = hist.map(h =>
-    `<div class="history-item" onclick="restoreHistory(${JSON.stringify(h).replace(/"/g,'&quot;')})">
-      <div class="history-icon">✨</div>
+  // 히스토리 아이템별로 임시 맵에 메타 저장 후 id로만 참조
+  window._histMap = {};
+  hist.forEach(h => { window._histMap[h.id] = h; });
+
+  list.innerHTML = hist.map(h => {
+    // 실제로 결과가 localStorage에 있는지 확인
+    const hasResult = !!lsGetResult(h.id);
+    const icon = hasResult ? '📄' : '🔁';
+    const hint = hasResult ? '' : '<span style="font-size:10px;color:var(--orange);margin-left:4px;">(재생성 필요)</span>';
+    return `<div class="history-item" data-hist-id="${h.id}" data-has-result="${hasResult}" onclick="restoreHistory(this.dataset.histId)">
+      <div class="history-icon">${icon}</div>
       <div class="history-info">
-        <div class="history-topic">${escHtml(h.topic)}</div>
+        <div class="history-topic">${escHtml(h.topic)}${hint}</div>
         <div class="history-types">${(h.types||[]).map(t => TYPE_META[t]?.label||t).join(' · ')}</div>
       </div>
       <div class="history-date">${formatDate(h.date)}</div>
-      <button class="history-del" onclick="event.stopPropagation();deleteHistory(${h.id})">🗑️</button>
-    </div>`
-  ).join('');
+      <button class="history-del" data-del-id="${h.id}" onclick="event.stopPropagation();deleteHistory(this.dataset.delId)">🗑️</button>
+    </div>`;
+  }).join('');
 }
 
 async function deleteHistory(id) {
+  const numId = Number(id);
   let hist = await rGet('ronai:hist') || [];
-  hist = hist.filter(h => h.id !== id);
+  hist = hist.filter(h => h.id !== numId);
+  // 저장된 결과도 삭제
+  try { localStorage.removeItem('ronai:result:' + numId); } catch(e){}
+  delete (window._histMap||{})[numId];
   await rSet('ronai:hist', hist);
   loadHistory();
 }
@@ -2480,15 +2551,39 @@ async function clearAllHistory() {
   loadHistory();
 }
 
-function restoreHistory(h) {
-  // restore types
-  selectedTypes = h.types || [];
-  document.querySelectorAll('.type-btn').forEach(btn => {
-    btn.classList.toggle('selected', selectedTypes.includes(btn.dataset.type));
-  });
-  document.getElementById('topicInput').value = h.topic || '';
-  switchTab('make');
-  showToast('✅ 설정이 복원됐어요');
+function restoreHistory(idStr) {
+  const id = Number(idStr);
+  const h = (window._histMap || {})[id];
+  if (!h) { showToast('히스토리를 불러올 수 없어요'); return; }
+
+  // 저장된 결과 불러오기
+  const savedResults = lsGetResult(id);
+
+  if (savedResults) {
+    // 결과가 있으면 → 결과 화면으로 바로 이동
+    selectedTypes = h.types || [];
+    switchTab('make');
+    // 폼·로딩 숨기고 결과 화면 표시
+    document.getElementById('formScreen').classList.remove('active');
+    document.getElementById('loadingScreen').classList.remove('active');
+    showResult(h.topic, savedResults);
+    setStep(3);
+    showToast('✅ 저장된 결과를 불러왔어요');
+  } else {
+    // 결과가 없으면 → 폼에 설정값 복원 후 재생성 안내
+    selectedTypes = h.types || [];
+    document.querySelectorAll('.type-btn').forEach(btn => {
+      btn.classList.toggle('selected', selectedTypes.includes(btn.dataset.type));
+    });
+    document.getElementById('topicInput').value = h.topic || '';
+    const hasBlog = selectedTypes.some(t => t === 'naver_blog' || t === 'tistory');
+    document.getElementById('blogImgCard').classList.toggle('hidden', !hasBlog);
+    switchTab('make');
+    document.getElementById('formScreen').classList.add('active');
+    document.getElementById('resultScreen').classList.remove('active');
+    setStep(1);
+    showToast('⚠️ 저장된 결과가 없어요. 재생성해주세요 (2주 이상 지난 항목)');
+  }
 }
 
 function formatDate(iso) {
