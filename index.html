@@ -864,17 +864,29 @@
     padding: 10px;
     border-bottom: 1px solid var(--border);
     font-size: 13px;
-    vertical-align: top;
+    vertical-align: middle;
   }
 
   .prompt-table td:first-child {
     font-weight: 700;
     color: var(--navy);
     white-space: nowrap;
-    width: 120px;
+    width: 140px;
+    min-width: 140px;
+  }
+
+  .prompt-table td:nth-child(2) {
+    text-align: center;
+    font-size: 16px;
   }
 
   .prompt-table td:last-child {
+    color: var(--gray);
+    word-break: break-all;
+  }
+
+  .prompt-table tr td:only-child,
+  .prompt-table tr td:nth-child(2):last-child {
     color: var(--gray);
     word-break: break-all;
   }
@@ -1317,7 +1329,7 @@
 // ─────────────────────────────────────────
 const WORKER = 'https://ronai-claude.dlrndkskzz.workers.dev';
 const REDIS  = 'https://destined-hornet-42955.upstash.io';
-const RTOKEN = 'AasTAAIjcDEzOTYzMDA3MzU5NDE0NTI2YzQxNGI2Y2RhNTg3OTc4OXAxMA'; // placeholder – set real token
+const RTOKEN = ''; // ← 실제 Upstash REST token을 여기에 입력
 const MODEL  = 'claude-sonnet-4-6';
 const WEB_SEARCH = 'web_search_20250305';
 const HIST_MAX = 30;
@@ -1331,6 +1343,7 @@ let mainKws = [];
 let productImages = []; // { file, base64, name }
 let blogImages = [];
 let currentResult = null;
+const _copyTexts = {}; // copy 텍스트 임시 저장 맵
 
 // ─────────────────────────────────────────
 // STORAGE HELPERS
@@ -1350,26 +1363,31 @@ function lsGet(key) {
 async function rGet(key) {
   const local = lsGet(key);
   if (local !== null) return local;
+  if (!RTOKEN) return null; // Redis 토큰 없으면 localStorage만 사용
   try {
-    const r = await fetch(`${REDIS}/get/${encodeURIComponent(key)}`, {headers:{'Authorization':`Bearer ${RTOKEN}`}});
+    const r = await fetch(`${REDIS}/get/${encodeURIComponent(key)}`, {
+      headers: { 'Authorization': `Bearer ${RTOKEN}` }
+    });
+    if (!r.ok) return null; // 401 등 오류 시 null
     const d = await r.json();
     if (d.result) {
       const parsed = JSON.parse(d.result);
       lsSet(key, parsed);
       return parsed;
     }
-  } catch(e){}
+  } catch(e) {}
   return null;
 }
 async function rSet(key, value) {
-  lsSet(key, value);
+  lsSet(key, value); // localStorage 항상 저장
+  if (!RTOKEN) return; // Redis 토큰 없으면 skip
   try {
     await fetch(`${REDIS}/set/${encodeURIComponent(key)}`, {
       method: 'POST',
-      headers: {'Authorization':`Bearer ${RTOKEN}`, 'Content-Type':'application/json'},
+      headers: { 'Authorization': `Bearer ${RTOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(JSON.stringify(value))
     });
-  } catch(e){}
+  } catch(e) {}
 }
 
 // ─────────────────────────────────────────
@@ -2041,6 +2059,33 @@ A3:
 // ─────────────────────────────────────────
 // API CALLS
 // ─────────────────────────────────────────
+// ── API 응답에서 텍스트만 안전하게 추출 (tool_use/tool_result 블록 무시)
+function extractText(content) {
+  if (!Array.isArray(content)) return '';
+  return content
+    .filter(c => c && c.type === 'text')
+    .map(c => c.text || '')
+    .filter(Boolean)
+    .join('\n');
+}
+
+// ── Worker 호출 공통 함수 (웹서치는 Worker에서 처리)
+async function workerPost(body) {
+  const r = await fetch(WORKER, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) {
+    const errText = await r.text().catch(() => '');
+    throw new Error(`API ${r.status}: ${errText.slice(0,200)}`);
+  }
+  const d = await r.json();
+  // API가 에러 객체를 200으로 감싸서 줄 때 처리
+  if (d.type === 'error') throw new Error(d.error?.message || 'API error');
+  return d;
+}
+
 async function callClaude(prompt, useSearch, maxTokens) {
   const body = {
     model: MODEL,
@@ -2049,10 +2094,8 @@ async function callClaude(prompt, useSearch, maxTokens) {
     messages: [{ role: 'user', content: prompt }]
   };
   if (useSearch) body.tools = [{ type: WEB_SEARCH, name: 'web_search' }];
-  const r = await fetch(WORKER, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error(`API error ${r.status}`);
-  const d = await r.json();
-  return d.content.map(c => c.type==='text' ? c.text : '').filter(Boolean).join('\n');
+  const d = await workerPost(body);
+  return extractText(d.content);
 }
 
 async function callClaudeRaw(messages, useSearch, maxTokens) {
@@ -2063,45 +2106,47 @@ async function callClaudeRaw(messages, useSearch, maxTokens) {
     messages
   };
   if (useSearch) body.tools = [{ type: WEB_SEARCH, name: 'web_search' }];
-  const r = await fetch(WORKER, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error(`API error ${r.status}`);
-  const d = await r.json();
-  return d.content.map(c => c.type==='text' ? c.text : '').filter(Boolean).join('\n');
+  const d = await workerPost(body);
+  return extractText(d.content);
 }
 
 async function callClaudeWithImages(prompt, useSearch, maxTokens, productImgs, blogImgs, type) {
-  const content = [];
+  const msgContent = [];
 
-  // add product images if any
-  if (productImgs.length) {
-    productImgs.forEach(img => {
-      content.push({ type:'image', source:{ type:'base64', media_type: img.type, data: img.base64 }});
-    });
-    content.push({ type:'text', text:'위 이미지는 제품 이미지입니다. 이미지 정보를 콘텐츠 생성에 활용해주세요.\n\n' });
+  // 제품 이미지 첨부
+  if (productImgs && productImgs.length) {
+    for (const img of productImgs) {
+      msgContent.push({
+        type: 'image',
+        source: { type: 'base64', media_type: img.type || 'image/jpeg', data: img.base64 }
+      });
+    }
+    msgContent.push({ type: 'text', text: '위 이미지는 제품 이미지입니다. 이미지 정보를 콘텐츠 생성에 활용해주세요.\n\n' });
   }
 
-  // add blog images if blog type
-  if ((type==='naver_blog'||type==='tistory') && blogImgs.length) {
-    blogImgs.forEach(img => {
-      content.push({ type:'image', source:{ type:'base64', media_type: img.type, data: img.base64 }});
-    });
-    content.push({ type:'text', text:`위 이미지들(총 ${blogImgs.length}장)을 참고하여 이미지 가이드(파일명/alt텍스트/삽입위치)를 생성해주세요.\n\n` });
+  // 블로그 이미지 첨부 (블로그 타입일 때만)
+  if ((type === 'naver_blog' || type === 'tistory') && blogImgs && blogImgs.length) {
+    for (const img of blogImgs) {
+      msgContent.push({
+        type: 'image',
+        source: { type: 'base64', media_type: img.type || 'image/jpeg', data: img.base64 }
+      });
+    }
+    msgContent.push({ type: 'text', text: `위 이미지들(총 ${blogImgs.length}장)을 참고하여 이미지 가이드(파일명/alt텍스트/삽입위치)를 생성해주세요.\n\n` });
   }
 
-  content.push({ type:'text', text: prompt });
+  msgContent.push({ type: 'text', text: prompt });
 
   const body = {
     model: MODEL,
     max_tokens: maxTokens || 2000,
     system: BRAND_SYSTEM,
-    messages: [{ role:'user', content }]
+    messages: [{ role: 'user', content: msgContent }]
   };
   if (useSearch) body.tools = [{ type: WEB_SEARCH, name: 'web_search' }];
 
-  const r = await fetch(WORKER, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error(`API error ${r.status}`);
-  const d = await r.json();
-  return d.content.map(c => c.type==='text' ? c.text : '').filter(Boolean).join('\n');
+  const d = await workerPost(body);
+  return extractText(d.content);
 }
 
 // ─────────────────────────────────────────
@@ -2175,20 +2220,24 @@ function parseVerifyLine(line) {
 
 function renderContentSection(type, text) {
   const meta = TYPE_META[type];
-  const blocks = parseContentBlocks(type, text);
+  if (!meta) return '';
+  const safeId = 'cs_' + type + '_' + Date.now();
+  const blocks = parseContentBlocks(type, text, safeId);
+  // 텍스트를 전역 맵에 보관
+  _copyTexts[safeId] = text;
   return `<div class="content-section">
     <div class="content-section-header">
       <div class="content-section-title">
         ${meta.icon} ${meta.label}
         <span class="content-type-badge">${type}</span>
       </div>
-      <button class="copy-all-btn" onclick="copyText(${JSON.stringify(text)}, this)">📋 전체 복사</button>
+      <button class="copy-all-btn" data-copy-id="${safeId}" onclick="copyById(this.dataset.copyId, this)">📋 전체 복사</button>
     </div>
     ${blocks}
   </div>`;
 }
 
-function parseContentBlocks(type, text) {
+function parseContentBlocks(type, text, parentId) {
   // Parse text into labeled blocks by bracket sections
   const sections = [];
   const regex = /\[([^\]]+)\]\n?([\s\S]*?)(?=\n\[|$)/g;
@@ -2198,13 +2247,15 @@ function parseContentBlocks(type, text) {
   }
 
   if (!sections.length) {
+    const bid = (parentId||'b') + '_all';
+    _copyTexts[bid] = text;
     return `<div class="content-block">
-      <div class="block-label">내용 <button class="copy-btn" onclick="copyText(${JSON.stringify(text)}, this)">📋 복사</button></div>
+      <div class="block-label">내용 <button class="copy-btn" data-copy-id="${bid}" onclick="copyById(this.dataset.copyId,this)">📋 복사</button></div>
       <div class="block-content">${escHtml(text)}</div>
     </div>`;
   }
 
-  return sections.map(s => {
+  return sections.map((s, i) => {
     const label = s.label;
     const content = s.content;
     let rendered = '';
@@ -2221,8 +2272,10 @@ function parseContentBlocks(type, text) {
       rendered = `<div class="block-content">${escHtml(content)}</div>`;
     }
 
+    const bid = (parentId||'b') + '_' + i;
+    _copyTexts[bid] = content;
     return `<div class="content-block">
-      <div class="block-label">${escHtml(label)} <button class="copy-btn" onclick="copyText(${JSON.stringify(content)}, this)">📋 복사</button></div>
+      <div class="block-label">${escHtml(label)} <button class="copy-btn" data-copy-id="${bid}" onclick="copyById(this.dataset.copyId,this)">📋 복사</button></div>
       ${rendered}
     </div>`;
   }).join('');
@@ -2306,6 +2359,10 @@ function openCanva() {
 // ─────────────────────────────────────────
 // COPY
 // ─────────────────────────────────────────
+function copyById(id, btn) {
+  const text = _copyTexts[id] || '';
+  copyText(text, btn);
+}
 function copyText(text, btn) {
   navigator.clipboard.writeText(text).then(() => {
     if (btn) {
