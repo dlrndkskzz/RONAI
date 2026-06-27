@@ -1336,7 +1336,7 @@
 // ─────────────────────────────────────────
 const WORKER = 'https://ronai-claude.dlrndkskzz.workers.dev';
 const REDIS  = 'https://destined-hornet-42955.upstash.io';
-const RTOKEN = ''; // ← 실제 Upstash REST token을 여기에 입력
+const RTOKEN = 'AafLAAIgcDE1OGY1NTUyNTdiNTQ0N2FhYjg5NzQzZWExNzgyNzdhZg';
 const MODEL  = 'claude-sonnet-4-6';
 const WEB_SEARCH = 'web_search_20250305';
 const HIST_MAX = 30;
@@ -1370,31 +1370,71 @@ function lsGet(key) {
   } catch(e) { return null; }
 }
 // 결과 저장 전용 (TTL 없이 영구 보관, 용량 초과 시 조용히 실패)
-function lsSetResult(id, results) {
+// ── 결과 저장: localStorage + Redis 동시 저장 ──
+async function saveResult(id, results) {
+  const key = 'ronai:result:' + id;
+  const json = JSON.stringify(results);
+  // localStorage 저장
+  try { localStorage.setItem(key, json); } catch(e) { pruneOldResults(); try { localStorage.setItem(key, json); } catch(e2) {} }
+  // Redis 저장 (기기 간 동기화)
+  if (!RTOKEN) return;
   try {
-    const json = JSON.stringify(results);
-    // 개당 5MB 초과 방지
-    if (json.length > 5 * 1024 * 1024) {
-      console.warn('결과 용량 초과, 저장 생략');
-      return false;
-    }
-    localStorage.setItem('ronai:result:' + id, json);
-    return true;
-  } catch(e) {
-    // QuotaExceededError 등 - 오래된 결과 정리 후 재시도
-    try { pruneOldResults(); localStorage.setItem('ronai:result:' + id, JSON.stringify(results)); return true; } catch(e2) {}
-    return false;
-  }
+    await fetch(`${REDIS}/set/${encodeURIComponent(key)}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${RTOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(json)  // 문자열 그대로 저장
+    });
+  } catch(e) { console.warn('Redis 결과 저장 실패 (localStorage는 저장됨)'); }
 }
+
+// ── 결과 불러오기: localStorage 우선 → Redis 폴백 ──
+async function loadResult(id) {
+  const key = 'ronai:result:' + id;
+  // 1. localStorage 먼저
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  // 2. Redis 폴백 (다른 기기에서 생성한 경우)
+  if (!RTOKEN) return null;
+  try {
+    const r = await fetch(`${REDIS}/get/${encodeURIComponent(key)}`, {
+      headers: { 'Authorization': `Bearer ${RTOKEN}` }
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    if (d.result) {
+      const parsed = JSON.parse(d.result);  // 문자열 → 객체
+      // localStorage에도 캐시
+      try { localStorage.setItem(key, d.result); } catch(e) {}
+      return parsed;
+    }
+  } catch(e) { console.warn('Redis 결과 불러오기 실패'); }
+  return null;
+}
+
+// ── 결과 삭제: localStorage + Redis 동시 삭제 ──
+async function deleteResult(id) {
+  const key = 'ronai:result:' + id;
+  try { localStorage.removeItem(key); } catch(e) {}
+  if (!RTOKEN) return;
+  try {
+    await fetch(`${REDIS}/del/${encodeURIComponent(key)}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${RTOKEN}` }
+    });
+  } catch(e) {}
+}
+
 function lsGetResult(id) {
+  // 동기 버전 (loadHistory 렌더링용 — localStorage만 체크)
   try {
     const raw = localStorage.getItem('ronai:result:' + id);
-    if (!raw) return null;
-    return JSON.parse(raw);
+    return raw ? JSON.parse(raw) : null;
   } catch(e) { return null; }
 }
+
 function pruneOldResults() {
-  // 'ronai:result:' 키 중 가장 오래된 것부터 삭제
   const keys = [];
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
@@ -1402,7 +1442,7 @@ function pruneOldResults() {
       keys.push({ k, id: Number(k.replace('ronai:result:','')) });
     }
   }
-  keys.sort((a,b) => a.id - b.id); // 오래된 순
+  keys.sort((a,b) => a.id - b.id);
   keys.slice(0, Math.ceil(keys.length / 2)).forEach(item => localStorage.removeItem(item.k));
 }
 async function rGet(key) {
@@ -2485,18 +2525,18 @@ async function saveHistory(entry) {
   const id = Date.now();
   const record = { id, topic: entry.topic, types: entry.types, date: entry.date };
 
-  // 결과는 별도 키로 localStorage에만 저장 (Redis 용량 절감)
+  // 결과를 localStorage + Redis 동시 저장 (기기 간 동기화)
   if (entry.results && Object.keys(entry.results).length) {
-    const saved = lsSetResult(id, entry.results);
-    record.hasResult = saved; // 저장 성공 여부 기록
+    await saveResult(id, entry.results);
+    record.hasResult = true;
   }
 
   hist.unshift(record);
   if (hist.length > HIST_MAX) {
-    hist.slice(HIST_MAX).forEach(h => {
-      try { localStorage.removeItem('ronai:result:' + h.id); } catch(e){}
-    });
+    // 넘치는 항목 결과 정리
+    const expired = hist.slice(HIST_MAX);
     hist = hist.slice(0, HIST_MAX);
+    expired.forEach(h => deleteResult(h.id));
   }
   await rSet('ronai:hist', hist);
 }
@@ -2538,8 +2578,7 @@ async function deleteHistory(id) {
   const numId = Number(id);
   let hist = await rGet('ronai:hist') || [];
   hist = hist.filter(h => h.id !== numId);
-  // 저장된 결과도 삭제
-  try { localStorage.removeItem('ronai:result:' + numId); } catch(e){}
+  await deleteResult(numId);  // localStorage + Redis 동시 삭제
   delete (window._histMap||{})[numId];
   await rSet('ronai:hist', hist);
   loadHistory();
@@ -2547,30 +2586,32 @@ async function deleteHistory(id) {
 
 async function clearAllHistory() {
   if (!confirm('모든 히스토리를 삭제할까요?')) return;
+  const hist = await rGet('ronai:hist') || [];
+  hist.forEach(h => deleteResult(h.id)); // 결과도 전부 삭제
   await rSet('ronai:hist', []);
   loadHistory();
 }
 
-function restoreHistory(idStr) {
+async function restoreHistory(idStr) {
   const id = Number(idStr);
   const h = (window._histMap || {})[id];
   if (!h) { showToast('히스토리를 불러올 수 없어요'); return; }
 
-  // 저장된 결과 불러오기
-  const savedResults = lsGetResult(id);
+  showToast('⏳ 결과를 불러오는 중...');
 
-  if (savedResults) {
-    // 결과가 있으면 → 결과 화면으로 바로 이동
+  // localStorage 우선 → 없으면 Redis에서 fetch (기기 간 동기화 핵심)
+  const savedResults = await loadResult(id);
+
+  if (savedResults && Object.keys(savedResults).length) {
     selectedTypes = h.types || [];
     switchTab('make');
-    // 폼·로딩 숨기고 결과 화면 표시
     document.getElementById('formScreen').classList.remove('active');
     document.getElementById('loadingScreen').classList.remove('active');
     showResult(h.topic, savedResults);
     setStep(3);
-    showToast('✅ 저장된 결과를 불러왔어요');
+    showToast('✅ 결과를 불러왔어요');
   } else {
-    // 결과가 없으면 → 폼에 설정값 복원 후 재생성 안내
+    // 결과 없음 → 폼 복원 후 재생성 유도
     selectedTypes = h.types || [];
     document.querySelectorAll('.type-btn').forEach(btn => {
       btn.classList.toggle('selected', selectedTypes.includes(btn.dataset.type));
@@ -2582,7 +2623,7 @@ function restoreHistory(idStr) {
     document.getElementById('formScreen').classList.add('active');
     document.getElementById('resultScreen').classList.remove('active');
     setStep(1);
-    showToast('⚠️ 저장된 결과가 없어요. 재생성해주세요 (2주 이상 지난 항목)');
+    showToast('⚠️ 저장된 결과가 없어요. 다시 생성해주세요');
   }
 }
 
