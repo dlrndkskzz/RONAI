@@ -1168,6 +1168,24 @@
       </div>
 
       <div class="field-gap">
+        <div class="field-label">📊 키워드 검색량 확인 <span class="opt">(제목 선택 전 필수 체크)</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <a class="btn btn-outline btn-sm" id="naverKwBtn" href="#" target="_blank" onclick="openNaverKw(event)">
+            🔍 네이버 키워드 검색량
+          </a>
+          <a class="btn btn-outline btn-sm" id="googleKwBtn" href="#" target="_blank" onclick="openGoogleTrend(event)">
+            📈 구글 트렌드
+          </a>
+          <a class="btn btn-outline btn-sm" href="https://searchad.naver.com" target="_blank">
+            📋 네이버 광고 키워드 도구
+          </a>
+        </div>
+        <div style="font-size:11px;color:var(--gray);margin-top:6px;">
+          💡 제목 확정 전에 메인 키워드 월 검색량을 꼭 확인하세요. 검색량 0이면 조회수도 0이에요.
+        </div>
+      </div>
+
+      <div class="field-gap">
         <div class="field-label">제품 이미지 업로드 <span class="opt">(선택, 최대 5장)</span></div>
         <div class="upload-area" id="productImgArea">
           <input type="file" accept="image/*" multiple id="productImgInput" onchange="handleProductImages(event)">
@@ -1598,6 +1616,19 @@ function addFavToMain(kw) {
 // ─────────────────────────────────────────
 // PRODUCT SEARCH
 // ─────────────────────────────────────────
+function openNaverKw(e) {
+  const topic = document.getElementById('topicInput').value.trim();
+  const kw = mainKws.length ? mainKws[0] : topic;
+  if (!kw) { showToast('키워드를 먼저 입력해주세요'); e.preventDefault(); return; }
+  e.currentTarget.href = `https://manage.searchad.naver.com/customers/2411508/tool/keyword-planner?query=${encodeURIComponent(kw)}`;
+}
+function openGoogleTrend(e) {
+  const topic = document.getElementById('topicInput').value.trim();
+  const kw = mainKws.length ? mainKws[0] : topic;
+  if (!kw) { showToast('키워드를 먼저 입력해주세요'); e.preventDefault(); return; }
+  e.currentTarget.href = `https://trends.google.co.kr/trends/explore?q=${encodeURIComponent(kw)}&geo=KR`;
+}
+
 async function searchProduct() {
   const topic = document.getElementById('topicInput').value.trim();
   if (!topic) { showToast('주제 또는 제품명을 먼저 입력해주세요'); return; }
@@ -1855,18 +1886,44 @@ function buildPrompt(type, topic, mainKws, lsiKws, target, intent, tone, extra) 
 
 웹서치로 최신 정보를 수집한 후 아래 항목을 모두 작성하세요.
 
-[제목 5개]
-질문형 / 비교형 / 정의형 / 리스트형 / 사례형 각 1개씩
+【핵심 원칙】
+- 제목은 반드시 실제로 사람들이 네이버에서 검색하는 키워드를 그대로 포함해야 함
+- 카피라이팅식 제목(예: "피부가 숨쉰다 vs 숨쉬지 않는다") 절대 금지
+- 월간 검색량이 실제로 있는 구체적인 검색어를 제목에 넣을 것
+- AI가 쓴 티가 나는 패턴 절대 금지: 문단 길이 균일, 소제목 반복, "~할 수 있습니다" 남발, 서론→본론→결론 깔끔한 구조
+- 문장 길이를 의도적으로 불규칙하게. 짧은 문장과 긴 문장을 섞을 것
+- 실제 현장 경험담 또는 고객 사례 1~2개 반드시 포함 (라임스킨 에스테틱 원장 시점)
+- "~입니다" 말고 "~거든요", "~더라고요", "~인데" 같은 구어체 섞기
+
+[제목 후보 5개] ← 발행 시 이 중 1개만 선택
+※ 조건: 네이버 월간 검색량 실제 존재하는 키워드를 제목에 반드시 포함
+※ 형식: [예상 월 검색량: 대/중/소] 제목
+- 대형(월 1만+): 경쟁 심하지만 상위 노출 시 폭발적 유입
+- 중형(월 1천~1만): 신규 블로그 공략 추천
+- 소형(월 100~1천): 경쟁 없고 빠른 색인 가능
+
+예시 형식:
+1. [중형] 세라마이드 크림 추천 — 피부과 원장이 실제 쓰는 기준
+2. [소형] 앰플 바르는 순서 틀리면 효과 없는 이유
+3. [중형] 건성피부 겨울 관리법 피부과에서 배운 것들
+4. [소형] 토너패드 매일 써도 되나요 — 피부과 답변
+5. [대형] 피부 보습 크림 성분 비교
 
 [핵심 요약]
-2~3문장
+2~3문장 (독자가 왜 이 글을 읽어야 하는지 명확히)
 
 [본문]
-1200~1500자 / 문제→원인→해석→선택기준→제품 구조 / 공정위 표현 준수
+1200~1500자
+- 문제→원인→해석→선택기준→제품 구조
+- 공정위 표현 준수
+- 첫 문장: "안녕하세요" 절대 금지. 바로 핵심으로 시작
+- 소제목은 2~3개만, 검색 키워드 포함
+- 중간에 라임스킨/에스테틱 현장 경험 1개 자연스럽게 삽입
+- 마지막 문단: "도움이 되셨나요?" 절대 금지
 
 [FAQ]
-Q1: (자연어 질문)
-A1: (답변)
+Q1: (실제 검색될 법한 자연어 질문)
+A1:
 Q2:
 A2:
 Q3:
@@ -1876,22 +1933,24 @@ A3:
 타입 추천 및 이유
 
 [이미지 가이드]
-이미지1: [파일명] | [alt텍스트] | [삽입위치]
+이미지1: [파일명] | [alt텍스트 — 검색 키워드 포함] | [삽입위치]
 이미지2: [파일명] | [alt텍스트] | [삽입위치]
 이미지3: [파일명] | [alt텍스트] | [삽입위치]
 
 [해시태그]
-대형(3개): #태그
-중형(5개): #태그
-소형(7개): #태그
+대형(3개): 월 검색량 1만+ 태그
+중형(5개): 월 검색량 1천~1만 태그
+소형(7개): 월 검색량 100~1천 롱테일 태그
+(#로나이 포함)
 
 [메타 설명]
-160자 이내
+160자 이내 — 첫 문장에 메인 키워드 포함
 
 [발행 최적 시간대]
 요일 / 시간 / 이유
 
 [첫댓글 예시]
+(자연스러운 질문 형태로, 추가 키워드 포함)
 
 [AI 검증]
 공정위: ✅/⚠️/❌ | 판단이유
@@ -1907,17 +1966,37 @@ A3:
 
 웹서치로 최신 정보를 수집한 후 아래 항목을 모두 작성하세요.
 
-[제목 5개]
-질문형 / 비교형 / 정의형 / 리스트형 / 사례형 각 1개씩
+【핵심 원칙】
+- 구글 검색량이 실제로 있는 키워드를 제목과 본문 소제목에 반드시 포함
+- 티스토리는 구글 SEO가 핵심 — "사람들이 구글에서 실제로 치는 검색어" 기준으로 작성
+- 카피라이팅식 창의적 제목 금지. 검색어를 그대로 제목에 넣을 것
+- AI 패턴 금지: 균일한 문단, "~할 수 있습니다" 반복, 깔끔한 3단 구조
+- 문장 길이 불규칙하게. 짧고 단호한 문장과 긴 설명 문장을 섞을 것
+- 실제 현장 경험 또는 고객 사례 1~2개 자연스럽게 삽입 (라임스킨 에스테틱 원장 시점)
+
+[제목 후보 5개] ← 발행 시 이 중 1개만 선택
+※ 조건: 구글 월간 검색량 실제 존재하는 키워드를 제목에 포함
+※ 형식: [예상 검색량: 대/중/소] 제목
+1. [중형] 구글에서 실제 검색되는 키워드 기반 제목
+2. [소형] 롱테일 키워드 기반 제목 (경쟁 낮음, 빠른 색인)
+3. [중형] 구체적인 고민/증상 기반 제목
+4. [소형] "~하는 방법", "~이유" 형태 How-to 제목
+5. [대형] 검색량 많은 키워드 포함 제목 (경쟁 심함)
 
 [핵심 요약]
 2~3문장
 
 [본문]
-1200~1500자 / 문제→원인→해석→선택기준→제품 구조
+1200~1500자
+- 문제→원인→해석→선택기준→제품 구조
+- 공정위 표현 준수
+- H2 소제목에 반드시 검색 키워드 포함
+- 첫 문장 바로 핵심으로 시작 ("안녕하세요" 금지)
+- 중간에 에스테틱 현장 경험 1개 삽입
+- 마지막: "도움이 되셨나요?" 금지
 
 [FAQ]
-Q1:
+Q1: (구글에서 실제 검색될 법한 자연어 질문)
 A1:
 Q2:
 A2:
@@ -1925,15 +2004,15 @@ Q3:
 A3:
 
 [이미지 가이드]
-이미지1: [파일명] | [alt텍스트] | [삽입위치]
+이미지1: [파일명] | [alt텍스트 — 검색 키워드 포함] | [삽입위치]
 이미지2: [파일명] | [alt텍스트] | [삽입위치]
 이미지3: [파일명] | [alt텍스트] | [삽입위치]
 
 [해시태그]
-#로나이 포함 10개
+#로나이 포함 10개 (검색량 있는 태그 위주)
 
 [메타 설명]
-160자 이내`,
+160자 이내 — 첫 문장에 메인 키워드 포함, 클릭 유도 문구 포함`,
 
     insta_feed: `${meta}
 
