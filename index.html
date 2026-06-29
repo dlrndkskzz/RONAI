@@ -1063,6 +1063,63 @@
   }
   .img-guide-alt { font-size: 12px; color: var(--text); }
   .img-guide-pos { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+  /* ─── KEYWORD CARD ─── */
+  .kw-card {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    background: var(--bg);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .kw-card:hover { border-color: var(--lavender); background: var(--lavender-light); }
+  .kw-card.selected { border-color: var(--navy); background: var(--navy); color: white; }
+  .kw-card.selected .kw-volume { color: var(--lavender); }
+  .kw-card.selected .kw-desc { color: rgba(255,255,255,0.7); }
+
+  .kw-card-check {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 5px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    margin-top: 1px;
+    transition: all 0.2s;
+  }
+  .kw-card.selected .kw-card-check { background: var(--lavender); border-color: var(--lavender); color: var(--navy); }
+
+  .kw-card-body { flex: 1; min-width: 0; }
+  .kw-word { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+  .kw-volume {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 700;
+    padding: 2px 7px; border-radius: 20px;
+    margin-bottom: 5px;
+  }
+  .kw-vol-high { background: #fde8e8; color: #c0392b; }
+  .kw-vol-mid  { background: #e8f5e9; color: #2e7d32; }
+  .kw-vol-low  { background: #e8eaf6; color: #3949ab; }
+  .kw-desc { font-size: 12px; color: var(--gray); line-height: 1.5; }
+  .kw-difficulty {
+    font-size: 10px; font-weight: 700; padding: 1px 6px;
+    border-radius: 10px; margin-left: 6px;
+  }
+  .diff-hard { background: #fde8e8; color: #c0392b; }
+  .diff-mid  { background: #fff3e0; color: #e65100; }
+  .diff-easy { background: #e8f5e9; color: #2e7d32; }
+
+  .step-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--lavender-light); color: var(--navy);
+    border: 1px solid var(--lavender); border-radius: 20px;
+    padding: 4px 12px; font-size: 12px; font-weight: 700;
+    margin-bottom: 12px;
+  }
 </style>
 </head>
 <body>
@@ -1083,78 +1140,104 @@
 <div class="step-bar" id="stepBar">
   <div class="step-item">
     <div class="step-dot active" id="dot1">1</div>
-    <span class="step-label active" id="lbl1">설정</span>
+    <span class="step-label active" id="lbl1">키워드</span>
   </div>
   <div class="step-line" id="line1"></div>
   <div class="step-item">
     <div class="step-dot" id="dot2">2</div>
-    <span class="step-label" id="lbl2">생성중</span>
+    <span class="step-label" id="lbl2">설정</span>
   </div>
   <div class="step-line" id="line2"></div>
   <div class="step-item">
     <div class="step-dot" id="dot3">3</div>
-    <span class="step-label" id="lbl3">결과</span>
+    <span class="step-label" id="lbl3">생성중</span>
+  </div>
+  <div class="step-line" id="line3"></div>
+  <div class="step-item">
+    <div class="step-dot" id="dot4">4</div>
+    <span class="step-label" id="lbl4">결과</span>
   </div>
 </div>
 
 <!-- ─── MAKE TAB ─── -->
 <div id="tab-make" class="main">
 
-  <!-- FORM SCREEN -->
-  <div class="form-screen active" id="formScreen">
+  <!-- ── STEP 1: 키워드 추천 화면 ── -->
+  <div class="form-screen active" id="kwScreen">
 
-    <!-- 1. 콘텐츠 유형 -->
     <div class="section-card">
-      <div class="section-title"><span class="section-title-icon">🎯</span> 콘텐츠 유형 선택</div>
-
-      <div class="type-group-label">📝 블로그</div>
-      <div class="type-grid" style="margin-bottom:10px;">
-        <button class="type-btn" data-type="naver_blog" onclick="toggleType(this)">
-          <span class="type-icon">📝</span> 네이버 블로그
-        </button>
-        <button class="type-btn" data-type="tistory" onclick="toggleType(this)">
-          <span class="type-icon">📓</span> 티스토리
-        </button>
-      </div>
-
-      <div class="type-group-label">📸 SNS</div>
-      <div class="type-grid" style="margin-bottom:10px;">
-        <button class="type-btn" data-type="insta_feed" onclick="toggleType(this)">
-          <span class="type-icon">📸</span> 인스타 피드
-        </button>
-        <button class="type-btn" data-type="insta_reels" onclick="toggleType(this)">
-          <span class="type-icon">🎬</span> 인스타 릴스
-        </button>
-        <button class="type-btn" data-type="youtube_shorts" onclick="toggleType(this)">
-          <span class="type-icon">▶️</span> 유튜브 쇼츠
-        </button>
-        <button class="type-btn" data-type="kakao_channel" onclick="toggleType(this)">
-          <span class="type-icon">💬</span> 카카오 채널
-        </button>
-        <button class="type-btn" data-type="threads" onclick="toggleType(this)">
-          <span class="type-icon">🧵</span> 스레드
-        </button>
-      </div>
-
-      <div class="type-group-label">🃏 콘텐츠</div>
-      <div class="type-grid" style="margin-bottom:10px;">
-        <button class="type-btn" data-type="card_news" onclick="toggleType(this)">
-          <span class="type-icon">🃏</span> 카드뉴스
-        </button>
-      </div>
-
-      <div class="type-group-label">🛍️ 쇼핑</div>
+      <div class="section-title"><span class="section-title-icon">🎯</span> 어떤 채널에 올릴 건가요?</div>
       <div class="type-grid">
-        <button class="type-btn" data-type="product_detail" onclick="toggleType(this)">
-          <span class="type-icon">🛍️</span> 제품 상세페이지
-        </button>
-        <button class="type-btn" data-type="smart_store" onclick="toggleType(this)">
-          <span class="type-icon">🏪</span> 스마트스토어
-        </button>
+        <button class="type-btn" data-type="naver_blog" onclick="toggleType(this)"><span class="type-icon">📝</span> 네이버 블로그</button>
+        <button class="type-btn" data-type="tistory" onclick="toggleType(this)"><span class="type-icon">📓</span> 티스토리</button>
+        <button class="type-btn" data-type="insta_feed" onclick="toggleType(this)"><span class="type-icon">📸</span> 인스타 피드</button>
+        <button class="type-btn" data-type="insta_reels" onclick="toggleType(this)"><span class="type-icon">🎬</span> 인스타 릴스</button>
+        <button class="type-btn" data-type="youtube_shorts" onclick="toggleType(this)"><span class="type-icon">▶️</span> 유튜브 쇼츠</button>
+        <button class="type-btn" data-type="kakao_channel" onclick="toggleType(this)"><span class="type-icon">💬</span> 카카오 채널</button>
+        <button class="type-btn" data-type="threads" onclick="toggleType(this)"><span class="type-icon">🧵</span> 스레드</button>
+        <button class="type-btn" data-type="card_news" onclick="toggleType(this)"><span class="type-icon">🃏</span> 카드뉴스</button>
+        <button class="type-btn" data-type="product_detail" onclick="toggleType(this)"><span class="type-icon">🛍️</span> 제품 상세페이지</button>
+        <button class="type-btn" data-type="smart_store" onclick="toggleType(this)"><span class="type-icon">🏪</span> 스마트스토어</button>
       </div>
     </div>
 
-    <!-- 2. 주제 / 제품 -->
+    <div class="section-card">
+      <div class="section-title"><span class="section-title-icon">🔎</span> 어떤 주제로 쓸 건가요?</div>
+      <div class="field-gap">
+        <div class="field-label">카테고리 / 제품명 / 피부 고민 <span class="opt">(대략적으로 입력)</span></div>
+        <div class="input-row">
+          <input type="text" id="kwThemeInput" placeholder="예) 세라마이드, 건성피부, 앰플 추천, 더라포..." />
+          <button class="btn btn-navy btn-sm" onclick="recommendKeywords()" id="kwRecommendBtn">✨ 키워드 추천</button>
+        </div>
+        <div style="font-size:11px;color:var(--gray);margin-top:6px;">💡 AI가 실제 검색량 있는 롱테일 키워드를 추천해드려요</div>
+      </div>
+
+      <!-- 키워드 추천 결과 -->
+      <div id="kwResultArea" style="display:none;">
+        <div class="field-label" style="margin-top:4px;">📊 키워드 추천 결과 <span class="opt">— 사용할 키워드를 선택하세요 (복수 선택 가능)</span></div>
+        <div id="kwList" style="display:flex;flex-direction:column;gap:8px;margin-top:8px;"></div>
+
+        <div style="margin-top:14px;">
+          <div class="field-label">✏️ 또는 직접 입력</div>
+          <div class="input-row">
+            <input type="text" id="kwCustomInput" placeholder="직접 키워드 입력" />
+            <button class="btn btn-lavender btn-sm" onclick="addCustomKw()">추가</button>
+          </div>
+        </div>
+
+        <!-- 선택된 키워드 -->
+        <div id="selectedKwArea" style="display:none;margin-top:14px;">
+          <div class="field-label">✅ 선택된 키워드</div>
+          <div id="selectedKwList" class="fav-kw-wrap" style="margin-top:6px;"></div>
+          <button class="generate-btn" onclick="goToFormWithKw()" style="position:relative;bottom:auto;margin-top:14px;">
+            다음 단계 — 글 설정하기 →
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── STEP 2: 설정 화면 ── -->
+  <!-- FORM SCREEN -->
+  <div class="form-screen" id="formScreen">
+
+    <!-- 선택된 채널/키워드 요약 표시 -->
+    <div class="section-card" id="formSummaryCard" style="background:var(--navy);color:white;border:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-size:12px;opacity:0.6;margin-bottom:4px;">선택된 채널</div>
+          <div id="formSummaryTypes" style="font-size:13px;font-weight:700;color:var(--lavender);"></div>
+        </div>
+        <div>
+          <div style="font-size:12px;opacity:0.6;margin-bottom:4px;">메인 키워드</div>
+          <div id="formSummaryKws" style="font-size:13px;font-weight:700;color:white;"></div>
+        </div>
+        <button class="btn btn-sm" onclick="goBackToKw()" style="background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);">← 키워드 변경</button>
+      </div>
+    </div>
+
+    <!-- 주제 / 제품 -->
     <div class="section-card">
       <div class="section-title"><span class="section-title-icon">🔎</span> 주제 또는 제품</div>
 
@@ -1779,13 +1862,181 @@ async function extractProductInfo() {
 // STEP BAR
 // ─────────────────────────────────────────
 function setStep(n) {
+  [1,2,3,4].forEach(i => {
+    const dot = document.getElementById(`dot${i}`);
+    const lbl = document.getElementById(`lbl${i}`);
+    if (!dot) return;
+    dot.className = 'step-dot' + (i < n ? ' done' : i === n ? ' active' : '');
+    lbl.className = 'step-label' + (i === n ? ' active' : '');
+  });
   [1,2,3].forEach(i => {
-    document.getElementById(`dot${i}`).className = 'step-dot' + (i < n ? ' done' : i === n ? ' active' : '');
-    document.getElementById(`lbl${i}`).className = 'step-label' + (i === n ? ' active' : '');
+    const line = document.getElementById(`line${i}`);
+    if (!line) return;
+    line.className = 'step-line' + (i < n ? ' done' : '');
   });
-  [1,2].forEach(i => {
-    document.getElementById(`line${i}`).className = 'step-line' + (i < n ? ' done' : '');
+}
+
+// ─────────────────────────────────────────
+// STEP 1: 키워드 추천
+// ─────────────────────────────────────────
+let selectedKws = []; // 선택된 키워드 배열
+
+async function recommendKeywords() {
+  const theme = document.getElementById('kwThemeInput').value.trim();
+  if (!theme) { showToast('주제를 먼저 입력해주세요'); return; }
+  if (!selectedTypes.length) { showToast('채널을 먼저 선택해주세요'); return; }
+
+  const btn = document.getElementById('kwRecommendBtn');
+  btn.textContent = '⏳ 분석중...';
+  btn.disabled = true;
+
+  const channelNames = selectedTypes.map(t => TYPE_META[t]?.label || t).join(', ');
+  const isBlog = selectedTypes.some(t => t === 'naver_blog' || t === 'tistory');
+  const platform = isBlog ? '네이버/구글 블로그' : '소셜미디어';
+
+  const prompt = `당신은 한국 뷰티/스킨케어 SEO 키워드 전문가입니다.
+
+채널: ${channelNames}
+주제: "${theme}"
+플랫폼: ${platform}
+
+위 주제로 ${platform}에 포스팅할 때 실제로 검색량이 있는 키워드를 추천해주세요.
+
+반드시 아래 JSON 형식으로만 답하세요. 다른 텍스트 없이 JSON만:
+{
+  "keywords": [
+    {
+      "word": "키워드",
+      "volume": "high|mid|low",
+      "volume_label": "월 1만+|월 1천~1만|월 100~1천",
+      "difficulty": "hard|mid|easy",
+      "difficulty_label": "경쟁 높음|경쟁 보통|경쟁 낮음",
+      "desc": "이 키워드를 추천하는 이유 + 어떤 사람이 검색하는지 한 줄",
+      "title_example": "이 키워드로 만든 제목 예시"
+    }
+  ]
+}
+
+규칙:
+- 총 10개 추천 (high 2개, mid 4개, low 4개)
+- low/mid 키워드는 신규 블로그도 상위 노출 가능한 롱테일 위주
+- 카피라이팅식 키워드 금지. 실제로 사람들이 검색창에 치는 표현
+- 뷰티/스킨케어/RONAI 브랜드 맥락에 맞게
+- 예시: "세라마이드 크림 추천" (O) / "피부가 달라지는 마법" (X)`;
+
+  try {
+    const result = await callClaude(prompt, false, 2000);
+    // JSON 파싱
+    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('JSON 파싱 실패');
+    const data = JSON.parse(jsonMatch[0]);
+    renderKeywords(data.keywords || []);
+    document.getElementById('kwResultArea').style.display = 'block';
+    showToast('✅ 키워드 추천 완료!');
+  } catch(e) {
+    showToast('⚠️ 키워드 추천 실패. 다시 시도해주세요');
+    console.error(e);
+  }
+
+  btn.textContent = '✨ 키워드 추천';
+  btn.disabled = false;
+}
+
+function renderKeywords(kws) {
+  const list = document.getElementById('kwList');
+  list.innerHTML = kws.map((kw, i) => {
+    const volCls = kw.volume === 'high' ? 'kw-vol-high' : kw.volume === 'mid' ? 'kw-vol-mid' : 'kw-vol-low';
+    const volIcon = kw.volume === 'high' ? '🔴' : kw.volume === 'mid' ? '🟢' : '🔵';
+    const diffCls = kw.difficulty === 'hard' ? 'diff-hard' : kw.difficulty === 'mid' ? 'diff-mid' : 'diff-easy';
+    return `<div class="kw-card" data-idx="${i}" data-word="${kw.word.replace(/"/g,'&quot;')}" onclick="toggleKwCard(this, ${i})">
+      <div class="kw-card-check">✓</div>
+      <div class="kw-card-body">
+        <div class="kw-word">${kw.word} <span class="kw-difficulty ${diffCls}">${kw.difficulty_label}</span></div>
+        <div><span class="kw-volume ${volCls}">${volIcon} ${kw.volume_label}</span></div>
+        <div class="kw-desc">${kw.desc}</div>
+        <div style="margin-top:5px;font-size:11px;color:var(--gray);">📝 제목 예시: <em>${kw.title_example}</em></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleKwCard(el, idx) {
+  el.classList.toggle('selected');
+  const word = el.dataset.word;
+  if (el.classList.contains('selected')) {
+    if (!selectedKws.includes(word)) selectedKws.push(word);
+  } else {
+    selectedKws = selectedKws.filter(k => k !== word);
+  }
+  renderSelectedKws();
+}
+
+function addCustomKw() {
+  const v = document.getElementById('kwCustomInput').value.trim();
+  if (!v) return;
+  if (!selectedKws.includes(v)) selectedKws.push(v);
+  document.getElementById('kwCustomInput').value = '';
+  renderSelectedKws();
+  showToast('✅ 키워드 추가됨');
+}
+
+function renderSelectedKws() {
+  const area = document.getElementById('selectedKwArea');
+  const list = document.getElementById('selectedKwList');
+  if (!selectedKws.length) { area.style.display = 'none'; return; }
+  area.style.display = 'block';
+  list.innerHTML = selectedKws.map((kw, i) =>
+    `<span class="fav-kw-btn" onclick="removeSelectedKw(${i})">
+      ${kw} <span class="del-fav">✕</span>
+    </span>`
+  ).join('');
+}
+
+function removeSelectedKw(i) {
+  // 카드 선택도 해제
+  const word = selectedKws[i];
+  document.querySelectorAll('.kw-card').forEach(el => {
+    if (el.dataset.word === word) el.classList.remove('selected');
   });
+  selectedKws.splice(i, 1);
+  renderSelectedKws();
+}
+
+function goToFormWithKw() {
+  if (!selectedKws.length) { showToast('키워드를 하나 이상 선택해주세요'); return; }
+  if (!selectedTypes.length) { showToast('채널을 선택해주세요'); return; }
+
+  // mainKws에 선택된 키워드 세팅
+  mainKws = [...selectedKws];
+  renderMainKws();
+
+  // 주제 입력란에도 첫 번째 키워드 채우기
+  const topic = document.getElementById('kwThemeInput').value.trim();
+  if (topic) document.getElementById('topicInput').value = topic;
+
+  // 요약 카드 업데이트
+  document.getElementById('formSummaryTypes').textContent =
+    selectedTypes.map(t => TYPE_META[t]?.icon + ' ' + TYPE_META[t]?.label).join(' · ');
+  document.getElementById('formSummaryKws').textContent = selectedKws.join(', ');
+
+  // 블로그 이미지 카드 표시 여부
+  const hasBlog = selectedTypes.some(t => t === 'naver_blog' || t === 'tistory');
+  document.getElementById('blogImgCard').classList.toggle('hidden', !hasBlog);
+
+  // 화면 전환
+  document.getElementById('kwScreen').classList.remove('active');
+  document.getElementById('formScreen').classList.add('active');
+  setStep(2);
+  window.scrollTo(0, 0);
+}
+
+function goBackToKw() {
+  document.getElementById('formScreen').classList.remove('active');
+  document.getElementById('resultScreen').classList.remove('active');
+  document.getElementById('loadingScreen').classList.remove('active');
+  document.getElementById('kwScreen').classList.add('active');
+  setStep(1);
+  window.scrollTo(0, 0);
 }
 
 // ─────────────────────────────────────────
@@ -1799,9 +2050,10 @@ async function startGenerate() {
   // switch to loading
   document.getElementById('formScreen').classList.remove('active');
   document.getElementById('resultScreen').classList.remove('active');
+  document.getElementById('kwScreen').classList.remove('active');
   const ls = document.getElementById('loadingScreen');
   ls.classList.add('active');
-  setStep(2);
+  setStep(3);
 
   const intent = getChoice('intentGroup');
   const tone   = getChoice('toneGroup');
@@ -1855,7 +2107,7 @@ async function startGenerate() {
   setTimeout(() => {
     ls.classList.remove('active');
     showResult(topic, results);
-    setStep(3);
+    setStep(4);
   }, 600);
 }
 
@@ -2592,7 +2844,7 @@ function goBack() {
   document.getElementById('resultScreen').classList.remove('active');
   document.getElementById('loadingScreen').classList.remove('active');
   document.getElementById('formScreen').classList.add('active');
-  setStep(1);
+  setStep(2);
   window.scrollTo(0,0);
 }
 
@@ -2687,7 +2939,7 @@ async function restoreHistory(idStr) {
     document.getElementById('formScreen').classList.remove('active');
     document.getElementById('loadingScreen').classList.remove('active');
     showResult(h.topic, savedResults);
-    setStep(3);
+    setStep(4);
     showToast('✅ 결과를 불러왔어요');
   } else {
     // 결과 없음 → 폼 복원 후 재생성 유도
@@ -2802,6 +3054,9 @@ function showToast(msg) {
 window.addEventListener('DOMContentLoaded', () => {
   loadFavKws();
   setStep(1);
+  // kwScreen이 기본 활성, formScreen은 숨김 확인
+  document.getElementById('kwScreen').classList.add('active');
+  document.getElementById('formScreen').classList.remove('active');
 });
 </script>
 </body>
