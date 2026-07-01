@@ -1182,8 +1182,38 @@
       </div>
     </div>
 
+    <!-- 제품 콘텐츠 전용 경로 (상세페이지/스마트스토어 선택 시 표시) -->
+    <div class="section-card" id="productModeCard" style="display:none;border:2px solid var(--lavender);">
+      <div class="section-title" style="color:var(--navy);">🛍️ 제품 콘텐츠 모드</div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:12px;">
+        제품 상세페이지·스마트스토어는 키워드 분석 대신 제품 정보를 바로 입력하세요
+      </div>
+      <div class="field-gap">
+        <div class="field-label">제품명 입력</div>
+        <div class="input-row">
+          <input type="text" id="productNameInput" placeholder="예) 더라포 EGF 앰플, 리라신 세럼..."/>
+          <button class="btn btn-navy btn-sm" onclick="searchProductDirect()">🔍 검색</button>
+        </div>
+        <div class="search-result-box" id="productDirectResultBox"></div>
+      </div>
+      <div class="field-gap">
+        <div class="field-label">제품 이미지 <span class="opt">(선택, 최대 5장)</span></div>
+        <div class="upload-area" style="padding:14px;">
+          <input type="file" accept="image/*" multiple id="productImgInputKw" onchange="handleProductImagesKw(event)">
+          <div style="text-align:center;">
+            <div style="font-size:22px;margin-bottom:4px;">📷</div>
+            <div style="font-size:12px;color:var(--gray);">이미지 업로드 시 AI가 제품 정보 자동 추출</div>
+          </div>
+        </div>
+        <div class="image-previews" id="productImgPreviewsKw"></div>
+      </div>
+      <button class="generate-btn" onclick="goToFormProduct()" style="position:relative;bottom:auto;margin-top:4px;">
+        다음 — 글 상세 설정 →
+      </button>
+    </div>
+
     <!-- 1-B. 키워드 분석 -->
-    <div class="section-card">
+    <div class="section-card" id="kwAnalysisCard">
       <div class="section-title"><span class="section-title-icon">②</span> 키워드 분석</div>
       <div style="font-size:12px;color:var(--gray);margin-bottom:12px;">
         카테고리를 선택하면 AI가 오늘 기준 검색량·경쟁도·제목 예시를 분석해줘요
@@ -1201,7 +1231,7 @@
         <button class="choice-btn" onclick="setKwCategory(this,'로나이 RONAI')">로나이 제품</button>
       </div>
       <div class="input-row">
-        <input type="text" id="kwThemeInput" placeholder="직접 입력: 예) 세라마이드, 더라포, 40대 피부..." />
+        <input type="text" id="kwThemeInput" placeholder="직접 입력: 예) 세라마이드, 건성피부 크림, 40대 피부..." />
         <button class="btn btn-navy btn-sm" onclick="recommendKeywords()" id="kwRecommendBtn">🔍 분석</button>
       </div>
     </div>
@@ -1643,7 +1673,34 @@ function toggleType(btn) {
   else { selectedTypes.push(type); btn.classList.add('selected'); }
 
   const hasBlog = selectedTypes.some(t => t==='naver_blog' || t==='tistory');
-  document.getElementById('blogImgCard').classList.toggle('hidden', !hasBlog);
+  const isProductMode = selectedTypes.some(t => t==='product_detail' || t==='smart_store');
+  const isOnlyProduct = isProductMode && selectedTypes.every(t => t==='product_detail' || t==='smart_store');
+
+  // 블로그 이미지 카드 (formScreen에 있을 때)
+  const blogCard = document.getElementById('blogImgCard');
+  if (blogCard) blogCard.classList.toggle('hidden', !hasBlog);
+
+  // 제품 모드 카드 표시/숨김 (kwScreen에 있을 때)
+  const productCard = document.getElementById('productModeCard');
+  const kwCard = document.getElementById('kwAnalysisCard');
+  const kwResult = document.getElementById('kwResultArea');
+  const selectedArea = document.getElementById('selectedKwArea');
+  if (productCard && kwCard) {
+    if (isProductMode) {
+      productCard.style.display = 'block';
+      // 제품 전용만 선택된 경우 키워드 분석 숨김
+      if (isOnlyProduct) {
+        kwCard.style.display = 'none';
+        if (kwResult) kwResult.style.display = 'none';
+        if (selectedArea) selectedArea.style.display = 'none';
+      } else {
+        kwCard.style.display = 'block';
+      }
+    } else {
+      productCard.style.display = 'none';
+      kwCard.style.display = 'block';
+    }
+  }
 }
 
 // ─────────────────────────────────────────
@@ -1727,6 +1784,90 @@ function addFavToMain(kw) {
 // ─────────────────────────────────────────
 // PRODUCT SEARCH
 // ─────────────────────────────────────────
+// ── 제품 직접 검색 (kwScreen 제품 모드) ──
+async function searchProductDirect() {
+  const name = document.getElementById('productNameInput').value.trim();
+  if (!name) { showToast('제품명을 입력해주세요'); return; }
+  const box = document.getElementById('productDirectResultBox');
+  box.textContent = '🔍 검색 중...';
+  box.className = 'search-result-box visible';
+  try {
+    const res = await callClaude(
+      `ronai.co.kr 에서 "${name}" 제품 정보를 찾아서 한국어로 요약해줘. 제품명, 주요 성분, 특장점, 가격대, 피부 효능 포함. 없으면 "해당 제품을 찾을 수 없어요"라고만 답해.`,
+      true, 1000
+    );
+    box.textContent = res;
+    // 제품명을 topic에 자동 세팅
+    document.getElementById('topicInput').value = name;
+  } catch(e) {
+    box.textContent = '검색 오류. 이미지 업로드 또는 직접 입력해주세요.';
+  }
+}
+
+async function handleProductImagesKw(e) {
+  const files = Array.from(e.target.files).slice(0, 5 - productImages.length);
+  if (!files.length) return;
+  showToast('🔄 이미지 처리 중...');
+  for (const f of files) {
+    try {
+      const { b64, mimeType } = await resizeAndEncode(f);
+      productImages.push({ base64: b64, name: f.name, type: mimeType });
+    } catch(err) { showToast(`⚠️ ${f.name} 처리 실패`); }
+  }
+  renderProductImgPreviewsKw();
+  // 제품명 자동 추출
+  if (productImages.length && !document.getElementById('productNameInput').value.trim()) {
+    extractProductInfoKw();
+  }
+}
+
+function renderProductImgPreviewsKw() {
+  const wrap = document.getElementById('productImgPreviewsKw');
+  if (!wrap) return;
+  wrap.innerHTML = productImages.map((img, i) =>
+    `<div class="img-preview-item">
+      <img src="data:${img.type};base64,${img.base64}" alt="">
+      <button class="img-del-btn" onclick="removeProductImg(${i});renderProductImgPreviewsKw()">✕</button>
+    </div>`
+  ).join('');
+}
+
+async function extractProductInfoKw() {
+  showToast('🔍 이미지에서 제품 정보 추출 중...');
+  try {
+    const msgContent = productImages.map(img => ({
+      type: 'image', source: { type: 'base64', media_type: img.type, data: img.base64 }
+    }));
+    msgContent.push({ type: 'text', text: '이미지에서 제품명을 추출해서 첫 줄에만 제품명을 답해줘. 그 다음 줄부터 성분·특장점 요약.' });
+    const res = await callClaudeRaw([{ role: 'user', content: msgContent }], false, 500);
+    const firstLine = res.split('
+')[0].trim();
+    if (firstLine) document.getElementById('productNameInput').value = firstLine;
+    document.getElementById('productDirectResultBox').textContent = res;
+    document.getElementById('productDirectResultBox').className = 'search-result-box visible';
+    showToast('✅ 제품 정보 추출 완료');
+  } catch(e) { showToast('이미지 분석 오류'); }
+}
+
+function goToFormProduct() {
+  const name = document.getElementById('productNameInput').value.trim();
+  if (!name && !productImages.length) { showToast('제품명을 입력하거나 이미지를 업로드해주세요'); return; }
+
+  // topic 세팅
+  document.getElementById('topicInput').value = name || '제품 콘텐츠';
+
+  // 요약 카드
+  document.getElementById('formSummaryTypes').textContent =
+    selectedTypes.map(t => (TYPE_META[t]?.icon || '') + ' ' + (TYPE_META[t]?.label || t)).join(' · ');
+  document.getElementById('formSummaryKws').textContent = name || '이미지로 입력';
+
+  // 화면 전환
+  document.getElementById('kwScreen').classList.remove('active');
+  document.getElementById('formScreen').classList.add('active');
+  setStep(2);
+  window.scrollTo(0, 0);
+}
+
 function openNaverKw(e) {
   const topic = document.getElementById('topicInput').value.trim();
   const kw = mainKws.length ? mainKws[0] : topic;
@@ -2231,18 +2372,20 @@ function buildPrompt(type, topic, mainKws, lsiKws, target, intent, tone, extra) 
 - "~입니다" 말고 "~거든요", "~더라고요", "~인데" 같은 구어체 섞기
 
 [제목 후보 5개] ← 발행 시 이 중 1개만 선택
-※ 조건: 네이버 월간 검색량 실제 존재하는 키워드를 제목에 반드시 포함
-※ 형식: [예상 월 검색량: 대/중/소] 제목
-- 대형(월 1만+): 경쟁 심하지만 상위 노출 시 폭발적 유입
-- 중형(월 1천~1만): 신규 블로그 공략 추천
-- 소형(월 100~1천): 경쟁 없고 빠른 색인 가능
+※ 핵심: 사람들이 검색창에 실제로 치는 표현을 제목에 그대로 넣을 것
+※ 형식: [검색량: 대/중/소] 제목
 
-예시 형식:
-1. [중형] 세라마이드 크림 추천 — 피부과 원장이 실제 쓰는 기준
-2. [소형] 앰플 바르는 순서 틀리면 효과 없는 이유
-3. [중형] 건성피부 겨울 관리법 피부과에서 배운 것들
-4. [소형] 토너패드 매일 써도 되나요 — 피부과 답변
-5. [대형] 피부 보습 크림 성분 비교
+절대 금지 표현 (쓰면 조회수 0):
+- "진짜 이유", "놓치는 것", "안 되는 이유", "다시 잡아야", "알아야 할"
+- "~의 비밀", "~가 달라지는", "~인 줄 알았는데"
+- 문학적·광고적 표현 전부 금지
+
+올바른 예시 (검색어 그대로):
+1. [소형] 펩타이드 아이크림 추천 30대
+2. [중형] 건성피부 아이크림 추천
+3. [소형] 아이크림 바르는 순서
+4. [소형] 눈가 주름 아이크림 성분
+5. [중형] 30대 눈가 주름 관리
 
 [핵심 요약]
 2~3문장 (독자가 왜 이 글을 읽어야 하는지 명확히)
@@ -2310,13 +2453,19 @@ A3:
 - 실제 현장 경험 또는 고객 사례 1~2개 자연스럽게 삽입 (라임스킨 에스테틱 원장 시점)
 
 [제목 후보 5개] ← 발행 시 이 중 1개만 선택
-※ 조건: 구글 월간 검색량 실제 존재하는 키워드를 제목에 포함
-※ 형식: [예상 검색량: 대/중/소] 제목
-1. [중형] 구글에서 실제 검색되는 키워드 기반 제목
-2. [소형] 롱테일 키워드 기반 제목 (경쟁 낮음, 빠른 색인)
-3. [중형] 구체적인 고민/증상 기반 제목
-4. [소형] "~하는 방법", "~이유" 형태 How-to 제목
-5. [대형] 검색량 많은 키워드 포함 제목 (경쟁 심함)
+※ 핵심: 구글 검색창에 실제로 치는 표현을 제목에 그대로 넣을 것
+※ 형식: [검색량: 대/중/소] 제목
+
+절대 금지 표현 (쓰면 조회수 0):
+- "진짜 이유", "놓치는 것", "안 되는 이유", "~의 비밀", "다시 잡아야"
+- 광고·카피라이팅식 문장 전부 금지
+
+올바른 예시 (검색어 그대로):
+1. [소형] 펩타이드 아이크림 추천 30대
+2. [중형] 건성피부 아이크림 추천
+3. [소형] 아이크림 바르는 순서
+4. [소형] 눈가 주름 아이크림 성분
+5. [중형] 30대 눈가 주름 관리
 
 [핵심 요약]
 2~3문장
