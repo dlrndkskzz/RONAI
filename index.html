@@ -1840,8 +1840,7 @@ async function extractProductInfoKw() {
     }));
     msgContent.push({ type: 'text', text: '이미지에서 제품명을 추출해서 첫 줄에만 제품명을 답해줘. 그 다음 줄부터 성분·특장점 요약.' });
     const res = await callClaudeRaw([{ role: 'user', content: msgContent }], false, 500);
-    const firstLine = res.split('
-')[0].trim();
+    const firstLine = res.split('\n')[0].trim();
     if (firstLine) document.getElementById('productNameInput').value = firstLine;
     document.getElementById('productDirectResultBox').textContent = res;
     document.getElementById('productDirectResultBox').className = 'search-result-box visible';
