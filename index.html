@@ -1196,20 +1196,44 @@
         </div>
         <div class="search-result-box" id="productDirectResultBox"></div>
       </div>
-      <div class="field-gap">
-        <div class="field-label">제품 이미지 <span class="opt">(선택, 최대 5장)</span></div>
-        <div class="upload-area" style="padding:14px;">
+      <!-- 탭: 이미지 / 텍스트 -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;" id="productInputTabs">
+        <button class="choice-btn selected" id="productTabImg" onclick="switchProductTab('img')">🖼️ 이미지 업로드</button>
+        <button class="choice-btn" id="productTabText" onclick="switchProductTab('text')">📋 텍스트 붙여넣기</button>
+      </div>
+
+      <!-- 이미지 탭 -->
+      <div id="productPanelImg">
+        <div class="field-label">제품 이미지 · 상세페이지 캡처 <span class="opt">(최대 10장)</span></div>
+        <div style="font-size:11px;color:var(--gray);margin-bottom:8px;">
+          제품 사진, 상세페이지 스크린샷, 성분표, 브랜드 자료 모두 가능해요
+        </div>
+        <div class="upload-area" style="padding:18px;">
           <input type="file" accept="image/*" multiple id="productImgInputKw" onchange="handleProductImagesKw(event)">
           <div style="text-align:center;">
-            <div style="font-size:22px;margin-bottom:4px;">📷</div>
-            <div style="font-size:12px;color:var(--gray);">이미지 업로드 시 AI가 제품 정보 자동 추출</div>
+            <div style="font-size:28px;margin-bottom:6px;">🖼️</div>
+            <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:3px;">이미지를 업로드하세요</div>
+            <div style="font-size:11px;color:var(--gray);">제품 사진 · 상세페이지 캡처 · 성분표 · 브랜드 자료<br>최대 10장 · JPG/PNG/WEBP</div>
           </div>
         </div>
-        <div class="image-previews" id="productImgPreviewsKw"></div>
+        <div class="image-previews" id="productImgPreviewsKw" style="grid-template-columns:repeat(5,1fr);margin-top:10px;"></div>
+        <div id="productImgCountBadge" style="font-size:12px;color:var(--navy);font-weight:700;margin-top:6px;display:none;"></div>
       </div>
-      <button class="generate-btn" onclick="goToFormProduct()" style="position:relative;bottom:auto;margin-top:4px;">
-        다음 — 글 상세 설정 →
-      </button>
+
+      <!-- 텍스트 탭 -->
+      <div id="productPanelText" style="display:none;">
+        <div class="field-label">상세페이지 텍스트 붙여넣기</div>
+        <div style="font-size:11px;color:var(--gray);margin-bottom:8px;">
+          기존 상세페이지, 브랜드 자료, 성분 설명 등을 복사해서 붙여넣으세요
+        </div>
+        <textarea id="productRawText" style="min-height:160px;font-size:13px;" placeholder="여기에 제품 상세페이지 내용, 성분표, 브랜드 자료 등을 붙여넣으세요..."></textarea>
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+        <button class="generate-btn" onclick="analyzeAndGoForm()" style="position:relative;bottom:auto;flex:1;">
+          ✨ 분석 후 콘텐츠 생성 설정으로 →
+        </button>
+      </div>
     </div>
 
     <!-- 1-B. 키워드 분석 -->
@@ -1805,9 +1829,10 @@ async function searchProductDirect() {
 }
 
 async function handleProductImagesKw(e) {
-  const files = Array.from(e.target.files).slice(0, 5 - productImages.length);
+  const MAX = 10;
+  const files = Array.from(e.target.files).slice(0, MAX - productImages.length);
   if (!files.length) return;
-  showToast('🔄 이미지 처리 중...');
+  showToast(`🔄 이미지 ${files.length}장 처리 중...`);
   for (const f of files) {
     try {
       const { b64, mimeType } = await resizeAndEncode(f);
@@ -1815,10 +1840,11 @@ async function handleProductImagesKw(e) {
     } catch(err) { showToast(`⚠️ ${f.name} 처리 실패`); }
   }
   renderProductImgPreviewsKw();
-  // 제품명 자동 추출
+  // 첫 업로드 시 제품명 자동 추출
   if (productImages.length && !document.getElementById('productNameInput').value.trim()) {
     extractProductInfoKw();
   }
+  showToast(`✅ ${productImages.length}장 업로드 완료`);
 }
 
 function renderProductImgPreviewsKw() {
@@ -1826,10 +1852,23 @@ function renderProductImgPreviewsKw() {
   if (!wrap) return;
   wrap.innerHTML = productImages.map((img, i) =>
     `<div class="img-preview-item">
-      <img src="data:${img.type};base64,${img.base64}" alt="">
+      <img src="data:${img.type};base64,${img.base64}" alt="${img.name}">
       <button class="img-del-btn" onclick="removeProductImg(${i});renderProductImgPreviewsKw()">✕</button>
     </div>`
   ).join('');
+  // 카운트 배지
+  const badge = document.getElementById('productImgCountBadge');
+  if (badge) {
+    badge.style.display = productImages.length ? 'block' : 'none';
+    badge.textContent = `📎 ${productImages.length}장 업로드됨 — AI가 모든 이미지를 읽고 콘텐츠를 생성해요`;
+  }
+}
+
+function switchProductTab(tab) {
+  document.getElementById('productPanelImg').style.display = tab === 'img' ? 'block' : 'none';
+  document.getElementById('productPanelText').style.display = tab === 'text' ? 'block' : 'none';
+  document.getElementById('productTabImg').classList.toggle('selected', tab === 'img');
+  document.getElementById('productTabText').classList.toggle('selected', tab === 'text');
 }
 
 async function extractProductInfoKw() {
@@ -1848,23 +1887,56 @@ async function extractProductInfoKw() {
   } catch(e) { showToast('이미지 분석 오류'); }
 }
 
-function goToFormProduct() {
+async function analyzeAndGoForm() {
   const name = document.getElementById('productNameInput').value.trim();
-  if (!name && !productImages.length) { showToast('제품명을 입력하거나 이미지를 업로드해주세요'); return; }
+  const rawText = document.getElementById('productRawText')?.value.trim() || '';
+  const hasImages = productImages.length > 0;
 
-  // topic 세팅
-  document.getElementById('topicInput').value = name || '제품 콘텐츠';
+  if (!name && !hasImages && !rawText) {
+    showToast('제품명, 이미지, 또는 텍스트 중 하나를 입력해주세요');
+    return;
+  }
+
+  // 이미지가 있고 제품명이 없으면 → AI로 제품명 자동 추출
+  if (hasImages && !name) {
+    showToast('🔍 이미지 분석 중...');
+    await extractProductInfoKw();
+  }
+
+  // 텍스트가 있으면 extraInfo에 자동 세팅
+  if (rawText) {
+    const extraField = document.getElementById('extraInfo');
+    if (extraField) {
+      extraField.value = rawText + (extraField.value ? '\n\n' + extraField.value : '');
+    }
+    showToast('✅ 텍스트 정보가 추가됐어요');
+  }
+
+  // 이미지가 있으면 productImages에 이미 들어있으니 그대로 사용
+  const finalName = document.getElementById('productNameInput').value.trim() || name || '제품 콘텐츠';
+  document.getElementById('topicInput').value = finalName;
 
   // 요약 카드
+  const infoSummary = [
+    hasImages ? `🖼️ 이미지 ${productImages.length}장` : '',
+    rawText ? '📋 텍스트 정보' : '',
+  ].filter(Boolean).join(' · ');
+
   document.getElementById('formSummaryTypes').textContent =
-    selectedTypes.map(t => (TYPE_META[t]?.icon || '') + ' ' + (TYPE_META[t]?.label || t)).join(' · ');
-  document.getElementById('formSummaryKws').textContent = name || '이미지로 입력';
+    selectedTypes.map(t => (TYPE_META[t]?.icon||'') + ' ' + (TYPE_META[t]?.label||t)).join(' · ');
+  document.getElementById('formSummaryKws').textContent =
+    finalName + (infoSummary ? ' (' + infoSummary + ')' : '');
 
   // 화면 전환
   document.getElementById('kwScreen').classList.remove('active');
   document.getElementById('formScreen').classList.add('active');
   setStep(2);
   window.scrollTo(0, 0);
+  showToast('✅ 이미지·텍스트 정보가 콘텐츠 생성에 반영돼요');
+}
+
+function goToFormProduct() {
+  analyzeAndGoForm(); // 하위 호환
 }
 
 function openNaverKw(e) {
@@ -2224,11 +2296,12 @@ function removeSelectedKw(i) {
   renderSelectedKws();
 }
 
-function goToFormWithKw() {
+async function goToFormWithKw() {
   if (!selectedKws.length) { showToast('키워드를 하나 이상 선택해주세요'); return; }
   if (!selectedTypes.length) { showToast('채널을 선택해주세요'); return; }
 
-  const topic = document.getElementById('kwTopicInput').value.trim() || selectedKws[0];
+  const kwTopic = document.getElementById('kwTopicInput').value.trim();
+  const topic = kwTopic || selectedKws.join(' ');
 
   // mainKws 세팅
   mainKws = [...selectedKws];
@@ -2251,6 +2324,72 @@ function goToFormWithKw() {
   document.getElementById('formScreen').classList.add('active');
   setStep(2);
   window.scrollTo(0, 0);
+
+  // ── AI로 LSI 키워드·타겟·검색의도·톤 자동 채우기 ──
+  autoFillFormFields(topic, selectedKws, selectedTypes);
+}
+
+async function autoFillFormFields(topic, kws, types) {
+  showToast('⚙️ 세부 설정 자동 채우는 중...');
+  const channelNames = types.map(t => TYPE_META[t]?.label || t).join(', ');
+  const isBlog = types.some(t => t === 'naver_blog' || t === 'tistory');
+
+  const prompt = `스킨케어 SEO 전문가로서 아래 정보를 바탕으로 콘텐츠 세부 설정을 JSON으로만 답하세요.
+
+채널: ${channelNames}
+메인 키워드: ${kws.join(', ')}
+주제: ${topic}
+
+JSON 형식 (다른 텍스트 없이 JSON만):
+{
+  "lsi_keywords": ["LSI키워드1","LSI키워드2","LSI키워드3","LSI키워드4","LSI키워드5"],
+  "target": "타겟 독자 (예: 30대 건성피부 직장 여성)",
+  "intent": "info|compare|action 중 하나",
+  "tone": "calm|friendly|expert 중 하나",
+  "intent_reason": "이 검색의도를 선택한 이유 한 줄",
+  "tone_reason": "이 톤을 선택한 이유 한 줄"
+}
+
+규칙:
+- lsi_keywords: 메인 키워드와 함께 쓰면 SEO 효과 높은 연관 키워드 5개
+- target: 이 키워드를 실제로 검색할 구체적인 사람
+- intent: ${isBlog ? '블로그는 info 또는 compare 권장' : '채널 성격에 맞게'}
+- tone: 뷰티/스킨케어 콘텐츠에 맞게`;
+
+  try {
+    const res = await callClaude(prompt, false, 600);
+    const jsonMatch = res.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return;
+    const data = JSON.parse(jsonMatch[0]);
+
+    // LSI 키워드 자동 입력
+    (data.lsi_keywords || []).slice(0, 5).forEach((kw, i) => {
+      const el = document.getElementById(`lsi${i + 1}`);
+      if (el) el.value = kw;
+    });
+
+    // 타겟 독자 자동 입력
+    if (data.target) {
+      const targetEl = document.getElementById('targetInput');
+      if (targetEl) targetEl.value = data.target;
+    }
+
+    // 검색 의도 자동 선택
+    if (data.intent) {
+      const intentBtn = document.querySelector(`#intentGroup [data-val="${data.intent}"]`);
+      if (intentBtn) selectChoice('intentGroup', intentBtn);
+    }
+
+    // 글 톤 자동 선택
+    if (data.tone) {
+      const toneBtn = document.querySelector(`#toneGroup [data-val="${data.tone}"]`);
+      if (toneBtn) selectChoice('toneGroup', toneBtn);
+    }
+
+    showToast('✅ 세부 설정 자동 완료! 확인 후 생성하세요');
+  } catch(e) {
+    showToast('⚠️ 자동 설정 실패 — 직접 입력해주세요');
+  }
 }
 
 function goBackToKw() {
