@@ -1167,8 +1167,10 @@
 
     <!-- 1-A. 채널 선택 -->
     <div class="section-card">
-      <div class="section-title"><span class="section-title-icon">①</span> 채널 선택</div>
-      <div class="type-grid">
+      <div class="section-title"><span class="section-title-icon">①</span> 채널 선택 <span style="font-size:11px;font-weight:400;color:var(--gray);">복수 선택 가능</span></div>
+
+      <div style="font-size:11px;color:var(--gray);margin-bottom:8px;">블로그 · SNS</div>
+      <div class="type-grid" style="margin-bottom:14px;">
         <button class="type-btn" data-type="naver_blog" onclick="toggleType(this)"><span class="type-icon">📝</span> 네이버 블로그</button>
         <button class="type-btn" data-type="tistory" onclick="toggleType(this)"><span class="type-icon">📓</span> 티스토리</button>
         <button class="type-btn" data-type="insta_feed" onclick="toggleType(this)"><span class="type-icon">📸</span> 인스타 피드</button>
@@ -1177,16 +1179,33 @@
         <button class="type-btn" data-type="kakao_channel" onclick="toggleType(this)"><span class="type-icon">💬</span> 카카오 채널</button>
         <button class="type-btn" data-type="threads" onclick="toggleType(this)"><span class="type-icon">🧵</span> 스레드</button>
         <button class="type-btn" data-type="card_news" onclick="toggleType(this)"><span class="type-icon">🃏</span> 카드뉴스</button>
+      </div>
+
+      <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding-top:12px;border-top:1px solid var(--border);">
+        🛍️ 제품 콘텐츠
+      </div>
+      <div class="type-grid" style="margin-bottom:14px;">
         <button class="type-btn" data-type="product_detail" onclick="toggleType(this)"><span class="type-icon">🛍️</span> 제품 상세페이지</button>
         <button class="type-btn" data-type="smart_store" onclick="toggleType(this)"><span class="type-icon">🏪</span> 스마트스토어</button>
       </div>
+
+      <!-- 제품 정보 토글 버튼 (모든 채널에서 사용 가능) -->
+      <div style="padding-top:12px;border-top:1px solid var(--border);">
+        <button id="productInfoToggleBtn" class="btn btn-lavender btn-sm btn-full" onclick="toggleProductInfoPanel()" style="justify-content:center;">
+          📦 제품 정보 추가하기 <span style="font-size:10px;opacity:0.7;">(모든 채널에 적용 — 이미지·상세페이지·성분표)</span>
+        </button>
+      </div>
     </div>
 
-    <!-- 제품 콘텐츠 전용 경로 (상세페이지/스마트스토어 선택 시 표시) -->
-    <div class="section-card" id="productModeCard" style="display:none;border:2px solid var(--lavender);">
-      <div class="section-title" style="color:var(--navy);">🛍️ 제품 콘텐츠 모드</div>
-      <div style="font-size:12px;color:var(--gray);margin-bottom:12px;">
-        제품 상세페이지·스마트스토어는 키워드 분석 대신 제품 정보를 바로 입력하세요
+    <!-- 제품 정보 입력 (모든 채널에 선택적으로 사용 가능) -->
+    <div class="section-card" id="productModeCard" style="display:none;border:2px solid var(--navy);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="section-title" style="margin-bottom:0;"><span class="section-title-icon">🛍️</span> 제품 정보 입력</div>
+        <span style="font-size:11px;color:var(--gray);background:var(--bg);padding:3px 8px;border-radius:10px;border:1px solid var(--border);">선택사항</span>
+      </div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:14px;">
+        제품 이미지·상세페이지·성분표를 올리면 모든 채널 콘텐츠에 반영돼요<br>
+        <span style="color:var(--navy);font-weight:600;">블로그·인스타·스레드 등 어떤 채널이든 제품 정보 기반으로 생성 가능</span>
       </div>
       <div class="field-gap">
         <div class="field-label">제품명 입력</div>
@@ -1278,7 +1297,7 @@
       </div>
     </div>
 
-    <!-- 1-D. 선택된 키워드 확인 + 주제 구체화 -->
+    <!-- 1-D. 선택된 키워드 확인 + 주제 구체화 + 제품 정보 -->
     <div class="section-card" id="selectedKwArea" style="display:none;">
       <div class="section-title"><span class="section-title-icon">④</span> 주제 구체화</div>
       <div class="field-label" style="margin-bottom:6px;">선택된 키워드</div>
@@ -1292,10 +1311,54 @@
         </div>
         <input type="text" id="kwTopicInput" placeholder="주제를 입력하세요..." style="margin-bottom:6px;">
         <div id="topicIdeasWrap" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
-        <button class="generate-btn" onclick="goToFormWithKw()" style="position:relative;bottom:auto;">
-          다음 — 글 상세 설정 →
-        </button>
       </div>
+
+      <!-- 모든 채널 공통: 제품 정보 입력 (선택사항) -->
+      <div style="padding-top:14px;border-top:1px solid var(--border);">
+        <div class="field-label">🛍️ 제품 정보 첨부 <span class="opt">(선택 — 제품 관련 콘텐츠라면 추가하세요)</span></div>
+        <div style="font-size:11px;color:var(--gray);margin-bottom:10px;">
+          모든 채널에 적용돼요 — 이미지·텍스트를 넣으면 AI가 읽고 콘텐츠에 반영해요
+        </div>
+
+        <!-- 탭 -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button class="choice-btn selected" id="kwProdTabImg" onclick="switchKwProdTab('img')">🖼️ 이미지</button>
+          <button class="choice-btn" id="kwProdTabText" onclick="switchKwProdTab('text')">📋 텍스트</button>
+          <button class="choice-btn" id="kwProdTabSearch" onclick="switchKwProdTab('search')">🔍 제품 검색</button>
+        </div>
+
+        <!-- 이미지 패널 -->
+        <div id="kwProdPanelImg">
+          <div class="upload-area" style="padding:16px;">
+            <input type="file" accept="image/*" multiple id="productImgInputKw" onchange="handleProductImagesKw(event)">
+            <div style="text-align:center;">
+              <div style="font-size:24px;margin-bottom:4px;">🖼️</div>
+              <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:2px;">제품 이미지 · 상세페이지 캡처</div>
+              <div style="font-size:11px;color:var(--gray);">제품 사진 · 상세페이지 · 성분표 · 브랜드 자료 · 최대 10장</div>
+            </div>
+          </div>
+          <div class="image-previews" id="productImgPreviewsKw" style="margin-top:8px;"></div>
+          <div id="productImgCountBadge" style="font-size:12px;color:var(--navy);font-weight:700;margin-top:6px;display:none;"></div>
+        </div>
+
+        <!-- 텍스트 패널 -->
+        <div id="kwProdPanelText" style="display:none;">
+          <textarea id="productRawText" style="min-height:140px;font-size:13px;" placeholder="상세페이지 내용, 성분표, 브랜드 자료 등을 붙여넣으세요..."></textarea>
+        </div>
+
+        <!-- 제품 검색 패널 -->
+        <div id="kwProdPanelSearch" style="display:none;">
+          <div class="input-row">
+            <input type="text" id="productNameInput" placeholder="예) 더라포 EGF 앰플, 리라신 세럼..." />
+            <button class="btn btn-navy btn-sm" onclick="searchProductDirect()">🔍 검색</button>
+          </div>
+          <div class="search-result-box" id="productDirectResultBox"></div>
+        </div>
+      </div>
+
+      <button class="generate-btn" onclick="goToFormWithKw()" style="position:relative;bottom:auto;margin-top:16px;">
+        다음 — 글 상세 설정 →
+      </button>
     </div>
 
   </div>
@@ -1704,25 +1767,23 @@ function toggleType(btn) {
   const blogCard = document.getElementById('blogImgCard');
   if (blogCard) blogCard.classList.toggle('hidden', !hasBlog);
 
-  // 제품 모드 카드 표시/숨김 (kwScreen에 있을 때)
+  // 제품 모드 카드: 제품 채널 선택 시 자동 오픈
   const productCard = document.getElementById('productModeCard');
   const kwCard = document.getElementById('kwAnalysisCard');
   const kwResult = document.getElementById('kwResultArea');
   const selectedArea = document.getElementById('selectedKwArea');
-  if (productCard && kwCard) {
+  if (productCard) {
     if (isProductMode) {
       productCard.style.display = 'block';
-      // 제품 전용만 선택된 경우 키워드 분석 숨김
-      if (isOnlyProduct) {
-        kwCard.style.display = 'none';
-        if (kwResult) kwResult.style.display = 'none';
-        if (selectedArea) selectedArea.style.display = 'none';
-      } else {
-        kwCard.style.display = 'block';
-      }
-    } else {
-      productCard.style.display = 'none';
-      kwCard.style.display = 'block';
+      updateProductToggleBtn(true);
+    }
+    // 제품 전용만 선택된 경우 키워드 분석 숨김
+    if (kwCard) {
+      kwCard.style.display = isOnlyProduct ? 'none' : 'block';
+    }
+    if (isOnlyProduct) {
+      if (kwResult) kwResult.style.display = 'none';
+      if (selectedArea) selectedArea.style.display = 'none';
     }
   }
 }
@@ -1864,11 +1925,45 @@ function renderProductImgPreviewsKw() {
   }
 }
 
+// 제품 정보 패널 토글 (모든 채널에서 사용)
+function toggleProductInfoPanel() {
+  const card = document.getElementById('productModeCard');
+  const isOpen = card.style.display !== 'none';
+  card.style.display = isOpen ? 'none' : 'block';
+  updateProductToggleBtn(!isOpen);
+  if (!isOpen) {
+    setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  }
+}
+
+function updateProductToggleBtn(isOpen) {
+  const btn = document.getElementById('productInfoToggleBtn');
+  if (!btn) return;
+  if (isOpen) {
+    btn.textContent = '✕ 제품 정보 닫기';
+    btn.style.background = 'var(--gray-light)';
+    btn.style.color = 'var(--gray)';
+  } else {
+    btn.innerHTML = '📦 제품 정보 추가하기 <span style="font-size:10px;opacity:0.7;">(모든 채널에 적용 — 이미지·상세페이지·성분표)</span>';
+    btn.style.background = 'var(--lavender-light)';
+    btn.style.color = 'var(--navy)';
+  }
+}
+
 function switchProductTab(tab) {
   document.getElementById('productPanelImg').style.display = tab === 'img' ? 'block' : 'none';
   document.getElementById('productPanelText').style.display = tab === 'text' ? 'block' : 'none';
   document.getElementById('productTabImg').classList.toggle('selected', tab === 'img');
   document.getElementById('productTabText').classList.toggle('selected', tab === 'text');
+}
+
+function switchKwProdTab(tab) {
+  ['img','text','search'].forEach(t => {
+    const panel = document.getElementById(`kwProdPanel${t.charAt(0).toUpperCase()+t.slice(1)}`);
+    const btn   = document.getElementById(`kwProdTab${t.charAt(0).toUpperCase()+t.slice(1)}`);
+    if (panel) panel.style.display = t === tab ? 'block' : 'none';
+    if (btn)   btn.classList.toggle('selected', t === tab);
+  });
 }
 
 async function extractProductInfoKw() {
@@ -2325,6 +2420,15 @@ async function goToFormWithKw() {
   setStep(2);
   window.scrollTo(0, 0);
 
+  // 텍스트 정보 extraInfo에 반영
+  const rawText = document.getElementById('productRawText')?.value.trim() || '';
+  if (rawText) {
+    const extraField = document.getElementById('extraInfo');
+    if (extraField && !extraField.value.includes(rawText.slice(0,30))) {
+      extraField.value = rawText + (extraField.value ? '\n\n' + extraField.value : '');
+    }
+  }
+
   // ── AI로 LSI 키워드·타겟·검색의도·톤 자동 채우기 ──
   autoFillFormFields(topic, selectedKws, selectedTypes);
 }
@@ -2738,7 +2842,10 @@ CTA 마지막 줄: "나중에 꺼내보려면 📌저장하세요!" 형태
 [고정 댓글용 문구]
 선착순·마감 임박 + Linktree 경유
 
-[설명란 태그 10개]`,
+[설명란 태그 10개]
+
+[해시태그]
+#로나이 포함 15개 (검색량 있는 태그 위주)`,
 
     kakao_channel: `${meta}
 
@@ -2759,7 +2866,10 @@ CTA 버튼2:
 [리치메뉴 3분할 구성 제안]
 버튼1 (스마트스토어):
 버튼2 (1:1 피부상담):
-버튼3 (후기 모아보기):`,
+버튼3 (후기 모아보기):
+
+[해시태그]
+#로나이 포함 10개`,
 
     threads: `${meta}
 
@@ -2786,7 +2896,10 @@ CTA 버튼2:
 (핵심 정보 전달, 500자 이내)
 
 [추가 스레드 3]
-(정리 + RONAI 소개 + 대화 유도 질문)`,
+(정리 + RONAI 소개 + 대화 유도 질문)
+
+[해시태그]
+#로나이 포함 10개 (본문 아닌 첫번째 답글에 삽입)`,
 
     card_news: `${meta}
 
@@ -2817,7 +2930,10 @@ RONAI 신뢰 근거(2줄):
 [6장 (CTA)]
 "지금 📌저장하고 프로필 링크 클릭"
 혜택 문구:
-ronai.co.kr`,
+ronai.co.kr
+
+[해시태그]
+#로나이 포함 15개 (대형3/중형5/소형7)`,
 
     product_detail: `${meta}
 
@@ -3156,9 +3272,14 @@ function renderHashtags(text) {
     const tags = line.match(/#[^\s#,，]+/g) || [];
     tags.forEach(t => items.push({ tag: t, size: currentSize }));
   });
+  // #태그 형식 없으면 전체 텍스트에서 다시 추출
   if (!items.length) {
     const tags = text.match(/#[^\s#,，]+/g) || [];
     tags.forEach(t => items.push({ tag: t, size: 'small' }));
+  }
+  // 그래도 없으면 텍스트 그대로 표시
+  if (!items.length) {
+    return `<div class="block-content" style="white-space:pre-wrap;">${escHtml(text)}</div>`;
   }
   return `<div class="hashtag-wrap">${items.map(i =>
     `<span class="hashtag ht-${i.size}">${escHtml(i.tag)}</span>`
