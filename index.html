@@ -2669,8 +2669,15 @@ const BRAND_SYSTEM = `당신은 RONAI(로나이)의 콘텐츠 전략가입니다
 【금지 클리셰】
 "안녕하세요" / "오늘은~알아볼게요" / "도움이 되셨나요?" / "진짜 이유" / "놓치는 것" / "~의 비밀"
 
+【출력 형식 절대 준수】
+마크다운 기호 전면 금지 (**, ##, ---, *, ~~, > 등)
+섹션 구분은 [대괄호] 형식만 사용
+제목 후보는 "1. 제목" 형식 (볼드 없이)
+강조는 기호 없이 문장으로 표현
+복사해서 바로 붙여넣을 수 있는 순수 텍스트로 작성
+
 【절대 금지】
-추측·근거없는주장·의료표현·직접경험담·제조사 어투
+추측·근거없는주장·의료표현·직접경험담·제조사 어투·마크다운 기호
 
 항상 한국어로 작성하세요.`;
 
@@ -3101,11 +3108,31 @@ A3:
 // ── API 응답에서 텍스트만 안전하게 추출 (tool_use/tool_result 블록 무시)
 function extractText(content) {
   if (!Array.isArray(content)) return '';
-  return content
+  const raw = content
     .filter(c => c && c.type === 'text')
     .map(c => c.text || '')
     .filter(Boolean)
     .join('\n');
+  return stripMarkdown(raw);
+}
+
+// ── 마크다운 기호 제거 (복사 붙여넣기용 순수 텍스트)
+function stripMarkdown(text) {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')   // **볼드** 제거
+    .replace(/\*([^*]+)\*/g, '$1')          // *이탤릭* 제거
+    .replace(/^#{1,6}\s+/gm, '')             // ## 제목 제거
+    .replace(/^---+$/gm, '')                  // --- 구분선 제거
+    .replace(/^___+$/gm, '')                  // ___ 구분선 제거
+    .replace(/^- /gm, '')                     // - 리스트 제거 (섹션 내부)
+    .replace(/~~([^~]+)~~/g, '$1')            // ~~취소선~~ 제거
+    .replace(/`([^`]+)`/g, '$1')              // `인라인코드` 제거
+    .replace(/^> /gm, '')                     // > 인용 제거
+    .replace(/\[\[소형\]\]/g, '[소형]')
+    .replace(/\[\[중형\]\]/g, '[중형]')
+    .replace(/\[\[대형\]\]/g, '[대형]')
+    .replace(/\*\*(\[소형\]|\[중형\]|\[대형\])\*\*/g, '$1')
+    .trim();
 }
 
 // ── Worker 호출 공통 함수 (웹서치는 Worker에서 처리)
