@@ -1205,11 +1205,12 @@
       </div>
 
       <div style="font-size:11px;color:var(--gray);margin-bottom:8px;padding-top:12px;border-top:1px solid var(--border);">
-        🛍️ 제품 콘텐츠
+        🛍️ 제품 콘텐츠 · 쇼핑몰
       </div>
       <div class="type-grid" style="margin-bottom:14px;">
         <button class="type-btn" data-type="product_detail" onclick="toggleType(this)"><span class="type-icon">🛍️</span> 제품 상세페이지</button>
         <button class="type-btn" data-type="smart_store" onclick="toggleType(this)"><span class="type-icon">🏪</span> 스마트스토어</button>
+        <button class="type-btn" data-type="imweb" onclick="toggleType(this)"><span class="type-icon">🌐</span> 아임웹 게시물</button>
       </div>
 
       <!-- 제품 정보 토글 버튼 (모든 채널에서 사용 가능) -->
@@ -1763,6 +1764,7 @@ const TYPE_META = {
   card_news:      { label: '카드뉴스',       icon: '🃏', canva: '프레젠테이션' },
   product_detail: { label: '제품 상세페이지',icon: '🛍️', canva: '제품 카탈로그' },
   smart_store:    { label: '스마트스토어',   icon: '🏪', canva: '제품 이미지' },
+  imweb:          { label: '아임웹 게시물', icon: '🌐', canva: '블로그 배너' },
 };
 
 // ─────────────────────────────────────────
@@ -3095,8 +3097,53 @@ A3:
 
 [리뷰 보상 안내 문구]
 
+[리뷰 보상 안내 문구]
+
 [필수 표기사항 안내]
-용량 / 제조업자 / 제조국 / 성분 / 사용기한 / 사용방법 / 주의사항`
+용량 / 제조업자 / 제조국 / 성분 / 사용기한 / 사용방법 / 주의사항`,
+
+    imweb: `\${meta}
+
+다음 주제로 RONAI 아임웹 게시물 콘텐츠를 작성해주세요: "\${topic}"
+
+웹서치로 최신 정보를 수집한 후 아래 항목을 모두 작성하세요.
+
+아임웹 SEO 규칙 준수:
+- 제목 20~60자 이내, 주제가 드러나도록
+- 키워드 5~10개 (게시물과 직접 관련된 단어/구문)
+- 소제목은 h2 → h3 순서 준수, 번호 건너뜀·중복 금지
+- 모든 이미지에 대체 텍스트 포함
+
+[제목 후보 3개]
+조건: 20~60자 이내, 메인 키워드 포함, 실제 검색어 형태
+1.
+2.
+3.
+
+[SEO 키워드]
+게시물과 직접 관련된 검색 키워드 10개 (쉼표 구분)
+
+[핵심 요약]
+2~3문장
+
+[본문]
+1000~1500자
+- h2 소제목 → 본문 2~3문장 구조 반복
+- h3 소제목은 h2 하위에만 사용
+- RONAI 큐레이션 어투 (제조사 표현 금지)
+- 공정위 표현 준수
+- 마크다운 기호 없이 순수 텍스트
+
+[이미지 가이드]
+이미지1: [파일명] | [대체 텍스트 — 검색 키워드 포함] | [삽입 위치]
+이미지2: [파일명] | [대체 텍스트] | [삽입 위치]
+이미지3: [파일명] | [대체 텍스트] | [삽입 위치]
+
+[해시태그]
+#로나이 포함 10개 (검색량 있는 태그 위주)
+
+[메타 설명]
+160자 이내 — 첫 문장에 메인 키워드 포함`
   };
 
   return PROMPTS[type] || `"${topic}" 주제로 ${TYPE_META[type].label} 콘텐츠를 한국어로 작성해주세요.`;
