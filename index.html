@@ -1589,6 +1589,32 @@
   <div id="historyList"></div>
 </div>
 
+<!-- ─── API 키 설정 모달 ─── -->
+<div class="modal-overlay" id="apiKeyModal">
+  <div class="modal-sheet" style="max-height:auto;">
+    <div class="modal-header">
+      <span class="modal-title">🔑 API 키 설정</span>
+      <button class="modal-close" onclick="closeApiKeyModal()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px;">
+      <div style="font-size:13px;color:var(--gray);margin-bottom:16px;line-height:1.7;">
+        Gemini API 키를 입력해주세요.<br>
+        한 번만 입력하면 이 기기에 저장돼요 🔒
+      </div>
+      <div class="field-label">Gemini API Key</div>
+      <input type="password" id="geminiKeyInput"
+        placeholder="AQ.Ab8RN6... 또는 AIzaSy..."
+        style="margin-bottom:8px;font-family:monospace;font-size:13px;">
+      <div style="font-size:11px;color:var(--gray);margin-bottom:16px;">
+        👉 <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--navy);">aistudio.google.com/apikey</a> 에서 발급
+      </div>
+      <button class="btn btn-navy btn-full" onclick="saveApiKey()" style="font-size:15px;padding:13px;">
+        ✅ 저장하고 시작하기
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ─── PROMPT MODAL ─── -->
 <div class="modal-overlay" id="promptModal" onclick="closePromptOnOverlay(event)">
   <div class="modal-sheet">
@@ -1609,11 +1635,18 @@
 // ─────────────────────────────────────────
 // CONSTANTS
 // ─────────────────────────────────────────
-const WORKER = 'https://ronai-claude.dlrndkskzz.workers.dev';
+const WORKER = 'https://ronai-claude.dlrndkskzz.workers.dev'; // Claude fallback용 (미사용)
 const REDIS  = 'https://destined-hornet-42955.upstash.io';
 const RTOKEN = 'AafLAAIgcDE1OGY1NTUyNTdiNTQ0N2FhYjg5NzQzZWExNzgyNzdhZg';
-const MODEL  = 'claude-sonnet-4-6';
+const MODEL  = 'claude-sonnet-4-6'; // fallback용
 const WEB_SEARCH = 'web_search_20250305';
+
+// ── Gemini API 설정 ──
+const GEMINI_KEY = localStorage.getItem('ronai:gemini_key') || '';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+// 채널별 모델 분기: 블로그/상세페이지 → Pro, 나머지 → Flash (무료)
+const GEMINI_PRO   = 'gemini-2.0-flash'; // 전부 Flash로 (무료 한도 내)
+const GEMINI_FLASH = 'gemini-2.0-flash';
 const HIST_MAX = 30;
 const TTL_MS   = 14 * 24 * 60 * 60 * 1000; // 2 weeks
 
@@ -3182,547 +3215,100 @@ function stripMarkdown(text) {
     .trim();
 }
 
-// ── Worker 호출 공통 함수 (웹서치는 Worker에서 처리)
-async function workerPost(body) {
-  const r = await fetch(WORKER, {
+// ─────────────────────────────────────────
+// GEMINI API 호출 (무료 티어 활용)
+// ─────────────────────────────────────────
+async function geminiPost(parts, useSearch, maxTokens, model) {
+  // API 키 동적으로 읽기
+  const apiKey = localStorage.getItem('ronai:gemini_key') || GEMINI_KEY;
+  if (!apiKey) { if(typeof openApiKeyModal==='function') openApiKeyModal(); throw new Error('API 키 없음'); }
+  const m = model || GEMINI_FLASH;
+  const url = GEMINI_URL + '/' + m + ':generateContent?key=' + apiKey;
+  const body = {
+    systemInstruction: { parts: [{ text: BRAND_SYSTEM }] },
+    contents: [{ role: 'user', parts: parts }],
+    generationConfig: { maxOutputTokens: maxTokens || 2000, temperature: 0.7 }
+  };
+  if (useSearch) body.tools = [{ googleSearch: {} }];
+  const r = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
   if (!r.ok) {
     const errText = await r.text().catch(() => '');
-    throw new Error(`API ${r.status}: ${errText.slice(0,200)}`);
+    throw new Error('Gemini API ' + r.status + ': ' + errText.slice(0, 300));
   }
   const d = await r.json();
-  // API가 에러 객체를 200으로 감싸서 줄 때 처리
-  if (d.type === 'error') throw new Error(d.error?.message || 'API error');
-  return d;
+  if (d.error) throw new Error(d.error.message || 'Gemini error');
+  const raw = (d.candidates || [{}])[0]?.content?.parts
+    ?.filter(p => p.text)?.map(p => p.text)?.join('\n') || '';
+  return stripMarkdown(raw);
 }
 
 async function callClaude(prompt, useSearch, maxTokens) {
-  const body = {
-    model: MODEL,
-    max_tokens: maxTokens || 2000,
-    system: BRAND_SYSTEM,
-    messages: [{ role: 'user', content: prompt }]
-  };
-  if (useSearch) body.tools = [{ type: WEB_SEARCH, name: 'web_search' }];
-  const d = await workerPost(body);
-  return extractText(d.content);
+  return geminiPost([{ text: prompt }], useSearch, maxTokens);
 }
 
 async function callClaudeRaw(messages, useSearch, maxTokens) {
-  const body = {
-    model: MODEL,
-    max_tokens: maxTokens || 2000,
-    system: BRAND_SYSTEM,
-    messages
-  };
-  if (useSearch) body.tools = [{ type: WEB_SEARCH, name: 'web_search' }];
-  const d = await workerPost(body);
-  return extractText(d.content);
+  const lastMsg = messages[messages.length - 1];
+  const parts = Array.isArray(lastMsg.content)
+    ? lastMsg.content.map(c => {
+        if (c.type === 'text') return { text: c.text };
+        if (c.type === 'image') return { inlineData: { mimeType: c.source.media_type, data: c.source.data } };
+        return null;
+      }).filter(Boolean)
+    : [{ text: lastMsg.content }];
+  return geminiPost(parts, useSearch, maxTokens);
 }
 
 async function callClaudeWithImages(prompt, useSearch, maxTokens, productImgs, blogImgs, type) {
-  const msgContent = [];
-
-  // 제품 이미지 첨부
+  const parts = [];
   if (productImgs && productImgs.length) {
     for (const img of productImgs) {
-      msgContent.push({
-        type: 'image',
-        source: { type: 'base64', media_type: img.type || 'image/jpeg', data: img.base64 }
-      });
+      parts.push({ inlineData: { mimeType: img.type || 'image/jpeg', data: img.base64 } });
     }
-    msgContent.push({ type: 'text', text: '위 이미지는 제품 이미지입니다. 이미지 정보를 콘텐츠 생성에 활용해주세요.\n\n' });
+    parts.push({ text: '위 이미지는 제품 이미지입니다. 이미지 정보를 콘텐츠 생성에 활용해주세요.\n\n' });
   }
-
-  // 블로그 이미지 첨부 (블로그 타입일 때만)
-  if ((type === 'naver_blog' || type === 'tistory') && blogImgs && blogImgs.length) {
+  if ((type === 'naver_blog' || type === 'tistory' || type === 'imweb') && blogImgs && blogImgs.length) {
     for (const img of blogImgs) {
-      msgContent.push({
-        type: 'image',
-        source: { type: 'base64', media_type: img.type || 'image/jpeg', data: img.base64 }
-      });
+      parts.push({ inlineData: { mimeType: img.type || 'image/jpeg', data: img.base64 } });
     }
-    msgContent.push({ type: 'text', text: `위 이미지들(총 ${blogImgs.length}장)을 참고하여 이미지 가이드(파일명/alt텍스트/삽입위치)를 생성해주세요.\n\n` });
+    parts.push({ text: '위 이미지들(' + blogImgs.length + '장)을 참고하여 이미지 가이드를 생성해주세요.\n\n' });
   }
-
-  msgContent.push({ type: 'text', text: prompt });
-
-  const body = {
-    model: MODEL,
-    max_tokens: maxTokens || 2000,
-    system: BRAND_SYSTEM,
-    messages: [{ role: 'user', content: msgContent }]
-  };
-  if (useSearch) body.tools = [{ type: WEB_SEARCH, name: 'web_search' }];
-
-  const d = await workerPost(body);
-  return extractText(d.content);
+  parts.push({ text: prompt });
+  return geminiPost(parts, useSearch, maxTokens);
 }
+
 
 // ─────────────────────────────────────────
-// SHOW RESULT
+// API 키 관리
 // ─────────────────────────────────────────
-function showResult(topic, results) {
-  currentResult = { topic, results, types: selectedTypes };
-  document.getElementById('resultTopic').textContent = topic;
-  document.getElementById('resultDate').textContent = new Date().toLocaleString('ko-KR');
-  document.getElementById('resultTypes').textContent = selectedTypes.map(t => TYPE_META[t].label).join(' · ');
+let _geminiKey = localStorage.getItem('ronai:gemini_key') || '';
 
-  // verify section (blog / detail only)
-  const hasVerify = selectedTypes.some(t => t==='naver_blog'||t==='tistory'||t==='product_detail');
-  if (hasVerify) {
-    document.getElementById('verifySection').classList.remove('hidden');
-    renderVerify(results);
-  } else {
-    document.getElementById('verifySection').classList.add('hidden');
-  }
-
-  // render result content
-  _sectionIndex = 0; // 아코디언 인덱스 초기화
-  const container = document.getElementById('resultContent');
-  container.innerHTML = selectedTypes.map(type => renderContentSection(type, results[type]||'')).join('');
-
-  document.getElementById('resultScreen').classList.add('active');
-  window.scrollTo(0,0);
+function saveApiKey() {
+  const key = document.getElementById('geminiKeyInput').value.trim();
+  if (!key) { showToast('API 키를 입력해주세요'); return; }
+  _geminiKey = key;
+  localStorage.setItem('ronai:gemini_key', key);
+  document.getElementById('apiKeyModal').classList.remove('active');
+  showToast('✅ API 키 저장 완료! 이 기기에 저장됐어요');
 }
 
-function renderVerify(results) {
-  const VERIFY_ITEMS = [
-    { key:'ftc',    label:'공정위',    icon:'⚖️' },
-    { key:'fact',   label:'사실검증',  icon:'🔬' },
-    { key:'source', label:'출처',      icon:'📖' },
-    { key:'med',    label:'의료표현',  icon:'🏥' },
-    { key:'exag',   label:'과장표현',  icon:'📢' },
-    { key:'brand',  label:'브랜드철학',icon:'💎' },
-  ];
-
-  // try to parse from naver_blog or product_detail content
-  const sourceText = results['naver_blog'] || results['tistory'] || results['product_detail'] || '';
-  const verifyMap = {};
-  const lines = sourceText.split('\n');
-  lines.forEach(line => {
-    if (line.includes('공정위')) verifyMap.ftc = parseVerifyLine(line);
-    if (line.includes('사실검증')) verifyMap.fact = parseVerifyLine(line);
-    if (line.includes('출처')) verifyMap.source = parseVerifyLine(line);
-    if (line.includes('의료표현')) verifyMap.med = parseVerifyLine(line);
-    if (line.includes('과장표현')) verifyMap.exag = parseVerifyLine(line);
-    if (line.includes('브랜드철학')) verifyMap.brand = parseVerifyLine(line);
-  });
-
-  const grid = document.getElementById('verifyGrid');
-  grid.innerHTML = VERIFY_ITEMS.map(item => {
-    const v = verifyMap[item.key] || { status: '✅', reason: '검토 완료' };
-    const cls = v.icon==='✅' ? 'pass' : v.icon==='⚠️' ? 'warn' : 'fail';
-    return `<div class="verify-card ${cls}">
-      <div class="verify-icon">${item.icon}</div>
-      <div>
-        <div class="verify-label">${v.icon || '✅'} ${item.label}</div>
-        <div class="verify-status">${v.reason || ''}</div>
-      </div>
-    </div>`;
-  }).join('');
+function openApiKeyModal() {
+  document.getElementById('apiKeyModal').classList.add('active');
+  const input = document.getElementById('geminiKeyInput');
+  if (_geminiKey) input.value = _geminiKey;
+  setTimeout(() => input.focus(), 100);
 }
 
-function parseVerifyLine(line) {
-  const icon = line.includes('✅') ? '✅' : line.includes('⚠️') ? '⚠️' : line.includes('❌') ? '❌' : '✅';
-  const reason = line.split('|').pop()?.trim() || '';
-  return { icon, reason };
+function closeApiKeyModal() {
+  if (!_geminiKey) { showToast('API 키를 먼저 입력해주세요'); return; }
+  document.getElementById('apiKeyModal').classList.remove('active');
 }
 
-let _sectionIndex = 0;
-
-function renderContentSection(type, text) {
-  const meta = TYPE_META[type];
-  if (!meta) return '';
-  const safeId = 'cs_' + type + '_' + Date.now();
-  const blocks = parseContentBlocks(type, text, safeId);
-  _copyTexts[safeId] = text;
-  const isFirst = _sectionIndex === 0;
-  _sectionIndex++;
-  return '<div class="content-section ' + (isFirst ? 'open' : '') + '" id="' + safeId + '_wrap">' +
-    '<div class="content-section-header" onclick="toggleAccordion(\'' + safeId + '_wrap\')">' +
-      '<div class="content-section-title">' +
-        '<span>' + meta.icon + ' ' + meta.label + '</span>' +
-        '<span class="content-type-badge">' + type + '</span>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;gap:8px;">' +
-        '<button class="copy-all-btn" data-copy-id="' + safeId + '" onclick="event.stopPropagation();copyById(this.dataset.copyId,this)">📋 전체 복사</button>' +
-        '<span class="accordion-arrow">▼</span>' +
-      '</div>' +
-    '</div>' +
-    '<div class="accordion-body">' + blocks + '</div>' +
-  '</div>';
-}
-
-function toggleAccordion(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.toggle('open');
-}
-
-function openAllAccordions() {
-  document.querySelectorAll('.content-section').forEach(el => el.classList.add('open'));
-}
-
-function closeAllAccordions() {
-  document.querySelectorAll('.content-section').forEach(el => el.classList.remove('open'));
-}
-
-function parseContentBlocks(type, text, parentId) {
-  // Parse text into labeled blocks by bracket sections
-  const sections = [];
-  const regex = /\[([^\]]+)\]\n?([\s\S]*?)(?=\n\[|$)/g;
-  let match;
-  while ((match = regex.exec(text)) !== null) {
-    sections.push({ label: match[1].trim(), content: match[2].trim() });
-  }
-
-  if (!sections.length) {
-    const bid = (parentId||'b') + '_all';
-    _copyTexts[bid] = text;
-    return `<div class="content-block">
-      <div class="block-label">내용 <button class="copy-btn" data-copy-id="${bid}" onclick="copyById(this.dataset.copyId,this)">📋 복사</button></div>
-      <div class="block-content">${escHtml(text)}</div>
-    </div>`;
-  }
-
-  return sections.map((s, i) => {
-    const label = s.label;
-    const content = s.content;
-    let rendered = '';
-
-    if (label.includes('해시태그')) {
-      rendered = renderHashtags(content);
-    } else if (label.includes('FAQ') || label.includes('GEO 저격')) {
-      rendered = renderFAQ(content);
-    } else if (label.includes('이미지 가이드')) {
-      rendered = renderImgGuide(content);
-    } else if (label.includes('캐러셀') || label.includes('비교 매트릭스')) {
-      rendered = `<div class="block-content">${escHtml(content)}</div>`;
-    } else {
-      rendered = `<div class="block-content">${escHtml(content)}</div>`;
-    }
-
-    const bid = (parentId||'b') + '_' + i;
-    _copyTexts[bid] = content;
-    return `<div class="content-block">
-      <div class="block-label">${escHtml(label)} <button class="copy-btn" data-copy-id="${bid}" onclick="copyById(this.dataset.copyId,this)">📋 복사</button></div>
-      ${rendered}
-    </div>`;
-  }).join('');
-}
-
-function renderHashtags(text) {
-  const lines = text.split('\n').filter(Boolean);
-  const items = [];
-  let currentSize = 'small';
-  lines.forEach(line => {
-    if (line.includes('대형')) currentSize = 'large';
-    else if (line.includes('중형')) currentSize = 'medium';
-    else if (line.includes('소형')) currentSize = 'small';
-    const tags = line.match(/#[^\s#,，]+/g) || [];
-    tags.forEach(t => items.push({ tag: t, size: currentSize }));
-  });
-  // #태그 형식 없으면 전체 텍스트에서 다시 추출
-  if (!items.length) {
-    const tags = text.match(/#[^\s#,，]+/g) || [];
-    tags.forEach(t => items.push({ tag: t, size: 'small' }));
-  }
-  // 그래도 없으면 텍스트 그대로 표시
-  if (!items.length) {
-    return `<div class="block-content" style="white-space:pre-wrap;">${escHtml(text)}</div>`;
-  }
-  return `<div class="hashtag-wrap">${items.map(i =>
-    `<span class="hashtag ht-${i.size}">${escHtml(i.tag)}</span>`
-  ).join('')}</div>`;
-}
-
-function renderFAQ(text) {
-  const lines = text.split('\n');
-  const items = [];
-  let q = '', a = '';
-  lines.forEach(line => {
-    if (/^Q\d*[:.：]/.test(line.trim())) {
-      if (q) items.push({q, a});
-      q = line.replace(/^Q\d*[:.：]\s*/, '').trim();
-      a = '';
-    } else if (/^A\d*[:.：]/.test(line.trim())) {
-      a = line.replace(/^A\d*[:.：]\s*/, '').trim();
-    } else if (a !== '' && line.trim()) {
-      a += '\n' + line.trim();
-    }
-  });
-  if (q) items.push({q, a});
-  if (!items.length) return `<div class="block-content">${escHtml(text)}</div>`;
-  return items.map(i =>
-    `<div class="faq-item">
-      <div class="faq-q">Q. ${escHtml(i.q)}</div>
-      <div class="faq-a">${escHtml(i.a)}</div>
-    </div>`
-  ).join('');
-}
-
-function renderImgGuide(text) {
-  const lines = text.split('\n').filter(Boolean);
-  const items = lines.map(line => {
-    const parts = line.split('|').map(p => p.trim());
-    return { filename: parts[0]||'', alt: parts[1]||'', pos: parts[2]||'' };
-  }).filter(i => i.filename);
-  if (!items.length) return `<div class="block-content">${escHtml(text)}</div>`;
-  return items.map(i =>
-    `<div class="img-guide-item">
-      <div class="img-guide-filename">📁 ${escHtml(i.filename)}</div>
-      <div class="img-guide-alt">Alt: ${escHtml(i.alt)}</div>
-      ${i.pos ? `<div class="img-guide-pos">📍 ${escHtml(i.pos)}</div>` : ''}
-    </div>`
-  ).join('');
-}
-
-function escHtml(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ─────────────────────────────────────────
-// CANVA
-// ─────────────────────────────────────────
-function openCanva() {
-  const type = selectedTypes[0];
-  const meta = TYPE_META[type] || { canva: '소셜 미디어' };
-  const query = encodeURIComponent(meta.canva + ' 템플릿');
-  window.open(`https://www.canva.com/ko_kr/search/templates/?q=${query}`, '_blank');
-}
-
-// ─────────────────────────────────────────
-// COPY
-// ─────────────────────────────────────────
-function copyById(id, btn) {
-  const text = _copyTexts[id] || '';
-  copyText(text, btn);
-}
-function copyText(text, btn) {
-  navigator.clipboard.writeText(text).then(() => {
-    if (btn) {
-      const orig = btn.textContent;
-      btn.textContent = '✅ 복사됨';
-      btn.classList.add('copied');
-      setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
-    }
-    showToast('✅ 클립보드에 복사됐어요');
-  }).catch(() => showToast('복사 실패'));
-}
-
-// ─────────────────────────────────────────
-// BACK
-// ─────────────────────────────────────────
-function goBack() {
-  document.getElementById('resultScreen').classList.remove('active');
-  document.getElementById('loadingScreen').classList.remove('active');
-  document.getElementById('formScreen').classList.add('active');
-  setStep(2);
-  window.scrollTo(0,0);
-}
-
-// ─────────────────────────────────────────
-// HISTORY
-// ─────────────────────────────────────────
-async function saveHistory(entry) {
-  let hist = await rGet('ronai:hist') || [];
-  const id = Date.now();
-  const record = { id, topic: entry.topic, types: entry.types, date: entry.date };
-
-  // 결과를 localStorage + Redis 동시 저장 (기기 간 동기화)
-  if (entry.results && Object.keys(entry.results).length) {
-    await saveResult(id, entry.results);
-    record.hasResult = true;
-  }
-
-  hist.unshift(record);
-  if (hist.length > HIST_MAX) {
-    // 넘치는 항목 결과 정리
-    const expired = hist.slice(HIST_MAX);
-    hist = hist.slice(0, HIST_MAX);
-    expired.forEach(h => deleteResult(h.id));
-  }
-  await rSet('ronai:hist', hist);
-}
-
-async function loadHistory() {
-  const hist = await rGet('ronai:hist') || [];
-  const list = document.getElementById('historyList');
-  const count = document.getElementById('historyCount');
-  count.textContent = `${hist.length}개`;
-  if (!hist.length) {
-    list.innerHTML = `<div class="history-empty">
-      <div class="history-empty-icon">📂</div>
-      <div class="history-empty-text">아직 생성한 콘텐츠가 없어요</div>
-    </div>`;
-    return;
-  }
-  // 히스토리 아이템별로 임시 맵에 메타 저장 후 id로만 참조
-  window._histMap = {};
-  hist.forEach(h => { window._histMap[h.id] = h; });
-
-  list.innerHTML = hist.map(h => {
-    // 실제로 결과가 localStorage에 있는지 확인
-    const hasResult = !!lsGetResult(h.id);
-    const icon = hasResult ? '📄' : '🔁';
-    const hint = hasResult ? '' : '<span style="font-size:10px;color:var(--orange);margin-left:4px;">(재생성 필요)</span>';
-    return `<div class="history-item" data-hist-id="${h.id}" data-has-result="${hasResult}" onclick="restoreHistory(this.dataset.histId)">
-      <div class="history-icon">${icon}</div>
-      <div class="history-info">
-        <div class="history-topic">${escHtml(h.topic)}${hint}</div>
-        <div class="history-types">${(h.types||[]).map(t => TYPE_META[t]?.label||t).join(' · ')}</div>
-      </div>
-      <div class="history-date">${formatDate(h.date)}</div>
-      <button class="history-del" data-del-id="${h.id}" onclick="event.stopPropagation();deleteHistory(this.dataset.delId)">🗑️</button>
-    </div>`;
-  }).join('');
-}
-
-async function deleteHistory(id) {
-  const numId = Number(id);
-  let hist = await rGet('ronai:hist') || [];
-  hist = hist.filter(h => h.id !== numId);
-  await deleteResult(numId);  // localStorage + Redis 동시 삭제
-  delete (window._histMap||{})[numId];
-  await rSet('ronai:hist', hist);
-  loadHistory();
-}
-
-async function clearAllHistory() {
-  if (!confirm('모든 히스토리를 삭제할까요?')) return;
-  const hist = await rGet('ronai:hist') || [];
-  hist.forEach(h => deleteResult(h.id)); // 결과도 전부 삭제
-  await rSet('ronai:hist', []);
-  loadHistory();
-}
-
-async function restoreHistory(idStr) {
-  const id = Number(idStr);
-  const h = (window._histMap || {})[id];
-  if (!h) { showToast('히스토리를 불러올 수 없어요'); return; }
-
-  showToast('⏳ 결과를 불러오는 중...');
-
-  // localStorage 우선 → 없으면 Redis에서 fetch (기기 간 동기화 핵심)
-  const savedResults = await loadResult(id);
-
-  if (savedResults && Object.keys(savedResults).length) {
-    selectedTypes = h.types || [];
-    switchTab('make');
-    document.getElementById('formScreen').classList.remove('active');
-    document.getElementById('loadingScreen').classList.remove('active');
-    showResult(h.topic, savedResults);
-    setStep(4);
-    showToast('✅ 결과를 불러왔어요');
-  } else {
-    // 결과 없음 → 폼 복원 후 재생성 유도
-    selectedTypes = h.types || [];
-    document.querySelectorAll('.type-btn').forEach(btn => {
-      btn.classList.toggle('selected', selectedTypes.includes(btn.dataset.type));
-    });
-    document.getElementById('topicInput').value = h.topic || '';
-    const hasBlog = selectedTypes.some(t => t === 'naver_blog' || t === 'tistory');
-    document.getElementById('blogImgCard').classList.toggle('hidden', !hasBlog);
-    switchTab('make');
-    document.getElementById('formScreen').classList.add('active');
-    document.getElementById('resultScreen').classList.remove('active');
-    setStep(1);
-    showToast('⚠️ 저장된 결과가 없어요. 다시 생성해주세요');
-  }
-}
-
-function formatDate(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  const mm = d.getMonth()+1, dd = d.getDate();
-  const hh = d.getHours(), min = String(d.getMinutes()).padStart(2,'0');
-  return `${mm}/${dd} ${hh}:${min}`;
-}
-
-// ─────────────────────────────────────────
-// PROMPT MODAL
-// ─────────────────────────────────────────
-function openPromptModal() {
-  const body = document.getElementById('promptModalBody');
-  body.innerHTML = `
-    <div class="prompt-section-title">주요 변수 참조</div>
-    <table class="prompt-table">
-      <thead><tr><th>변수</th><th>값</th></tr></thead>
-      <tbody>
-        <tr><td>WORKER</td><td>${WORKER}</td></tr>
-        <tr><td>REDIS</td><td>${REDIS}</td></tr>
-        <tr><td>AI 모델</td><td>${MODEL}</td></tr>
-        <tr><td>웹서치 툴</td><td>${WEB_SEARCH}</td></tr>
-        <tr><td>히스토리 최대</td><td>${HIST_MAX}개</td></tr>
-        <tr><td>localStorage TTL</td><td>2주 (14일)</td></tr>
-      </tbody>
-    </table>
-
-    <div class="prompt-section-title">파일 업로드 가이드</div>
-    <div class="prompt-text">• 제품 이미지: 최대 5장, 모든 유형 생성 시 활용
-• 블로그 이미지: 최대 5장, 이미지 가이드(파일명/alt/위치) 자동 생성
-• 지원 형식: JPG, PNG, WebP, GIF</div>
-
-    <div class="prompt-section-title">브랜드 시스템 프롬프트</div>
-    <div class="prompt-text">${escHtml(BRAND_SYSTEM)}</div>
-
-    <div class="prompt-section-title">채널별 웹서치 사용 여부</div>
-    <table class="prompt-table">
-      <thead><tr><th>채널</th><th>웹서치</th><th>Max Tokens</th></tr></thead>
-      <tbody>
-        <tr><td>네이버 블로그</td><td>✅</td><td>4,000</td></tr>
-        <tr><td>티스토리</td><td>✅</td><td>4,000</td></tr>
-        <tr><td>제품 상세페이지</td><td>✅</td><td>4,000</td></tr>
-        <tr><td>스마트스토어</td><td>✅</td><td>2,000</td></tr>
-        <tr><td>인스타 피드</td><td>❌</td><td>2,000</td></tr>
-        <tr><td>인스타 릴스</td><td>❌</td><td>2,000</td></tr>
-        <tr><td>유튜브 쇼츠</td><td>❌</td><td>2,000</td></tr>
-        <tr><td>카카오 채널</td><td>❌</td><td>2,000</td></tr>
-        <tr><td>스레드</td><td>❌</td><td>2,000</td></tr>
-        <tr><td>카드뉴스</td><td>❌</td><td>2,000</td></tr>
-      </tbody>
-    </table>
-
-    <div class="prompt-section-title">스토리지 구조</div>
-    <div class="prompt-text">ronai:hist → 히스토리 배열 (최대 ${HIST_MAX}개)
-ronai:saved_kws → 즐겨찾기 키워드 배열
-lsSet(key, val) → {v, ts} 형태로 localStorage 저장
-lsGet(key) → 2주 초과 시 자동 삭제
-rGet(key) → localStorage 우선, 없으면 Redis fetch
-rSet(key, val) → localStorage 즉시 + Redis 백그라운드</div>
-
-    <div class="prompt-section-title">AI 자동 검증 6항목</div>
-    <table class="prompt-table">
-      <thead><tr><th>항목</th><th>기준</th></tr></thead>
-      <tbody>
-        <tr><td>공정위</td><td>금지 표현(치료/완치/재생 등) 포함 여부</td></tr>
-        <tr><td>사실검증</td><td>근거 없는 주장 포함 여부</td></tr>
-        <tr><td>출처</td><td>외부 데이터·수치 언급 시 출처 명시 여부</td></tr>
-        <tr><td>의료표현</td><td>질병 치료·진단·처방 관련 표현 포함 여부</td></tr>
-        <tr><td>과장표현</td><td>개인차 없이 효과를 단정하는 표현 여부</td></tr>
-        <tr><td>브랜드철학</td><td>"이 정보를 어떻게 이해해야 하는가" 관점 포함 여부</td></tr>
-      </tbody>
-    </table>
-  `;
-  document.getElementById('promptModal').classList.add('active');
-}
-function closePromptModal() { document.getElementById('promptModal').classList.remove('active'); }
-function closePromptOnOverlay(e) { if (e.target.id==='promptModal') closePromptModal(); }
-
-// ─────────────────────────────────────────
-// TOAST
-// ─────────────────────────────────────────
-let toastTimer;
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
-}
+// geminiPost에서 키 동적으로 읽기
+const _origGeminiPost = geminiPost;
 
 // ─────────────────────────────────────────
 // INIT
@@ -3730,9 +3316,12 @@ function showToast(msg) {
 window.addEventListener('DOMContentLoaded', () => {
   loadFavKws();
   setStep(1);
-  // kwScreen이 기본 활성, formScreen은 숨김 확인
   document.getElementById('kwScreen').classList.add('active');
   document.getElementById('formScreen').classList.remove('active');
+  _geminiKey = localStorage.getItem('ronai:gemini_key') || '';
+  if (!_geminiKey) {
+    setTimeout(() => openApiKeyModal(), 400);
+  }
 });
 </script>
 </body>
