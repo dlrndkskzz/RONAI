@@ -3215,6 +3215,347 @@ function stripMarkdown(text) {
     .trim();
 }
 
+
+// ─────────────────────────────────────────
+// STEP BAR
+// ─────────────────────────────────────────
+function setStep(n) {
+  [1,2,3,4].forEach(i => {
+    const dot = document.getElementById('dot'+i);
+    const lbl = document.getElementById('lbl'+i);
+    if (!dot) return;
+    dot.className = 'step-dot' + (i < n ? ' done' : i === n ? ' active' : '');
+    lbl.className = 'step-label' + (i === n ? ' active' : '');
+  });
+  [1,2,3].forEach(i => {
+    const line = document.getElementById('line'+i);
+    if (!line) return;
+    line.className = 'step-line' + (i < n ? ' done' : '');
+  });
+}
+
+// ─────────────────────────────────────────
+// COPY
+// ─────────────────────────────────────────
+function copyById(id, btn) { copyText(_copyTexts[id] || '', btn); }
+
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = '✅ 복사됨';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+    }
+    showToast('✅ 클립보드에 복사됐어요');
+  }).catch(() => showToast('복사 실패'));
+}
+
+// ─────────────────────────────────────────
+// BACK / CANVA
+// ─────────────────────────────────────────
+function goBack() {
+  document.getElementById('resultScreen').classList.remove('active');
+  document.getElementById('loadingScreen').classList.remove('active');
+  document.getElementById('formScreen').classList.add('active');
+  setStep(2);
+  window.scrollTo(0,0);
+}
+
+function openCanva() {
+  const type = selectedTypes[0];
+  const meta = TYPE_META[type] || { canva: '소셜 미디어' };
+  window.open('https://www.canva.com/ko_kr/search/templates/?q=' + encodeURIComponent(meta.canva + ' 템플릿'), '_blank');
+}
+
+// ─────────────────────────────────────────
+// ACCORDION
+// ─────────────────────────────────────────
+let _sectionIndex = 0;
+
+function toggleAccordion(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+function openAllAccordions() {
+  document.querySelectorAll('.content-section').forEach(el => el.classList.add('open'));
+}
+function closeAllAccordions() {
+  document.querySelectorAll('.content-section').forEach(el => el.classList.remove('open'));
+}
+
+// ─────────────────────────────────────────
+// SHOW RESULT
+// ─────────────────────────────────────────
+function showResult(topic, results) {
+  currentResult = { topic, results, types: selectedTypes };
+  document.getElementById('resultTopic').textContent = topic;
+  document.getElementById('resultDate').textContent = new Date().toLocaleString('ko-KR');
+  document.getElementById('resultTypes').textContent = selectedTypes.map(t => TYPE_META[t]?.label || t).join(' · ');
+
+  const hasVerify = selectedTypes.some(t => t==='naver_blog'||t==='tistory'||t==='product_detail');
+  if (hasVerify) {
+    document.getElementById('verifySection').classList.remove('hidden');
+    renderVerify(results);
+  } else {
+    document.getElementById('verifySection').classList.add('hidden');
+  }
+
+  _sectionIndex = 0;
+  const container = document.getElementById('resultContent');
+  container.innerHTML = selectedTypes.map(type => renderContentSection(type, results[type]||'')).join('');
+
+  document.getElementById('resultScreen').classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function renderVerify(results) {
+  const VERIFY_ITEMS = [
+    { key:'ftc', label:'공정위', icon:'⚖️' },
+    { key:'fact', label:'사실검증', icon:'🔬' },
+    { key:'source', label:'출처', icon:'📖' },
+    { key:'med', label:'의료표현', icon:'🏥' },
+    { key:'exag', label:'과장표현', icon:'📢' },
+    { key:'brand', label:'브랜드철학', icon:'💎' },
+  ];
+  const sourceText = results['naver_blog'] || results['tistory'] || results['product_detail'] || '';
+  const verifyMap = {};
+  sourceText.split('\n').forEach(line => {
+    if (line.includes('공정위')) verifyMap.ftc = parseVerifyLine(line);
+    if (line.includes('사실검증')) verifyMap.fact = parseVerifyLine(line);
+    if (line.includes('출처')) verifyMap.source = parseVerifyLine(line);
+    if (line.includes('의료표현')) verifyMap.med = parseVerifyLine(line);
+    if (line.includes('과장표현')) verifyMap.exag = parseVerifyLine(line);
+    if (line.includes('브랜드철학')) verifyMap.brand = parseVerifyLine(line);
+  });
+  const grid = document.getElementById('verifyGrid');
+  grid.innerHTML = VERIFY_ITEMS.map(item => {
+    const v = verifyMap[item.key] || { icon:'✅', reason:'검토 완료' };
+    const cls = v.icon==='✅' ? 'pass' : v.icon==='⚠️' ? 'warn' : 'fail';
+    return '<div class="verify-card ' + cls + '"><div class="verify-icon">' + item.icon + '</div><div><div class="verify-label">' + (v.icon||'✅') + ' ' + item.label + '</div><div class="verify-status">' + (v.reason||'') + '</div></div></div>';
+  }).join('');
+}
+
+function parseVerifyLine(line) {
+  const icon = line.includes('✅') ? '✅' : line.includes('⚠️') ? '⚠️' : line.includes('❌') ? '❌' : '✅';
+  const reason = line.split('|').pop()?.trim() || '';
+  return { icon, reason };
+}
+
+function renderContentSection(type, text) {
+  const meta = TYPE_META[type];
+  if (!meta) return '';
+  const safeId = 'cs_' + type + '_' + Date.now();
+  const blocks = parseContentBlocks(type, text, safeId);
+  _copyTexts[safeId] = text;
+  const isFirst = _sectionIndex === 0;
+  _sectionIndex++;
+  return '<div class="content-section ' + (isFirst ? 'open' : '') + '" id="' + safeId + '_wrap">' +
+    '<div class="content-section-header" onclick="toggleAccordion(\'' + safeId + '_wrap\')">' +
+      '<div class="content-section-title"><span>' + meta.icon + ' ' + meta.label + '</span><span class="content-type-badge">' + type + '</span></div>' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+        '<button class="copy-all-btn" data-copy-id="' + safeId + '" onclick="event.stopPropagation();copyById(this.dataset.copyId,this)">📋 전체 복사</button>' +
+        '<span class="accordion-arrow">▼</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="accordion-body">' + blocks + '</div>' +
+  '</div>';
+}
+
+function parseContentBlocks(type, text, parentId) {
+  const sections = [];
+  const regex = /\[([^\]]+)\]\n?([\s\S]*?)(?=\n\[|$)/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    sections.push({ label: match[1].trim(), content: match[2].trim() });
+  }
+  if (!sections.length) {
+    const bid = (parentId||'b') + '_all';
+    _copyTexts[bid] = text;
+    return '<div class="content-block"><div class="block-label">내용 <button class="copy-btn" data-copy-id="' + bid + '" onclick="copyById(this.dataset.copyId,this)">📋 복사</button></div><div class="block-content">' + escHtml(text) + '</div></div>';
+  }
+  return sections.map((s, i) => {
+    const label = s.label;
+    const content = s.content;
+    const bid = (parentId||'b') + '_' + i;
+    _copyTexts[bid] = content;
+    let rendered = '';
+    if (label.includes('해시태그')) rendered = renderHashtags(content);
+    else if (label.includes('FAQ') || label.includes('GEO')) rendered = renderFAQ(content);
+    else if (label.includes('이미지 가이드')) rendered = renderImgGuide(content);
+    else rendered = '<div class="block-content">' + escHtml(content) + '</div>';
+    return '<div class="content-block"><div class="block-label">' + escHtml(label) + ' <button class="copy-btn" data-copy-id="' + bid + '" onclick="copyById(this.dataset.copyId,this)">📋 복사</button></div>' + rendered + '</div>';
+  }).join('');
+}
+
+function renderHashtags(text) {
+  const lines = text.split('\n').filter(Boolean);
+  const items = [];
+  let currentSize = 'small';
+  lines.forEach(line => {
+    if (line.includes('대형')) currentSize = 'large';
+    else if (line.includes('중형')) currentSize = 'medium';
+    else if (line.includes('소형')) currentSize = 'small';
+    (line.match(/#[^\s#,，]+/g)||[]).forEach(t => items.push({ tag: t, size: currentSize }));
+  });
+  if (!items.length) (text.match(/#[^\s#,，]+/g)||[]).forEach(t => items.push({ tag: t, size: 'small' }));
+  if (!items.length) return '<div class="block-content">' + escHtml(text) + '</div>';
+  return '<div class="hashtag-wrap">' + items.map(i => '<span class="hashtag ht-' + i.size + '">' + escHtml(i.tag) + '</span>').join('') + '</div>';
+}
+
+function renderFAQ(text) {
+  const lines = text.split('\n');
+  const items = [];
+  let q = '', a = '';
+  lines.forEach(line => {
+    if (/^Q\d*[:.：]/.test(line.trim())) { if (q) items.push({q,a}); q = line.replace(/^Q\d*[:.：]\s*/,'').trim(); a=''; }
+    else if (/^A\d*[:.：]/.test(line.trim())) { a = line.replace(/^A\d*[:.：]\s*/,'').trim(); }
+    else if (a !== '' && line.trim()) a += '\n' + line.trim();
+  });
+  if (q) items.push({q,a});
+  if (!items.length) return '<div class="block-content">' + escHtml(text) + '</div>';
+  return items.map(i => '<div class="faq-item"><div class="faq-q">Q. ' + escHtml(i.q) + '</div><div class="faq-a">' + escHtml(i.a) + '</div></div>').join('');
+}
+
+function renderImgGuide(text) {
+  const lines = text.split('\n').filter(Boolean);
+  const items = lines.map(line => { const p = line.split('|').map(x=>x.trim()); return {filename:p[0]||'',alt:p[1]||'',pos:p[2]||''}; }).filter(i=>i.filename);
+  if (!items.length) return '<div class="block-content">' + escHtml(text) + '</div>';
+  return items.map(i => '<div class="img-guide-item"><div class="img-guide-filename">📁 ' + escHtml(i.filename) + '</div><div class="img-guide-alt">Alt: ' + escHtml(i.alt) + '</div>' + (i.pos ? '<div class="img-guide-pos">📍 ' + escHtml(i.pos) + '</div>' : '') + '</div>').join('');
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─────────────────────────────────────────
+// HISTORY
+// ─────────────────────────────────────────
+async function saveHistory(entry) {
+  let hist = await rGet('ronai:hist') || [];
+  const id = Date.now();
+  const record = { id, topic: entry.topic, types: entry.types, date: entry.date };
+  if (entry.results && Object.keys(entry.results).length) {
+    await saveResult(id, entry.results);
+    record.hasResult = true;
+  }
+  hist.unshift(record);
+  if (hist.length > HIST_MAX) {
+    hist.slice(HIST_MAX).forEach(h => deleteResult(h.id));
+    hist = hist.slice(0, HIST_MAX);
+  }
+  await rSet('ronai:hist', hist);
+}
+
+async function loadHistory() {
+  const hist = await rGet('ronai:hist') || [];
+  const list = document.getElementById('historyList');
+  const count = document.getElementById('historyCount');
+  count.textContent = hist.length + '개';
+  if (!hist.length) {
+    list.innerHTML = '<div class="history-empty"><div class="history-empty-icon">📂</div><div class="history-empty-text">아직 생성한 콘텐츠가 없어요</div></div>';
+    return;
+  }
+  window._histMap = {};
+  hist.forEach(h => { window._histMap[h.id] = h; });
+  list.innerHTML = hist.map(h => {
+    const hasResult = !!lsGetResult(h.id);
+    const icon = hasResult ? '📄' : '🔁';
+    const hint = hasResult ? '' : '<span style="font-size:10px;color:var(--orange);margin-left:4px;">(재생성 필요)</span>';
+    return '<div class="history-item" data-hist-id="' + h.id + '" data-has-result="' + hasResult + '" onclick="restoreHistory(this.dataset.histId)">' +
+      '<div class="history-icon">' + icon + '</div>' +
+      '<div class="history-info"><div class="history-topic">' + escHtml(h.topic) + hint + '</div>' +
+      '<div class="history-types">' + (h.types||[]).map(t => TYPE_META[t]?.label||t).join(' · ') + '</div></div>' +
+      '<div class="history-date">' + formatDate(h.date) + '</div>' +
+      '<button class="history-del" data-del-id="' + h.id + '" onclick="event.stopPropagation();deleteHistory(this.dataset.delId)">🗑️</button>' +
+    '</div>';
+  }).join('');
+}
+
+async function deleteHistory(id) {
+  const numId = Number(id);
+  let hist = await rGet('ronai:hist') || [];
+  hist = hist.filter(h => h.id !== numId);
+  await deleteResult(numId);
+  delete (window._histMap||{})[numId];
+  await rSet('ronai:hist', hist);
+  loadHistory();
+}
+
+async function clearAllHistory() {
+  if (!confirm('모든 히스토리를 삭제할까요?')) return;
+  const hist = await rGet('ronai:hist') || [];
+  hist.forEach(h => deleteResult(h.id));
+  await rSet('ronai:hist', []);
+  loadHistory();
+}
+
+async function restoreHistory(idStr) {
+  const id = Number(idStr);
+  const h = (window._histMap || {})[id];
+  if (!h) { showToast('히스토리를 불러올 수 없어요'); return; }
+  showToast('⏳ 결과를 불러오는 중...');
+  const savedResults = await loadResult(id);
+  if (savedResults && Object.keys(savedResults).length) {
+    selectedTypes = h.types || [];
+    switchTab('make');
+    document.getElementById('formScreen').classList.remove('active');
+    document.getElementById('loadingScreen').classList.remove('active');
+    document.getElementById('kwScreen').classList.remove('active');
+    showResult(h.topic, savedResults);
+    setStep(4);
+    showToast('✅ 결과를 불러왔어요');
+  } else {
+    selectedTypes = h.types || [];
+    document.querySelectorAll('.type-btn').forEach(btn => {
+      btn.classList.toggle('selected', selectedTypes.includes(btn.dataset.type));
+    });
+    document.getElementById('topicInput').value = h.topic || '';
+    switchTab('make');
+    document.getElementById('kwScreen').classList.remove('active');
+    document.getElementById('formScreen').classList.add('active');
+    document.getElementById('resultScreen').classList.remove('active');
+    setStep(2);
+    showToast('⚠️ 저장된 결과가 없어요. 다시 생성해주세요');
+  }
+}
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return (d.getMonth()+1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+// ─────────────────────────────────────────
+// PROMPT MODAL
+// ─────────────────────────────────────────
+function openPromptModal() {
+  const body = document.getElementById('promptModalBody');
+  body.innerHTML = '<div class="prompt-section-title">주요 변수 참조</div>' +
+    '<table class="prompt-table"><thead><tr><th>변수</th><th>값</th></tr></thead><tbody>' +
+    '<tr><td>Redis</td><td>' + REDIS + '</td></tr>' +
+    '<tr><td>AI 모델</td><td>Gemini 2.0 Flash (무료)</td></tr>' +
+    '<tr><td>히스토리 최대</td><td>' + HIST_MAX + '개</td></tr>' +
+    '</tbody></table>' +
+    '<div class="prompt-section-title">브랜드 시스템 프롬프트</div>' +
+    '<div class="prompt-text">' + escHtml(BRAND_SYSTEM) + '</div>';
+  document.getElementById('promptModal').classList.add('active');
+}
+function closePromptModal() { document.getElementById('promptModal').classList.remove('active'); }
+function closePromptOnOverlay(e) { if (e.target.id==='promptModal') closePromptModal(); }
+
+// ─────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
 // ─────────────────────────────────────────
 // GEMINI API 호출 (무료 티어 활용)
 // ─────────────────────────────────────────
