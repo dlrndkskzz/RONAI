@@ -1648,8 +1648,8 @@ const WEB_SEARCH = 'web_search_20250305';
 const GEMINI_KEY = localStorage.getItem('ronai:gemini_key') || '';
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 // 채널별 모델 분기: 블로그/상세페이지 → Pro, 나머지 → Flash (무료)
-const GEMINI_PRO   = 'gemini-2.5-flash-lite'; // 최신 모델
-const GEMINI_FLASH = 'gemini-2.5-flash-lite';
+const GEMINI_PRO   = 'gemini-2.5-flash'; // 최신 모델
+const GEMINI_FLASH = 'gemini-2.5-flash';
 const HIST_MAX = 30;
 const TTL_MS   = 14 * 24 * 60 * 60 * 1000; // 2 weeks
 
@@ -3567,7 +3567,13 @@ async function geminiPost(parts, useSearch, maxTokens, model) {
   const apiKey = localStorage.getItem('ronai:gemini_key') || GEMINI_KEY;
   if (!apiKey) { if(typeof openApiKeyModal==='function') openApiKeyModal(); throw new Error('API 키 없음'); }
   const m = model || GEMINI_FLASH;
-  const url = GEMINI_URL + '/' + m + ':generateContent?key=' + apiKey;
+  // AQ. 형식(새 Auth 키)은 x-goog-api-key 헤더로, AIzaSy 형식은 URL 파라미터로
+  const isAuthKey = apiKey.startsWith('AQ.');
+  const url = isAuthKey
+    ? GEMINI_URL + '/' + m + ':generateContent'
+    : GEMINI_URL + '/' + m + ':generateContent?key=' + apiKey;
+  const headers = { 'Content-Type': 'application/json' };
+  if (isAuthKey) headers['x-goog-api-key'] = apiKey;
   const body = {
     systemInstruction: { parts: [{ text: BRAND_SYSTEM }] },
     contents: [{ role: 'user', parts: parts }],
@@ -3576,7 +3582,7 @@ async function geminiPost(parts, useSearch, maxTokens, model) {
   if (useSearch) body.tools = [{ googleSearch: {} }];
   const r = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: headers,
     body: JSON.stringify(body)
   });
   if (!r.ok) {
