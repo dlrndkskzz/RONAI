@@ -1151,7 +1151,10 @@
 <header class="app-header">
   <div class="header-top">
     <div class="app-title">RONAI <span>콘텐츠 제작소</span></div>
-    <button class="header-btn" onclick="openPromptModal()">📋 통합 프롬프트</button>
+    <div style="display:flex;gap:6px;">
+      <button class="header-btn" onclick="openApiKeyModal()" style="background:rgba(255,200,100,0.15);border-color:rgba(255,200,100,0.4);color:#ffd080;">🔑 API 키</button>
+      <button class="header-btn" onclick="openPromptModal()">📋 통합 프롬프트</button>
+    </div>
   </div>
   <div class="tabs">
     <div class="tab active" onclick="switchTab('make')">✏️ 제작</div>
