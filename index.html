@@ -1645,8 +1645,8 @@ const WEB_SEARCH = 'web_search_20250305';
 const GEMINI_KEY = localStorage.getItem('ronai:gemini_key') || '';
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 // 채널별 모델 분기: 블로그/상세페이지 → Pro, 나머지 → Flash (무료)
-const GEMINI_PRO   = 'gemini-2.0-flash'; // 전부 Flash로 (무료 한도 내)
-const GEMINI_FLASH = 'gemini-2.0-flash';
+const GEMINI_PRO   = 'gemini-2.5-flash'; // 최신 모델
+const GEMINI_FLASH = 'gemini-2.5-flash';
 const HIST_MAX = 30;
 const TTL_MS   = 14 * 24 * 60 * 60 * 1000; // 2 weeks
 
