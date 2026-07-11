@@ -683,15 +683,29 @@ function safeParseJson(text){
 }
 
 /* ============================= RENDER ROOT ============================= */
-function render(){ if(currentTab==='create') renderCreate(); else renderHistory(); }
 let currentTab = 'create';
 function switchTab(tab){
   if(state.isGenerating && tab==='history'){ toast('콘텐츠 생성이 끝나면 히스토리를 확인할 수 있어요'); return; }
   currentTab = tab;
   document.getElementById('tab-create').classList.toggle('active', tab==='create');
   document.getElementById('tab-history').classList.toggle('active', tab==='history');
-  render();
+  const main = document.getElementById('main');
+  main.innerHTML = `<div class="empty">불러오는 중...</div>`; // clear stale content immediately so nothing looks frozen
+  try{
+    const result = render();
+    if(result && typeof result.catch === 'function'){
+      result.catch(err=>{
+        console.error('[RONAI] 탭 전환 렌더링 실패:', err);
+        main.innerHTML = `<div class="empty">화면을 불러오지 못했어요.<br>(${escapeHtml(String(err && err.message || err))})<br><br>새로고침 후 다시 시도해주세요.</div>`;
+      });
+    }
+  }catch(err){
+    console.error('[RONAI] 탭 전환 렌더링 실패:', err);
+    main.innerHTML = `<div class="empty">화면을 불러오지 못했어요.<br>(${escapeHtml(String(err && err.message || err))})<br><br>새로고침 후 다시 시도해주세요.</div>`;
+  }
 }
+
+function render(){ return currentTab==='create' ? renderCreate() : renderHistory(); }
 
 function renderCreate(){
   const main = document.getElementById('main');
