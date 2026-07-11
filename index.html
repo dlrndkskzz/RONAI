@@ -602,8 +602,14 @@ async function redisGet(key){
   try{
     const res = await fetch(`${REDIS_URL}/get/${encodeURIComponent(key)}`, { headers:{Authorization:`Bearer ${REDIS_TOKEN}`} });
     const data = await res.json();
-    return data.result ? JSON.parse(data.result) : null;
-  }catch(e){ return null; }
+    if(!data.result) return null;
+    let parsed = JSON.parse(data.result);
+    // defensive: if the value came back double-encoded (a JSON string containing JSON), parse once more
+    if(typeof parsed === 'string'){
+      try{ parsed = JSON.parse(parsed); }catch(e){ /* it really was just a string, leave as-is */ }
+    }
+    return parsed;
+  }catch(e){ console.error('[RONAI] redisGet 실패:', key, e); return null; }
 }
 async function redisSet(key, val){
   try{
@@ -1298,11 +1304,13 @@ async function saveToHistory(){
 async function renderHistory(){
   const main = document.getElementById('main');
   let hist = lsGet('ronai:hist', []);
+  if(!Array.isArray(hist)){ console.warn('[RONAI] localStorage 히스토리가 배열이 아님, 초기화:', hist); hist = []; }
   console.log('[RONAI] localStorage 히스토리:', hist);
   if(!hist.length){
     const remote = await redisGet('ronai:hist');
     console.log('[RONAI] Redis 히스토리:', remote);
-    if(remote) hist = remote;
+    if(Array.isArray(remote)) hist = remote;
+    else if(remote) console.warn('[RONAI] Redis 히스토리가 배열이 아님, 무시:', remote);
   }
   if(!hist.length){
     main.innerHTML = `<div class="empty">아직 생성한 콘텐츠가 없어요.</div>
@@ -1335,6 +1343,7 @@ async function renderHistory(){
       ev.stopPropagation();
       const id = el.dataset.histdel;
       let h = lsGet('ronai:hist', []);
+      if(!Array.isArray(h)) h = [];
       h = h.filter(x=>x.id!==id);
       lsSet('ronai:hist', h);
       await redisSet('ronai:hist', h);
