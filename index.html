@@ -159,7 +159,7 @@
 /* ============================= CONFIG ============================= */
 const REDIS_URL = "https://destined-hornet-42955.upstash.io";
 const REDIS_TOKEN = "AafLAAIgcDE1OGY1NTUyNTdiNTQ0N2FhYjg5NzQzZWExNzgyNzdhZg";
-const MODEL_CANDIDATES = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash"];
+const MODEL_CANDIDATES = ["gemini-flash-latest", "gemini-3.5-flash", "gemini-3.1-flash-lite"];
 const HIST_MAX = 30;
 
 const SYSTEM_PROMPT = `RONAI는 스킨케어 제품을 직접 만드는 제조사가 아닌, 검증된 브랜드를 엄선해 소개하는 큐레이션 편집숍(사입)입니다.
@@ -595,34 +595,39 @@ async function callGemini({ prompt, images=[], useWebSearch=false, maxTokens=200
 
   const body = {
     contents:[{ role:'user', parts }],
-    generationConfig:{ maxOutputTokens: maxTokens, temperature:0.9 },
+    generationConfig:{ maxOutputTokens: maxTokens, temperature:0.9, thinkingConfig:{ thinkingBudget: 0 } },
     systemInstruction: { parts:[{ text: system }] }
   };
   if(useWebSearch){ body.tools = [{ googleSearch:{} }]; }
 
   let lastErr = null;
   for(const model of MODEL_CANDIDATES){
-    try{
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify(body)
-      });
-      if(!res.ok){
-        const errText = await res.text();
-        lastErr = new Error(`[${model}] ${res.status}: ${errText}`);
-        // if model not found / unsupported, try next candidate
-        if(res.status === 404 || /not found|not supported/i.test(errText)){ continue; }
-        throw lastErr;
+    for(const useThinkingConfig of [true, false]){
+      try{
+        const reqBody = JSON.parse(JSON.stringify(body));
+        if(!useThinkingConfig) delete reqBody.generationConfig.thinkingConfig;
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json', 'x-goog-api-key': apiKey },
+          body: JSON.stringify(reqBody)
+        });
+        if(!res.ok){
+          const errText = await res.text();
+          lastErr = new Error(`[${model}] ${res.status}: ${errText}`);
+          if(res.status === 400 && /thinking/i.test(errText) && useThinkingConfig){ continue; } // retry same model without thinkingConfig
+          if(res.status === 404 || /not found|not supported/i.test(errText)){ break; } // try next model
+          throw lastErr;
+        }
+        const data = await res.json();
+        const text = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts || [])
+          .filter(p => !p.thought) // strip any internal "thinking" content, only keep real output
+          .map(p=>p.text||'').join('');
+        if(!text) { lastErr = new Error(`[${model}] empty response`); break; }
+        return text;
+      }catch(e){
+        lastErr = e;
+        continue;
       }
-      const data = await res.json();
-      const text = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts || [])
-        .map(p=>p.text||'').join('');
-      if(!text) { lastErr = new Error(`[${model}] empty response`); continue; }
-      return text;
-    }catch(e){
-      lastErr = e;
-      continue;
     }
   }
   throw lastErr || new Error('Gemini 호출 실패');
@@ -1044,7 +1049,7 @@ async function startGeneration(){
     try{
       const imgs = (conf.group==='blog' && p.channel==='naver_blog') ? state.blogImages : (conf.group==='product' ? state.productImages : []);
       const text = await callGemini({
-        prompt: ctxBlock + "\n\n" + conf.instructions,
+        prompt: ctxBlock + "\n\n" + conf.instructions + "\n\n[형식 준수 필수] 위에 나열된 섹션을 순서대로 전부 작성하고, 각 섹션 제목은 반드시 [대괄호]로 감싸서 한 줄에 단독으로 적어. 마크다운 기호(**, ##, ---, * 등)는 절대 쓰지 말고, 사고 과정이나 설명 없이 바로 결과물만 출력해.",
         images: imgs,
         useWebSearch: conf.webSearch,
         maxTokens: conf.maxTokens
