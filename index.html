@@ -1323,13 +1323,13 @@ async function renderHistory(){
       <button class="secondary" id="btn-refresh-hist">🔄 새로고침</button>
       <button class="secondary" id="btn-clear-hist">전체 삭제</button>
     </div>
-    ${hist.map(h=>`
-      <div class="hist-item" data-histid="${h.id}">
+    ${hist.filter(h=>h && typeof h==='object').map(h=>`
+      <div class="hist-item" data-histid="${h.id||''}">
         <div>
-          <div>${h.hasResult?'📄':'🔁'} ${h.topic}</div>
-          <div class="meta">${new Date(h.date).toLocaleString('ko-KR')} · ${h.channels.map(c=>CHANNELS[c]?CHANNELS[c].label:c).join(', ')}</div>
+          <div>${h.hasResult?'📄':'🔁'} ${h.topic||'(제목 없음)'}</div>
+          <div class="meta">${h.date ? new Date(h.date).toLocaleString('ko-KR') : ''} · ${Array.isArray(h.channels) ? h.channels.map(c=>CHANNELS[c]?CHANNELS[c].label:c).join(', ') : ''}</div>
         </div>
-        <button class="sec-copy" data-histdel="${h.id}">삭제</button>
+        <button class="sec-copy" data-histdel="${h.id||''}">삭제</button>
       </div>`).join('')}
   `;
   document.getElementById('btn-refresh-hist').onclick = renderHistory;
@@ -1366,9 +1366,9 @@ function openResultModal(h, result){
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `<div class="modal">
-    <h3>${h.topic}</h3>
-    <div class="small-muted" style="margin-bottom:10px;">${new Date(h.date).toLocaleString('ko-KR')}</div>
-    ${h.channels.map(c=>`<div class="accordion-item open"><div class="accordion-head">${CHANNELS[c]?CHANNELS[c].label:c}</div><div class="accordion-body">${renderSections(result[c]||'')}</div></div>`).join('')}
+    <h3>${h.topic||'(제목 없음)'}</h3>
+    <div class="small-muted" style="margin-bottom:10px;">${h.date ? new Date(h.date).toLocaleString('ko-KR') : ''}</div>
+    ${(Array.isArray(h.channels) ? h.channels : []).map(c=>`<div class="accordion-item open"><div class="accordion-head">${CHANNELS[c]?CHANNELS[c].label:c}</div><div class="accordion-body">${renderSections((result||{})[c]||'', c)}</div></div>`).join('')}
     <div class="modal-close"><button class="secondary" onclick="this.closest('.modal-overlay').remove()">닫기</button></div>
   </div>`;
   document.body.appendChild(overlay);
