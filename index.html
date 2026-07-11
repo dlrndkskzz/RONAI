@@ -1323,14 +1323,17 @@ async function renderHistory(){
       <button class="secondary" id="btn-refresh-hist">🔄 새로고침</button>
       <button class="secondary" id="btn-clear-hist">전체 삭제</button>
     </div>
-    ${hist.filter(h=>h && typeof h==='object').map(h=>`
+    ${hist.filter(h=>h && typeof h==='object').map(h=>{
+      const hasLocalResult = !!localStorage.getItem('ronai:result:'+h.id);
+      return `
       <div class="hist-item" data-histid="${h.id||''}">
         <div>
-          <div>${h.hasResult?'📄':'🔁'} ${h.topic||'(제목 없음)'}</div>
+          <div>${hasLocalResult ? '📄' : '🔁'} ${h.topic||'(제목 없음)'}</div>
           <div class="meta">${h.date ? new Date(h.date).toLocaleString('ko-KR') : ''} · ${Array.isArray(h.channels) ? h.channels.map(c=>CHANNELS[c]?CHANNELS[c].label:c).join(', ') : ''}</div>
         </div>
         <button class="sec-copy" data-histdel="${h.id||''}">삭제</button>
-      </div>`).join('')}
+      </div>`;
+    }).join('')}
   `;
   document.getElementById('btn-refresh-hist').onclick = renderHistory;
   document.getElementById('btn-clear-hist').onclick = async ()=>{
@@ -1355,8 +1358,17 @@ async function renderHistory(){
       const id = el.dataset.histid;
       let result = lsGet('ronai:result:'+id, null);
       if(!result) result = await redisGet('ronai:result:'+id);
-      if(!result){ toast('저장된 결과가 없어요. 다시 생성해주세요.'); return; }
       const h = hist.find(x=>x.id===id);
+      if(!result || typeof result !== 'object'){
+        toast('저장된 결과가 없어요. 재생성 화면으로 이동할게요.');
+        if(h){
+          state.topic = h.topic || '';
+          state.selectedChannels = Array.isArray(h.channels) ? h.channels.slice() : [];
+          state.step = 1;
+        }
+        switchTab('create');
+        return;
+      }
       openResultModal(h, result);
     };
   });
