@@ -639,6 +639,7 @@ function safeParseJson(text){
 function render(){ if(currentTab==='create') renderCreate(); else renderHistory(); }
 let currentTab = 'create';
 function switchTab(tab){
+  if(state.isGenerating && tab==='history'){ toast('콘텐츠 생성이 끝나면 히스토리를 확인할 수 있어요'); return; }
   currentTab = tab;
   document.getElementById('tab-create').classList.toggle('active', tab==='create');
   document.getElementById('tab-history').classList.toggle('active', tab==='history');
@@ -999,10 +1000,10 @@ function renderStep3(){
   const total = state.genProgress.length;
   const done = state.genProgress.filter(p=>p.status==='done'||p.status==='error').length;
   const pct = total ? Math.round(done/total*100) : 0;
-  const current = state.genProgress.find(p=>p.status==='working');
+  const working = state.genProgress.filter(p=>p.status==='working').map(p=>CHANNELS[p.channel].label);
   return `<div class="card" style="text-align:center;">
     <div class="spinner"></div>
-    <div style="font-weight:700;">${done} / ${total} — ${current ? CHANNELS[current.channel].label + ' 생성 중' : '완료'}</div>
+    <div style="font-weight:700;">${done} / ${total} — ${working.length ? working.join(', ') + ' 생성 중' : '완료'}</div>
     <div class="progress-bar-outer"><div class="progress-bar-inner" style="width:${pct}%"></div></div>
   </div>
   <div class="card">
@@ -1013,6 +1014,10 @@ function renderStep3(){
 }
 
 async function startGeneration(){
+  currentTab = 'create';
+  state.isGenerating = true;
+  document.getElementById('tab-create').classList.add('active');
+  document.getElementById('tab-history').classList.remove('active');
   state.step = 3;
   state.genProgress = state.selectedChannels.map(c=>({channel:c, status:'pending'}));
   state.results = {};
@@ -1027,7 +1032,12 @@ async function startGeneration(){
 [제품 정보]: ${state.productText || state.productName || '해당 없음'}
 [추가 정보]: ${state.additionalInfo || '없음'}`;
 
-  for(const p of state.genProgress){
+  // 채널별로 동시에(병렬) 생성해서 대기시간을 줄인다. 단, 한번에 너무 많은 요청이 몰리지 않도록
+  // CONCURRENCY 개씩 묶어서 처리한다.
+  const CONCURRENCY = 4;
+  const queue = state.genProgress.slice();
+
+  async function runOne(p){
     p.status = 'working';
     renderCreate();
     const conf = CHANNELS[p.channel];
@@ -1048,9 +1058,20 @@ async function startGeneration(){
     renderCreate();
   }
 
-  await saveToHistory();
+  async function worker(){
+    while(queue.length){
+      const p = queue.shift();
+      await runOne(p);
+    }
+  }
+  await Promise.all(Array.from({length: Math.min(CONCURRENCY, queue.length)}, worker));
+
+  // 결과 화면을 먼저 보여주고, 히스토리 저장은 백그라운드로 돌린다
+  // (Redis 저장이 느리거나 실패해도 결과 화면 전환이 막히지 않도록)
   state.step = 4;
+  state.isGenerating = false;
   renderCreate();
+  saveToHistory().catch(()=>{});
 }
 
 /* ============================= STEP 4: RESULTS ============================= */
