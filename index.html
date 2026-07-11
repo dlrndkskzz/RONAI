@@ -586,7 +586,7 @@ async function redisDel(key){
 /* ============================= GEMINI API ============================= */
 function getApiKey(){ return localStorage.getItem('ronai:gemini_key') || ""; }
 
-async function callGemini({ prompt, images=[], useWebSearch=false, maxTokens=2000, system=SYSTEM_PROMPT, wantJson=false, _retried=false }){
+async function callGemini({ prompt, images=[], useWebSearch=false, maxTokens=2000, system=SYSTEM_PROMPT, wantJson=false, onRetry=null, _retried=false }){
   const apiKey = getApiKey();
   if(!apiKey){ openApiKeyModal(); throw new Error('NO_KEY'); }
   const parts = [];
@@ -624,9 +624,13 @@ async function callGemini({ prompt, images=[], useWebSearch=false, maxTokens=200
           .filter(p => !p.thought) // strip any internal "thinking" content, only keep real output
           .map(p=>p.text||'').join('');
         if(!text) { lastErr = new Error(`[${model}] empty response`); break; }
-        // if the response got cut off, automatically retry once with a much bigger token budget
+        // if the response got cut off, automatically retry once with a bigger token budget
+        // (only fires when actually needed — not a blanket cost increase)
         if(candidate && candidate.finishReason === 'MAX_TOKENS' && !_retried && maxTokens < 8000){
-          return callGemini({ prompt, images, useWebSearch, maxTokens: Math.min(maxTokens * 2, 8000), system, wantJson, _retried:true });
+          const newMax = Math.min(maxTokens + 2000, 8000);
+          console.warn(`[RONAI] "${model}" 응답이 잘려서 토큰 한도를 늘려 재시도합니다 (기존 ${maxTokens} → ${newMax})`);
+          if(onRetry) onRetry(newMax);
+          return callGemini({ prompt, images, useWebSearch, maxTokens: newMax, system, wantJson, onRetry, _retried:true });
         }
         return text;
       }catch(e){
@@ -1010,7 +1014,7 @@ function renderStep3(){
   const total = state.genProgress.length;
   const done = state.genProgress.filter(p=>p.status==='done'||p.status==='error').length;
   const pct = total ? Math.round(done/total*100) : 0;
-  const working = state.genProgress.filter(p=>p.status==='working').map(p=>CHANNELS[p.channel].label);
+  const working = state.genProgress.filter(p=>p.status==='working'||p.status==='retrying').map(p=>CHANNELS[p.channel].label);
   return `<div class="card" style="text-align:center;">
     <div class="spinner"></div>
     <div style="font-weight:700;">${done} / ${total} — ${working.length ? working.join(', ') + ' 생성 중' : '완료'}</div>
@@ -1018,7 +1022,7 @@ function renderStep3(){
   </div>
   <div class="card">
     <ul class="progress-list">
-      ${state.genProgress.map(p=>`<li><span>${p.status==='done'?'✅':p.status==='error'?'❌':p.status==='working'?'⚙️':'⏳'}</span> ${CHANNELS[p.channel].label}</li>`).join('')}
+      ${state.genProgress.map(p=>`<li><span>${p.status==='done'?'✅':p.status==='error'?'❌':p.status==='retrying'?'🔁':p.status==='working'?'⚙️':'⏳'}</span> ${CHANNELS[p.channel].label}${p.status==='retrying'?' <span class="small-muted">(토큰 부족, 재시도 중)</span>':''}</li>`).join('')}
     </ul>
   </div>`;
 }
@@ -1057,7 +1061,8 @@ async function startGeneration(){
         prompt: ctxBlock + "\n\n" + conf.instructions + "\n\n[형식 준수 필수] 위에 나열된 섹션을 순서대로 전부 작성하고, 각 섹션 제목은 반드시 [대괄호]로 감싸서 한 줄에 단독으로 적어. 마크다운 기호(**, ##, ---, * 등)는 절대 쓰지 말고, 사고 과정이나 설명 없이 바로 결과물만 출력해.",
         images: imgs,
         useWebSearch: conf.webSearch,
-        maxTokens: conf.maxTokens
+        maxTokens: conf.maxTokens,
+        onRetry: ()=>{ p.status = 'retrying'; renderCreate(); }
       });
       state.results[p.channel] = text;
       p.status = 'done';
