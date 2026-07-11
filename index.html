@@ -596,7 +596,32 @@ function lsGet(key, fallback){
   try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; }
 }
 function lsSet(key, val){
-  try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){}
+  try{
+    localStorage.setItem(key, JSON.stringify(val));
+    return true;
+  }catch(e){
+    console.warn('[RONAI] localStorage 저장 실패, 용량 정리 시도:', key, e);
+    try{
+      // 저장공간이 꽉 찼을 가능성이 높음: 오래된 result:* 항목부터 지우고 재시도
+      const hist = lsGet('ronai:hist', []);
+      if(Array.isArray(hist) && hist.length){
+        const keepIds = new Set(hist.slice(0, 10).map(h=>h && h.id));
+        for(let i=localStorage.length-1; i>=0; i--){
+          const k = localStorage.key(i);
+          if(k && k.startsWith('ronai:result:')){
+            const id = k.replace('ronai:result:','');
+            if(!keepIds.has(id)) localStorage.removeItem(k);
+          }
+        }
+      }
+      localStorage.setItem(key, JSON.stringify(val));
+      console.log('[RONAI] 정리 후 저장 성공:', key);
+      return true;
+    }catch(e2){
+      console.error('[RONAI] 정리 후에도 저장 실패:', key, e2);
+      return false;
+    }
+  }
 }
 async function redisGet(key){
   try{
@@ -1289,15 +1314,20 @@ async function saveToHistory(){
       date: new Date().toISOString(), hasResult: true
     };
     let hist = lsGet('ronai:hist', []);
+    if(!Array.isArray(hist)) hist = [];
     hist.unshift(entry);
     hist = hist.slice(0, HIST_MAX);
-    lsSet('ronai:hist', hist);
-    lsSet('ronai:result:'+id, state.results);
-    console.log('[RONAI] 히스토리 저장됨:', entry);
+    const ok1 = lsSet('ronai:hist', hist);
+    const ok2 = lsSet('ronai:result:'+id, state.results);
+    console.log('[RONAI] 히스토리 저장됨:', entry, { ok1, ok2 });
+    if(!ok1 || !ok2){
+      toast('⚠️ 히스토리 저장에 실패했어요 (저장공간 부족). 결과는 화면에 남아있으니 지금 복사해두세요.');
+    }
     redisSet('ronai:hist', hist);
     redisSet('ronai:result:'+id, state.results);
   }catch(e){
     console.error('[RONAI] 히스토리 저장 실패:', e);
+    toast('⚠️ 히스토리 저장에 실패했어요. 결과는 화면에 남아있으니 지금 복사해두세요.');
   }
 }
 
