@@ -223,6 +223,80 @@ const STRICT_INPUT_RULE = `[입력 정보 우선 사용 — 반드시 준수]
 - 입력된 정보(텍스트+이미지)만으로 요구된 분량이나 섹션을 채우기 부족하다면, 절대 일반론으로 억지로 채우지 말고 써지는 만큼만 정확하게 쓴 뒤, 맨 마지막에 [정보 부족 안내]라는 섹션을 추가해서 어떤 정보(예: 성분표 사진, 전성분명, 사용감 등)가 더 필요한지 구체적으로 요청해.
 - 분량을 채우는 것보다 입력 정보에 대한 정확성이 항상 우선이야.`;
 
+// 구조/문체 반복으로 인해 검색엔진에 "템플릿 글"로 인식되는 것을 막기 위한 변주 풀
+const ANGLE_POOL = [
+  '성분/기전 해석 중심',
+  '실사용 후기 및 사용법 중심',
+  '타사 제품과의 비교 중심',
+  '피부 타입별 맞춤 가이드 중심',
+  '계절/생활 환경 요인과의 연관성 중심',
+  '자주 하는 실수와 오해 바로잡기 중심'
+];
+const INTRO_STYLES = [
+  '구체적인 일상 속 장면을 묘사하며 시작',
+  '흔한 오해나 잘못된 상식을 짚으며 시작',
+  '질문을 던지며 시작',
+  '통계나 수치를 언급하며 시작',
+  '짧고 담백한 공감형 문장으로 시작'
+];
+const LONGFORM_CHANNELS = ['naver_blog','tistory'];
+function pickRandom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function shuffleArr(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function buildVariationInstruction(channelKey, angle){
+  if(LONGFORM_CHANNELS.includes(channelKey)){
+    return `\n\n[이번 글 전용 작성 방향 — 반드시 반영]\n- 핵심 관점: ${angle}\n- 도입부 스타일: ${pickRandom(INTRO_STYLES)}\n- 같은 상품이 다른 채널(네이버 블로그 ↔ 티스토리)에도 함께 발행되므로, 문장 구조·소제목 구성·전개 순서를 그대로 반복하지 말고 위 관점을 중심으로 새롭게 재구성해. "서론-본론1-본론2-본론3"을 기계적으로 나열하지 말고 관점에 맞게 자연스럽게 풀어써.`;
+  }
+  return `\n\n[이번 글 도입부 스타일]: ${pickRandom(INTRO_STYLES)} 방식으로 시작해.`;
+}
+
+/* ===== 과거 히스토리 기반 반복 방지 (같은 채널의 최근 글과 겹치지 않게) ===== */
+function extractSectionText(fullText, sectionLabel){
+  if(!fullText) return '';
+  const re = new RegExp(`\\[${sectionLabel}\\]([\\s\\S]*?)(?=\\n\\[[^\\]]+\\]|$)`);
+  const m = fullText.match(re);
+  return m ? m[1].trim() : '';
+}
+function extractIntroSnippet(fullText){
+  const body = extractSectionText(fullText, '본문');
+  if(!body) return '';
+  const firstLine = body.split('\n').find(l=>l.trim().length>0) || '';
+  return firstLine.trim().slice(0, 70);
+}
+function extractFirstTitle(fullText){
+  const titles = extractSectionText(fullText, '제목 후보 5개') || extractSectionText(fullText, '제목 후보 3개');
+  if(!titles) return '';
+  const firstLine = titles.split('\n').find(l=>l.trim().length>0) || '';
+  return firstLine.replace(/^\[[^\]]*\]\s*/,'').trim().slice(0, 60);
+}
+async function getRecentSnippetsForChannel(channelKey, limit=3){
+  try{
+    let hist = lsGet('ronai:hist', []);
+    if(!Array.isArray(hist) || !hist.length){
+      const remote = await redisGet('ronai:hist');
+      if(Array.isArray(remote)) hist = remote;
+    }
+    if(!Array.isArray(hist)) return [];
+    const relevant = hist.filter(h => h && Array.isArray(h.channels) && h.channels.includes(channelKey)).slice(0, limit);
+    const snippets = [];
+    for(const h of relevant){
+      let result = lsGet('ronai:result:'+h.id, null);
+      if(!result) result = await redisGet('ronai:result:'+h.id);
+      const text = result && result[channelKey];
+      if(text){
+        const title = extractFirstTitle(text);
+        const intro = extractIntroSnippet(text);
+        if(title || intro) snippets.push({ title, intro });
+      }
+    }
+    return snippets;
+  }catch(e){ console.error('[RONAI] 최근 히스토리 조회 실패:', e); return []; }
+}
+function buildAvoidRepeatInstruction(snippets){
+  if(!snippets || !snippets.length) return '';
+  const lines = snippets.map((s,i)=>`${i+1}. 제목: "${s.title || '(정보 없음)'}" / 도입부: "${s.intro || '(정보 없음)'}"`).join('\n');
+  return `\n\n[최근 발행 글과 겹치지 않게 — 반드시 준수]\n아래는 이 채널에 최근 발행한 글들의 제목·도입부야. 이것들과 표현·문장 구조·전개 방식이 겹치지 않도록 완전히 새롭게 작성해:\n${lines}`;
+}
+
 /* ============================= CHANNEL DEFINITIONS ============================= */
 const CHANNELS = {
   naver_blog: { label:"네이버 블로그", group:"blog", webSearch:true, maxTokens:6000,
@@ -1136,6 +1210,18 @@ async function startGeneration(){
   const CONCURRENCY = 4;
   const queue = state.genProgress.slice();
 
+  // 같은 배치 안에서 네이버 블로그/티스토리 등 장문 채널끼리 관점이 겹치지 않도록 미리 배정
+  const longformInBatch = queue.map(p=>p.channel).filter(c=>LONGFORM_CHANNELS.includes(c));
+  const shuffledAngles = shuffleArr(ANGLE_POOL);
+  const angleAssignment = {};
+  longformInBatch.forEach((c,i)=>{ angleAssignment[c] = shuffledAngles[i % shuffledAngles.length]; });
+
+  // 장문 채널은 최근 발행 이력(제목/도입부)을 미리 불러와 반복을 피하도록 준비
+  const recentSnippetsMap = {};
+  await Promise.all(longformInBatch.map(async c=>{
+    recentSnippetsMap[c] = await getRecentSnippetsForChannel(c);
+  }));
+
   async function runOne(p){
     p.status = 'working';
     renderCreate();
@@ -1145,8 +1231,10 @@ async function startGeneration(){
         ...state.productImages,
         ...((conf.group==='blog' && p.channel==='naver_blog') ? state.blogImages : [])
       ];
+      const variationInstruction = buildVariationInstruction(p.channel, angleAssignment[p.channel] || pickRandom(ANGLE_POOL));
+      const avoidRepeatInstruction = buildAvoidRepeatInstruction(recentSnippetsMap[p.channel]);
       const text = await callGemini({
-        prompt: ctxBlock + "\n\n" + conf.instructions + "\n\n" + STRICT_INPUT_RULE + "\n\n[형식 준수 필수] 위에 나열된 섹션을 순서대로 전부 작성하고, 각 섹션 제목은 반드시 [대괄호]로 감싸서 한 줄에 단독으로 적어. 마크다운 기호(**, ##, ---, * 등)는 절대 쓰지 말고, 사고 과정이나 설명 없이 바로 결과물만 출력해.",
+        prompt: ctxBlock + "\n\n" + conf.instructions + "\n\n" + STRICT_INPUT_RULE + variationInstruction + avoidRepeatInstruction + "\n\n[형식 준수 필수] 위에 나열된 섹션을 순서대로 전부 작성하고, 각 섹션 제목은 반드시 [대괄호]로 감싸서 한 줄에 단독으로 적어. 마크다운 기호(**, ##, ---, * 등)는 절대 쓰지 말고, 사고 과정이나 설명 없이 바로 결과물만 출력해.",
         images: imgs,
         useWebSearch: conf.webSearch,
         maxTokens: conf.maxTokens,
@@ -1296,8 +1384,11 @@ async function regenerateChannel(channelKey){
       ...state.productImages,
       ...((conf.group==='blog' && channelKey==='naver_blog') ? state.blogImages : [])
     ];
+    const variationInstruction = buildVariationInstruction(channelKey, pickRandom(ANGLE_POOL));
+    const recentSnippets = LONGFORM_CHANNELS.includes(channelKey) ? await getRecentSnippetsForChannel(channelKey) : [];
+    const avoidRepeatInstruction = buildAvoidRepeatInstruction(recentSnippets);
     const text = await callGemini({
-      prompt: ctxBlock + "\n\n" + conf.instructions + "\n\n" + STRICT_INPUT_RULE + "\n\n[형식 준수 필수] 위에 나열된 섹션을 순서대로 전부 작성하고, 각 섹션 제목은 반드시 [대괄호]로 감싸서 한 줄에 단독으로 적어. 마크다운 기호(**, ##, ---, * 등)는 절대 쓰지 말고, 사고 과정이나 설명 없이 바로 결과물만 출력해.",
+      prompt: ctxBlock + "\n\n" + conf.instructions + "\n\n" + STRICT_INPUT_RULE + variationInstruction + avoidRepeatInstruction + "\n\n[형식 준수 필수] 위에 나열된 섹션을 순서대로 전부 작성하고, 각 섹션 제목은 반드시 [대괄호]로 감싸서 한 줄에 단독으로 적어. 마크다운 기호(**, ##, ---, * 등)는 절대 쓰지 말고, 사고 과정이나 설명 없이 바로 결과물만 출력해.",
       images: imgs,
       useWebSearch: conf.webSearch,
       maxTokens: conf.maxTokens
