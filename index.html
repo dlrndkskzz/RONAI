@@ -892,13 +892,22 @@ function attachStepEvents(){
   if(analyzeProductBtn) analyzeProductBtn.onclick = async ()=>{
     analyzeProductBtn.textContent = '분석중...';
     try{
-      if(state.productImages.length && !state.productName){
+      if(state.productImages.length){
         const text = await callGemini({
-          prompt:`첨부된 이미지에서 제품명을 추출해줘. JSON 형식으로만 응답: {"product_name": "..."}`,
-          images: state.productImages.slice(0,3), maxTokens:300, wantJson:true
+          prompt:`첨부된 이미지들은 제품 상세페이지 캡처, 제품 사진, 성분표(전성분) 등이야. 이미지에 여러 개의 서로 다른 제품이 섞여 있을 수 있으니, 이미지별로 어떤 제품에 해당하는지 구분해서 각 제품마다 아래 정보를 정리해줘.
+JSON 형식으로만 응답 (마크다운 금지):
+{"products":[{"name":"제품명","volume":"용량 (있으면)","key_ingredients":"핵심 성분 3~5개, 쉼표 구분","features":"이 제품만의 특징이나 강점 1~2문장"}]}
+정보가 이미지에 없으면 빈 문자열로 두고, 확실하지 않은 내용은 추측해서 지어내지 마.`,
+          images: state.productImages.slice(0,10), maxTokens:1200, wantJson:true
         });
         const parsed = safeParseJson(text);
-        if(parsed && parsed.product_name) state.productName = parsed.product_name;
+        if(parsed && Array.isArray(parsed.products) && parsed.products.length){
+          const summary = parsed.products.map(p=>
+            `[제품명] ${p.name||'미상'}\n[용량] ${p.volume||'-'}\n[핵심성분] ${p.key_ingredients||'-'}\n[특징] ${p.features||'-'}`
+          ).join('\n\n');
+          state.productText = (state.productText ? state.productText + '\n\n' : '') + summary;
+          if(!state.productName) state.productName = parsed.products.map(p=>p.name).filter(Boolean).join(', ');
+        }
       }
       if(!state.topic && state.productName) state.topic = state.productName;
       toast('제품 정보 분석 완료');
@@ -1154,7 +1163,10 @@ async function startGeneration(){
 [검색 의도]: ${state.searchIntent}
 [글 톤]: ${state.tone}
 [제품 정보]: ${state.productText || state.productName || '해당 없음'}
-[추가 정보]: ${state.additionalInfo || '없음'}`;
+[추가 정보]: ${state.additionalInfo || '없음'}
+
+[제품 정보 반영 필수] 위 [제품 정보]나 첨부된 이미지에 실제 제품명·성분·특징이 있다면, 반드시 그 내용을 글 안에서 구체적으로 언급해라. 제품 정보 없이 뭉뚱그린 일반론만 쓰지 말 것. 제품 정보에 여러 개의 제품이 들어있다면, 하나로 뭉뚱그리지 말고 각 제품의 이름과 고유한 특징을 살려서 개별적으로 소개해라.`;
+
 
   // 채널별로 동시에(병렬) 생성해서 대기시간을 줄인다. 단, 한번에 너무 많은 요청이 몰리지 않도록
   // CONCURRENCY 개씩 묶어서 처리한다.
@@ -1166,7 +1178,7 @@ async function startGeneration(){
     renderCreate();
     const conf = CHANNELS[p.channel];
     try{
-      const imgs = (conf.group==='blog' && p.channel==='naver_blog') ? state.blogImages : (conf.group==='product' ? state.productImages : []);
+      const imgs = [...state.productImages, ...(p.channel==='naver_blog' ? state.blogImages : [])].slice(0, 10);
       const text = await callGemini({
         prompt: ctxBlock + "\n\n" + conf.instructions + "\n\n[형식 준수 필수] 위에 나열된 섹션을 순서대로 전부 작성하고, 각 섹션 제목은 반드시 [대괄호]로 감싸서 한 줄에 단독으로 적어. 마크다운 기호(**, ##, ---, * 등)는 절대 쓰지 말고, 사고 과정이나 설명 없이 바로 결과물만 출력해.",
         images: imgs,
@@ -1312,9 +1324,11 @@ async function regenerateChannel(channelKey){
 [검색 의도]: ${state.searchIntent}
 [글 톤]: ${state.tone}
 [제품 정보]: ${state.productText || state.productName || '해당 없음'}
-[추가 정보]: ${state.additionalInfo || '없음'}`;
+[추가 정보]: ${state.additionalInfo || '없음'}
+
+[제품 정보 반영 필수] 위 [제품 정보]나 첨부된 이미지에 실제 제품명·성분·특징이 있다면, 반드시 그 내용을 글 안에서 구체적으로 언급해라. 제품 정보 없이 뭉뚱그린 일반론만 쓰지 말 것. 제품 정보에 여러 개의 제품이 들어있다면, 하나로 뭉뚱그리지 말고 각 제품의 이름과 고유한 특징을 살려서 개별적으로 소개해라.`;
   try{
-    const imgs = (conf.group==='blog' && channelKey==='naver_blog') ? state.blogImages : (conf.group==='product' ? state.productImages : []);
+    const imgs = [...state.productImages, ...(channelKey==='naver_blog' ? state.blogImages : [])].slice(0, 10);
     const text = await callGemini({
       prompt: ctxBlock + "\n\n" + conf.instructions + "\n\n[형식 준수 필수] 위에 나열된 섹션을 순서대로 전부 작성하고, 각 섹션 제목은 반드시 [대괄호]로 감싸서 한 줄에 단독으로 적어. 마크다운 기호(**, ##, ---, * 등)는 절대 쓰지 말고, 사고 과정이나 설명 없이 바로 결과물만 출력해.",
       images: imgs,
