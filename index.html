@@ -89,7 +89,8 @@
   .kw-title-ex{ font-size:12px; color:var(--ink); margin-top:4px; font-style:italic; }
 
   .hint{ font-size:12px; color:var(--lav-deep); font-weight:600; }
-  .imgs-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .imgs-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; padding:4px; border-radius:10px; transition:.15s; }
+  .imgs-row.drag-over{ background:#F1EEFB; outline:2px dashed var(--lav-deep); outline-offset:2px; }
   .thumb{ width:56px; height:56px; border-radius:8px; object-fit:cover; border:1px solid var(--line); }
   .upload-box{ width:56px; height:56px; border:1.5px dashed var(--line); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--muted); cursor:pointer; }
 
@@ -781,7 +782,7 @@ function renderStep1(){
 
   if(needsProduct){
     html += `<div class="card"><h3>② 제품 정보</h3>
-      <label class="field-label">제품 사진 / 상세페이지 캡처 / 성분표 (최대 10장)</label>
+      <label class="field-label">제품 사진 / 상세페이지 캡처 / 성분표 (최대 10장, 드래그해서 올려도 돼요)</label>
       <div class="imgs-row" id="product-img-row">
         ${state.productImages.map((img,i)=>`<img class="thumb" src="data:${img.mime};base64,${img.base64}">`).join('')}
         ${state.productImages.length<10 ? `<div class="upload-box" onclick="document.getElementById('product-img-input').click()">＋</div>` : ''}
@@ -856,13 +857,16 @@ function attachStepEvents(){
   if(toggleBtn) toggleBtn.onclick = ()=>{ state.showProductCard = !state.showProductCard; renderCreate(); };
 
   const imgInput = document.getElementById('product-img-input');
-  if(imgInput) imgInput.onchange = async (e)=>{
-    for(const file of e.target.files){
+  const addProductImages = async (files)=>{
+    for(const file of files){
+      if(state.productImages.length >= 10) break;
       const base64 = await fileToBase64(file);
       state.productImages.push({ base64, mime:file.type });
     }
     renderCreate();
   };
+  if(imgInput) imgInput.onchange = (e)=> addProductImages(e.target.files);
+  setupImageDropzone(document.getElementById('product-img-row'), addProductImages);
   const productTextInput = document.getElementById('product-text-input');
   if(productTextInput) productTextInput.onchange = e=> state.productText = e.target.value;
 
@@ -980,6 +984,27 @@ function fileToBase64(file){
   });
 }
 
+// generic drag-and-drop wiring for an image dropzone: highlights on drag, calls onFiles(FileList) on drop
+function setupImageDropzone(zoneEl, onFiles){
+  if(!zoneEl) return;
+  ['dragenter','dragover'].forEach(evt=>{
+    zoneEl.addEventListener(evt, e=>{ e.preventDefault(); e.stopPropagation(); zoneEl.classList.add('drag-over'); });
+  });
+  ['dragleave','dragend'].forEach(evt=>{
+    zoneEl.addEventListener(evt, e=>{ e.preventDefault(); e.stopPropagation(); zoneEl.classList.remove('drag-over'); });
+  });
+  zoneEl.addEventListener('drop', e=>{
+    e.preventDefault(); e.stopPropagation();
+    zoneEl.classList.remove('drag-over');
+    const files = e.dataTransfer && e.dataTransfer.files;
+    if(files && files.length){
+      const imageFiles = Array.from(files).filter(f=>f.type.startsWith('image/'));
+      if(imageFiles.length) onFiles(imageFiles);
+      else toast('이미지 파일만 올릴 수 있어요');
+    }
+  });
+}
+
 /* ============================= STEP 2 ============================= */
 function renderStep2(){
   const hasBlog = state.selectedChannels.some(c=>BLOG_CHANNELS.includes(c));
@@ -1017,8 +1042,8 @@ function renderStep2(){
       ${["차분한 정보체","친근한 구어체","전문적 설명체"].map(v=>`<div class="chip ${state.tone===v?'selected':''}" data-tone="${v}">${v}</div>`).join('')}
     </div>
 
-    ${hasBlog ? `<label class="field-label" style="margin-top:12px;">블로그 이미지 (최대 5장)</label>
-    <div class="imgs-row">
+    ${hasBlog ? `<label class="field-label" style="margin-top:12px;">블로그 이미지 (최대 5장, 드래그해서 올려도 돼요)</label>
+    <div class="imgs-row" id="blog-img-row">
       ${state.blogImages.map(img=>`<img class="thumb" src="data:${img.mime};base64,${img.base64}">`).join('')}
       ${state.blogImages.length<5 ? `<div class="upload-box" onclick="document.getElementById('blog-img-input').click()">＋</div>` : ''}
     </div>
@@ -1079,13 +1104,16 @@ function attachStep2Events(){
   });
 
   const blogImgInput = document.getElementById('blog-img-input');
-  if(blogImgInput) blogImgInput.onchange = async e=>{
-    for(const file of e.target.files){
+  const addBlogImages = async (files)=>{
+    for(const file of files){
+      if(state.blogImages.length >= 5) break;
       const base64 = await fileToBase64(file);
       state.blogImages.push({ base64, mime:file.type });
     }
     renderCreate();
   };
+  if(blogImgInput) blogImgInput.onchange = e=> addBlogImages(e.target.files);
+  setupImageDropzone(document.getElementById('blog-img-row'), addBlogImages);
 
   const genBtn = document.getElementById('btn-generate');
   if(genBtn) genBtn.onclick = ()=> startGeneration();
@@ -1456,6 +1484,8 @@ function openPromptModal(){
 }
 
 /* ============================= INIT ============================= */
+window.addEventListener('dragover', e=> e.preventDefault());
+window.addEventListener('drop', e=> e.preventDefault());
 render();
 if(!getApiKey()) setTimeout(openApiKeyModal, 400);
 </script>
