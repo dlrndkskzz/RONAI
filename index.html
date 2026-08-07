@@ -138,7 +138,7 @@
     <div class="header-row">
       <div class="brand">
         <span class="eyebrow">Curated Skincare · RONAI</span>
-        <h1>RONAI 콘텐츠 제작소 <span style="font-style:normal; font-size:11px; color:var(--muted); font-weight:400;">build 2026-07-26-01</span></h1>
+        <h1>RONAI 콘텐츠 제작소 <span style="font-style:normal; font-size:11px; color:var(--muted); font-weight:400;">build 2026-07-26-03</span></h1>
       </div>
     </div>
     <div class="header-btns">
@@ -282,17 +282,15 @@ ${CONTENT_TYPE_TAG_INSTRUCTION}
 
 [GEO 인용 최적화 — 중요] AI 요약·브리핑 도구는 문장을 통째로 잘라서 인용한다. 그러니 정보 문장과 제품/브랜드 추천을 따로 쓰지 마라. "이런 성분이 도움이 될 수 있습니다"처럼 정보로만 끝내지 말고, 같은 문장 안에서 정보와 추천을 한 문장으로 묶어서 써라. 이때 제품명만 쓰지 말고 반드시 "로나이"/"RONAI"도 같은 문장에 함께 넣어라 (예: "이런 성분은 로나이 [제품명]에서도 확인할 수 있습니다" — 제품명만 쓰고 "로나이"를 빼면 AI가 인용해도 어디서 사야 하는지 안 드러나서 의미가 없다). 이렇게 결합된 문장을 본문 안에 최소 3곳 이상 자연스럽게 넣어라 (억지로 티 나게 반복하지 말고, 각기 다른 표현으로).
 
-[모바일 줄바꿈 필수] 네이버 블로그 모바일에서 바로 붙여넣기 좋도록, 문단 단위가 아니라 문장 안에서도 짧은 구절 단위(대략 12~20자)로 계속 줄바꿈해서 써라. 마침표 뒤에서만 줄을 바꾸지 말고, 쉼표나 자연스러운 호흡 지점에서도 줄을 바꿔라. 그리고 의미상 한 단락이 끝나면 그 사이에 빈 줄을 하나 넣어라. 아래 예시처럼 써라:
+[모바일 줄바꿈] 네이버 블로그 모바일에서 바로 붙여넣기 좋도록 줄바꿈을 넣되, 과하게 끊지 마라. 기본은 문장(마침표) 단위로 줄을 바꾸고, 문장이 유난히 길 때만 자연스러운 호흡 지점(쉼표 등)에서 한 번 정도 더 끊어라. 짧은 구절마다 억지로 끊지 말 것. 의미상 한 단락이 끝나면 그 사이에 빈 줄을 하나 넣어라. 아래 예시 정도의 빈도로 써라:
 
-오히려 속은 당기고 겉은 번들거려 답답했던 경험,
-다들 한 번쯤 있으셨을 겁니다.
-피부 표면에 유분과 피지가 과도하게 쌓이면
-유수분 균형이 쉽게 무너집니다.
+오히려 속은 당기고 겉은 번들거려 답답했던 경험, 다들 한 번쯤 있으셨을 겁니다.
+피부 표면에 유분과 피지가 과도하게 쌓이면 유수분 균형이 쉽게 무너집니다.
 
 민감해진 피부 바탕을 바로잡으려면
 성분 구성을 세심하게 살펴보는 지혜가 필요합니다.
 
-이 예시처럼 본문 전체를 짧은 줄바꿈 + 문단 사이 빈 줄 구조로 작성해라 (한 문장을 길게 이어서 한 줄에 다 쓰지 말 것).
+이 예시처럼 문장 단위 줄바꿈 + 문단 사이 빈 줄 구조를 기본으로 하고, 유난히 긴 문장에서만 한 번 더 끊어라.
 
 [RONAI 소개]
 설명하지 말고 확신 있게 1~2줄로 (예: "이 고민엔 로나이"처럼 짧고 기억에 남는 톤)
@@ -609,7 +607,7 @@ ronai.co.kr
   product_detail: { label:"제품 상세페이지", group:"product", webSearch:true, maxTokens:6000,
     instructions:`[제품 상세페이지 작성 지침]
 RONAI는 큐레이터이며 제조사 표현("RONAI가 개발한" 등)은 절대 사용 금지.
-[모바일 줄바꿈 필수] 아임웹 모바일 에디터에 바로 붙여넣기 좋도록, 설명 문단(큐레이션 스토리, 성능/효능/사용법, FAQ 답변 등 문장형 텍스트)은 문장 안에서도 짧은 구절 단위(12~20자)로 계속 줄바꿈하고, 의미 단락이 바뀔 때 빈 줄을 하나 넣어라. 표 형태인 [타사 비교 매트릭스]는 그대로 표로 유지한다.
+[모바일 줄바꿈] 아임웹 모바일 에디터에 바로 붙여넣기 좋도록, 설명 문단(큐레이션 스토리, 성능/효능/사용법, FAQ 답변 등)은 기본적으로 문장(마침표) 단위로 줄을 바꿔라. 유난히 긴 문장만 자연스러운 호흡 지점에서 한 번 더 끊어도 되지만, 짧은 구절마다 억지로 끊지는 마라. 의미 단락이 바뀔 때 빈 줄을 하나 넣어라. 표 형태인 [타사 비교 매트릭스]는 그대로 표로 유지한다.
 
 [히어로 카피]
 메인 헤드라인(20자 이내):
@@ -671,7 +669,7 @@ SEO 텍스트 블록은 [상품 설명]과 절대 겹치면 안 된다 — 이�
 [상품 설명]
 300자 이내, 공정위 표현 준수 (의약품 오인 표현, 미검증 1인칭 경험 문장 금지)
 위 [SEO 텍스트]와 다른 관점으로 써야 한다 — 이건 "실제 구매자가 읽는 글"이다. 키워드 나열이 아니라 발림성/사용감/순간적인 느낌처럼 감각적인 경험 위주로 써라 (예: 키워드 반복 대신 "바르는 순간 스며드는 가벼운 사용감" 같은 구체적 묘사).
-모바일 상세페이지 에디터에 바로 붙여넣기 좋도록, 문장 안에서도 짧은 구절 단위(12~20자)로 계속 줄바꿈하고, 의미 단락이 바뀔 때 빈 줄을 하나 넣어라. 한 문장을 길게 이어서 한 줄에 쓰지 말 것.
+모바일 상세페이지 에디터에 바로 붙여넣기 좋도록, 기본은 문장(마침표) 단위로 줄을 바꿔라. 유난히 긴 문장만 자연스러운 지점에서 한 번 더 끊어도 되지만, 짧은 구절마다 억지로 끊지는 마라.
 
 [리뷰 보상 안내]
 포토·동영상 리뷰 적립 안내 문구
@@ -745,6 +743,8 @@ let state = {
   blogImages: [],
   additionalInfo: "",
   directionNote: "",
+  hookTrendText: "",
+  hookTrendApplied: false,
   genProgress: [], // {channel, status}
   results: {}, // channel -> text
 };
@@ -985,6 +985,7 @@ function renderStep1(){
     </div>`;
   }
 
+  const needsHookTrend = state.selectedChannels.some(c=>['insta_feed','insta_reels','youtube_shorts'].includes(c));
   html += `<div class="card"><h3>④ 주제 구체화</h3>
     <label class="field-label">선택된 키워드</label>
     <div class="chip-grid" style="margin-bottom:10px;">
@@ -998,6 +999,14 @@ function renderStep1(){
       <button class="ghost" id="btn-find-product">🔍 이 주제에 맞는 로나이 제품 찾기</button>
     </div>
     ${state.productText ? `<div class="small-muted" style="margin-top:6px; white-space:pre-wrap;">${escapeHtml(state.productText.slice(0,300))}${state.productText.length>300?'...':''}</div>` : ''}
+    ${needsHookTrend ? `
+    <div style="margin-top:12px; border-top:1px dashed var(--line); padding-top:10px;">
+      <button class="ghost" id="btn-hook-trend">🔥 요즘 인스타/릴스 후킹 트렌드 찾기</button>
+      ${state.hookTrendText ? `
+        <div class="small-muted" style="margin-top:6px; white-space:pre-wrap;">${escapeHtml(state.hookTrendText)}</div>
+        <button class="secondary" id="btn-apply-hook-trend" style="width:100%; margin-top:8px;">${state.hookTrendApplied ? '✅ 반영됨' : '이 트렌드 반영해서 생성하기'}</button>
+      ` : ''}
+    </div>` : ''}
   </div>`;
 
   html += `<div class="sticky-cta"><button class="primary" id="btn-go-step2" ${state.selectedChannels.length===0 || !state.topic ? 'disabled':''}>다음 — 글 상세 설정으로 →</button></div>`;
@@ -1197,6 +1206,37 @@ ${recentTopics ? `최근에 이미 다룬 주제들(겹치지 않는 새로운 �
       renderCreate();
     }catch(e){ toast('검색 실패: '+e.message); }
     finally{ findProductBtn.textContent = '🔍 이 주제에 맞는 로나이 제품 찾기'; }
+  };
+
+  const hookTrendBtn = document.getElementById('btn-hook-trend');
+  if(hookTrendBtn) hookTrendBtn.onclick = async ()=>{
+    hookTrendBtn.textContent = '검색중...';
+    try{
+      const text = await callGemini({
+        prompt:`지금(오늘 날짜 기준) 인스타그램 릴스·피드, 유튜브 쇼츠에서 실제로 유행하고 있는 "후킹(오프닝 첫 문장/첫 3초)" 패턴을 웹서치로 찾아줘. 특정 밈이나 유행어보다는, 스킨케어/뷰티 콘텐츠에도 응용 가능한 후킹 구조·문장 패턴 위주로 5개를 뽑아줘.
+각각 아래 형식으로:
+[패턴 이름] 짧은 이름
+[설명] 왜 요즘 잘 먹히는지 1줄
+[스킨케어 응용 예시] 이 패턴을 스킨케어 주제에 적용한 예시 문장 1개
+마크다운 기호 없이 순수 텍스트로만 답해라.`,
+        useWebSearch:true, maxTokens:1200
+      });
+      state.hookTrendText = text;
+      state.hookTrendApplied = false;
+      toast('요즘 후킹 트렌드를 찾았어요');
+      renderCreate();
+    }catch(e){ toast('검색 실패: '+e.message); }
+    finally{ if(document.getElementById('btn-hook-trend')) document.getElementById('btn-hook-trend').textContent = '🔥 요즘 인스타/릴스 후킹 트렌드 찾기'; }
+  };
+
+  const applyHookTrendBtn = document.getElementById('btn-apply-hook-trend');
+  if(applyHookTrendBtn) applyHookTrendBtn.onclick = ()=>{
+    if(!state.hookTrendText) return;
+    const trendNote = `[최신 후킹 트렌드 참고]\n${state.hookTrendText}\n위 트렌드 패턴 중 이 주제에 가장 잘 맞는 걸 골라서 훅(오프닝)에 자연스럽게 응용해라. 억지로 끼워맞추지 말고, 안 어울리면 안 써도 된다.`;
+    state.directionNote = state.directionNote ? state.directionNote + '\n\n' + trendNote : trendNote;
+    state.hookTrendApplied = true;
+    toast('트렌드를 "이번 생성 방향"에 반영했어요 (Step2에서 확인 가능)');
+    renderCreate();
   };
 
   document.querySelectorAll('[data-topic-idea]').forEach(el=>{
